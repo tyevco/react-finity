@@ -1,15 +1,156 @@
 import { useMemo, useState } from 'react'
-import type { Mesh } from 'three'
+import type { Mesh, BufferGeometry } from 'three'
 import { Edges } from '@react-three/drei'
-import type { GridfinityObject } from '@/types/gridfinity'
+import type {
+  GridfinityObject,
+  GridfinityProfile,
+  Modifier,
+  ModifierContext,
+  BinParams,
+} from '@/types/gridfinity'
 import { generateBaseplate } from '@/engine/geometry/baseplate'
 import { generateBin } from '@/engine/geometry/bin'
+import { generateDividerGrid } from '@/engine/geometry/modifiers/dividerGrid'
+import { generateLabelTab } from '@/engine/geometry/modifiers/labelTab'
+import { generateScoop } from '@/engine/geometry/modifiers/scoop'
+import { generateInsert } from '@/engine/geometry/modifiers/insert'
+import { generateLid } from '@/engine/geometry/modifiers/lid'
+import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
 import { TransformGizmo } from './TransformGizmo'
 
 interface SceneObjectProps {
   object: GridfinityObject
+}
+
+function generateModifierGeometry(
+  modifier: Modifier,
+  context: ModifierContext,
+  profile: GridfinityProfile,
+): BufferGeometry | null {
+  switch (modifier.kind) {
+    case 'dividerGrid':
+      return generateDividerGrid(modifier.params, context, profile)
+    case 'labelTab':
+      return generateLabelTab(modifier.params, context, profile)
+    case 'scoop':
+      return generateScoop(modifier.params, context, profile)
+    case 'insert':
+      return generateInsert(modifier.params, context, profile)
+    case 'lid':
+      return generateLid(modifier.params, context, profile)
+  }
+}
+
+function computeBinContext(params: BinParams, profile: GridfinityProfile): ModifierContext {
+  const { gridWidth, gridDepth, heightUnits, wallThickness } = params
+  const { gridSize, heightUnit, tolerance, socketWallHeight } = profile
+
+  const outerWidth = gridWidth * gridSize - tolerance * 2
+  const outerDepth = gridDepth * gridSize - tolerance * 2
+  const innerWidth = outerWidth - wallThickness * 2
+  const innerDepth = outerDepth - wallThickness * 2
+  const wallHeight = heightUnits * heightUnit
+
+  return {
+    innerWidth,
+    innerDepth,
+    wallHeight,
+    floorY: socketWallHeight + wallThickness,
+    centerX: 0,
+    centerZ: 0,
+  }
+}
+
+interface ModifierMeshesProps {
+  parentId: string
+  context: ModifierContext
+}
+
+function ModifierMeshes({ parentId, context }: ModifierMeshesProps) {
+  const allModifiers = useProjectStore((s) => s.modifiers)
+  const modifiers = useMemo(
+    () => allModifiers.filter((m) => m.parentId === parentId),
+    [allModifiers, parentId],
+  )
+  const activeProfile = useProfileStore((s) => s.activeProfile)
+
+  return (
+    <>
+      {modifiers.map((modifier) => (
+        <ModifierMesh
+          key={modifier.id}
+          modifier={modifier}
+          context={context}
+          profile={activeProfile}
+        />
+      ))}
+    </>
+  )
+}
+
+interface ModifierMeshProps {
+  modifier: Modifier
+  context: ModifierContext
+  profile: GridfinityProfile
+}
+
+function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
+  const geometry = useMemo(() => {
+    return generateModifierGeometry(modifier, context, profile)
+  }, [modifier, context, profile])
+
+  // Compute child context for nested modifiers
+  const childContext = useMemo((): ModifierContext | null => {
+    if (modifier.kind === 'dividerGrid') {
+      const { dividersX, dividersY, wallThickness } = modifier.params
+      if (dividersX === 0 && dividersY === 0) return context
+      const compartmentWidth = (context.innerWidth - wallThickness * dividersX) / (dividersX + 1)
+      const compartmentDepth = (context.innerDepth - wallThickness * dividersY) / (dividersY + 1)
+      return {
+        innerWidth: compartmentWidth,
+        innerDepth: compartmentDepth,
+        wallHeight: context.wallHeight,
+        floorY: context.floorY,
+        centerX: context.centerX,
+        centerZ: context.centerZ,
+      }
+    }
+    if (modifier.kind === 'insert') {
+      const { compartmentsX, compartmentsY, wallThickness } = modifier.params
+      const rimInnerWidth = context.innerWidth - wallThickness * 2
+      const rimInnerDepth = context.innerDepth - wallThickness * 2
+      const compartmentWidth = (rimInnerWidth - wallThickness * (compartmentsX - 1)) / compartmentsX
+      const compartmentDepth = (rimInnerDepth - wallThickness * (compartmentsY - 1)) / compartmentsY
+      return {
+        innerWidth: compartmentWidth,
+        innerDepth: compartmentDepth,
+        wallHeight: context.wallHeight,
+        floorY: context.floorY,
+        centerX: context.centerX,
+        centerZ: context.centerZ,
+      }
+    }
+    return context
+  }, [modifier, context])
+
+  if (!geometry || !('position' in geometry.attributes)) return null
+
+  return (
+    <>
+      <mesh geometry={geometry}>
+        <meshStandardMaterial
+          color="#c8c8c8"
+          roughness={0.6}
+          metalness={0.1}
+          transparent
+          opacity={0.9}
+        />
+      </mesh>
+      {childContext && <ModifierMeshes parentId={modifier.id} context={childContext} />}
+    </>
+  )
 }
 
 export function SceneObject({ object }: SceneObjectProps) {
@@ -26,12 +167,15 @@ export function SceneObject({ object }: SceneObjectProps) {
         return generateBaseplate(object.params, activeProfile)
       case 'bin':
         return generateBin(object.params, activeProfile)
-      default:
-        return null
     }
   }, [object.kind, object.params, activeProfile])
 
-  if (!geometry) return null
+  const binContext = useMemo(() => {
+    if (object.kind === 'bin') {
+      return computeBinContext(object.params, activeProfile)
+    }
+    return null
+  }, [object.kind, object.params, activeProfile])
 
   return (
     <>
@@ -52,6 +196,11 @@ export function SceneObject({ object }: SceneObjectProps) {
         {isSelected && <Edges threshold={15} color="#4a90d9" lineWidth={2} />}
       </mesh>
       {isSelected && meshNode && <TransformGizmo target={meshNode} objectId={object.id} />}
+      {binContext && (
+        <group position={object.position}>
+          <ModifierMeshes parentId={object.id} context={binContext} />
+        </group>
+      )}
     </>
   )
 }

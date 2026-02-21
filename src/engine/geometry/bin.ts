@@ -56,7 +56,7 @@ function createHollowExtrusion(
  * 4. Stacking lip (optional) — raised rim at top edge for bin stacking
  */
 export function generateBin(params: BinParams, profile: GridfinityProfile): THREE.BufferGeometry {
-  const { gridWidth, gridDepth, heightUnits, stackingLip, wallThickness } = params
+  const { gridWidth, gridDepth, heightUnits, stackingLip, wallThickness, innerFillet } = params
   const { gridSize, heightUnit, binCornerRadius, tolerance, socketWallHeight, stackingLipHeight } =
     profile
 
@@ -131,6 +131,44 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): THRE
     )
     lipGeo.translate(0, socketWallHeight + wallHeight, 0)
     geometries.push(lipGeo)
+  }
+
+  // === 5. Inner fillet (optional) ===
+  if (innerFillet > 0) {
+    const filletR = Math.min(innerFillet, wt, wallHeight / 2)
+    const floorY = socketWallHeight + wt
+
+    // Chamfer strip cross-section: right triangle with legs = filletR
+    const chamferShape = new THREE.Shape()
+    chamferShape.moveTo(0, 0)
+    chamferShape.lineTo(filletR, 0)
+    chamferShape.lineTo(0, filletR)
+    chamferShape.lineTo(0, 0)
+
+    // Front wall (negative Z)
+    const frontGeo = extrudeShape(chamferShape, innerWidth - innerRadius * 2)
+    frontGeo.rotateY(Math.PI / 2)
+    frontGeo.translate(-(innerWidth / 2 - innerRadius), floorY, -innerDepth / 2)
+    geometries.push(frontGeo)
+
+    // Back wall (positive Z)
+    const backGeo = extrudeShape(chamferShape, innerWidth - innerRadius * 2)
+    backGeo.rotateY(Math.PI / 2)
+    backGeo.rotateY(Math.PI)
+    backGeo.translate(innerWidth / 2 - innerRadius, floorY, innerDepth / 2)
+    geometries.push(backGeo)
+
+    // Left wall (negative X)
+    const leftGeo = extrudeShape(chamferShape, innerDepth - innerRadius * 2)
+    leftGeo.rotateY(0)
+    leftGeo.translate(-innerWidth / 2, floorY, -(innerDepth / 2 - innerRadius))
+    geometries.push(leftGeo)
+
+    // Right wall (positive X)
+    const rightGeo = extrudeShape(chamferShape, innerDepth - innerRadius * 2)
+    rightGeo.rotateY(Math.PI)
+    rightGeo.translate(innerWidth / 2, floorY, innerDepth / 2 - innerRadius)
+    geometries.push(rightGeo)
   }
 
   // Merge all sub-geometries

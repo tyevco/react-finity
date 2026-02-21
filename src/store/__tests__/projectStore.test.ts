@@ -4,7 +4,7 @@ import { useProjectStore } from '../projectStore'
 describe('projectStore', () => {
   beforeEach(() => {
     // Reset store between tests
-    useProjectStore.setState({ objects: [] })
+    useProjectStore.setState({ objects: [], modifiers: [] })
   })
 
   it('starts with empty objects array', () => {
@@ -65,5 +65,219 @@ describe('projectStore', () => {
 
     useProjectStore.getState().clearObjects()
     expect(useProjectStore.getState().objects).toHaveLength(0)
+  })
+
+  it('clears modifiers when clearing objects', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    useProjectStore.getState().addModifier(binId, 'dividerGrid')
+    expect(useProjectStore.getState().modifiers).toHaveLength(1)
+
+    useProjectStore.getState().clearObjects()
+    expect(useProjectStore.getState().modifiers).toHaveLength(0)
+  })
+
+  it('adds a bin object with innerFillet default', () => {
+    const id = useProjectStore.getState().addObject('bin')
+    const obj = useProjectStore.getState().objects[0]
+
+    expect(obj.id).toBe(id)
+    expect(obj.kind).toBe('bin')
+    expect(obj.params).toMatchObject({ innerFillet: 0 })
+  })
+})
+
+describe('modifier CRUD', () => {
+  beforeEach(() => {
+    useProjectStore.setState({ objects: [], modifiers: [] })
+  })
+
+  it('addModifier creates a dividerGrid modifier with correct defaults', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    const modId = useProjectStore.getState().addModifier(binId, 'dividerGrid')
+    const { modifiers } = useProjectStore.getState()
+
+    expect(modifiers).toHaveLength(1)
+    expect(modifiers[0].id).toBe(modId)
+    expect(modifiers[0].parentId).toBe(binId)
+    expect(modifiers[0].kind).toBe('dividerGrid')
+    expect(modifiers[0].params).toEqual({
+      dividersX: 1,
+      dividersY: 1,
+      wallThickness: 1.2,
+    })
+  })
+
+  it('addModifier creates a labelTab modifier with correct defaults', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    useProjectStore.getState().addModifier(binId, 'labelTab')
+    const { modifiers } = useProjectStore.getState()
+
+    expect(modifiers[0].kind).toBe('labelTab')
+    expect(modifiers[0].params).toEqual({
+      wall: 'front',
+      angle: 45,
+      height: 7,
+    })
+  })
+
+  it('addModifier creates a scoop modifier with correct defaults', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    useProjectStore.getState().addModifier(binId, 'scoop')
+    const { modifiers } = useProjectStore.getState()
+
+    expect(modifiers[0].kind).toBe('scoop')
+    expect(modifiers[0].params).toEqual({
+      wall: 'front',
+      radius: 0,
+    })
+  })
+
+  it('addModifier creates an insert modifier with correct defaults', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    useProjectStore.getState().addModifier(binId, 'insert')
+    const { modifiers } = useProjectStore.getState()
+
+    expect(modifiers[0].kind).toBe('insert')
+    expect(modifiers[0].params).toEqual({
+      compartmentsX: 2,
+      compartmentsY: 2,
+      wallThickness: 1.2,
+    })
+  })
+
+  it('addModifier creates a lid modifier with correct defaults', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    useProjectStore.getState().addModifier(binId, 'lid')
+    const { modifiers } = useProjectStore.getState()
+
+    expect(modifiers[0].kind).toBe('lid')
+    expect(modifiers[0].params).toEqual({
+      stacking: false,
+    })
+  })
+
+  it('updateModifierParams merges params correctly', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    const modId = useProjectStore.getState().addModifier(binId, 'dividerGrid')
+
+    useProjectStore.getState().updateModifierParams(modId, { dividersX: 5 })
+
+    const mod = useProjectStore.getState().modifiers[0]
+    expect(mod.params).toEqual({
+      dividersX: 5,
+      dividersY: 1,
+      wallThickness: 1.2,
+    })
+  })
+
+  it('removeModifier removes by ID', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    const modId = useProjectStore.getState().addModifier(binId, 'dividerGrid')
+    expect(useProjectStore.getState().modifiers).toHaveLength(1)
+
+    useProjectStore.getState().removeModifier(modId)
+    expect(useProjectStore.getState().modifiers).toHaveLength(0)
+  })
+
+  it('removeModifier cascade-deletes child modifiers', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    const insertId = useProjectStore.getState().addModifier(binId, 'insert')
+    useProjectStore.getState().addModifier(insertId, 'scoop')
+    useProjectStore.getState().addModifier(insertId, 'labelTab')
+    expect(useProjectStore.getState().modifiers).toHaveLength(3)
+
+    useProjectStore.getState().removeModifier(insertId)
+    expect(useProjectStore.getState().modifiers).toHaveLength(0)
+  })
+
+  it('removeModifier cascade-deletes grandchild modifiers', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    const insertId = useProjectStore.getState().addModifier(binId, 'insert')
+    const divId = useProjectStore.getState().addModifier(insertId, 'dividerGrid')
+    useProjectStore.getState().addModifier(divId, 'scoop')
+    expect(useProjectStore.getState().modifiers).toHaveLength(3)
+
+    useProjectStore.getState().removeModifier(insertId)
+    expect(useProjectStore.getState().modifiers).toHaveLength(0)
+  })
+
+  it('removeObject cascade-deletes all modifiers in subtree', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    const insertId = useProjectStore.getState().addModifier(binId, 'insert')
+    useProjectStore.getState().addModifier(insertId, 'scoop')
+    useProjectStore.getState().addModifier(binId, 'lid')
+    expect(useProjectStore.getState().modifiers).toHaveLength(3)
+
+    useProjectStore.getState().removeObject(binId)
+    expect(useProjectStore.getState().objects).toHaveLength(0)
+    expect(useProjectStore.getState().modifiers).toHaveLength(0)
+  })
+
+  it('getModifiersForParent returns only direct children', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    const insertId = useProjectStore.getState().addModifier(binId, 'insert')
+    useProjectStore.getState().addModifier(insertId, 'scoop')
+    useProjectStore.getState().addModifier(binId, 'lid')
+
+    const binMods = useProjectStore.getState().getModifiersForParent(binId)
+    expect(binMods).toHaveLength(2)
+    expect(binMods.map((m) => m.kind).sort()).toEqual(['insert', 'lid'])
+
+    const insertMods = useProjectStore.getState().getModifiersForParent(insertId)
+    expect(insertMods).toHaveLength(1)
+    expect(insertMods[0].kind).toBe('scoop')
+  })
+
+  it('getRootObjectId walks up parent chain correctly', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    const insertId = useProjectStore.getState().addModifier(binId, 'insert')
+    const scoopId = useProjectStore.getState().addModifier(insertId, 'scoop')
+
+    expect(useProjectStore.getState().getRootObjectId(insertId)).toBe(binId)
+    expect(useProjectStore.getState().getRootObjectId(scoopId)).toBe(binId)
+  })
+
+  it('addModifier with parentId pointing to another modifier works', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    const divId = useProjectStore.getState().addModifier(binId, 'dividerGrid')
+    const labelId = useProjectStore.getState().addModifier(divId, 'labelTab')
+
+    const mod = useProjectStore.getState().modifiers.find((m) => m.id === labelId)
+    expect(mod).toBeDefined()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(mod!.parentId).toBe(divId)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(mod!.kind).toBe('labelTab')
+  })
+
+  it('multiple modifiers on same parent all returned correctly', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    useProjectStore.getState().addModifier(binId, 'dividerGrid')
+    useProjectStore.getState().addModifier(binId, 'scoop')
+    useProjectStore.getState().addModifier(binId, 'labelTab')
+    useProjectStore.getState().addModifier(binId, 'lid')
+
+    const mods = useProjectStore.getState().getModifiersForParent(binId)
+    expect(mods).toHaveLength(4)
+  })
+
+  it('getModifierContext returns context for bin parent', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    const context = useProjectStore.getState().getModifierContext(binId)
+
+    expect(context).not.toBeNull()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(context!.innerWidth).toBeGreaterThan(0)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(context!.innerDepth).toBeGreaterThan(0)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(context!.wallHeight).toBeGreaterThan(0)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(context!.floorY).toBeGreaterThan(0)
+  })
+
+  it('getModifierContext returns null for unknown parent', () => {
+    const context = useProjectStore.getState().getModifierContext('nonexistent-id')
+    expect(context).toBeNull()
   })
 })

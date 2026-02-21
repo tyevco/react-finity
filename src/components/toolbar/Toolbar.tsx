@@ -51,7 +51,6 @@ export function Toolbar() {
         <DropdownMenuContent>
           <DropdownMenuItem onClick={handleAddBaseplate}>Baseplate</DropdownMenuItem>
           <DropdownMenuItem onClick={handleAddBin}>Bin</DropdownMenuItem>
-          <DropdownMenuItem disabled>Lid (Phase 4)</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

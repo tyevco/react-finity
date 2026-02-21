@@ -17,8 +17,6 @@ function getDimensions(
       return getBaseplateDimensions(object.params, profile)
     case 'bin':
       return getBinDimensions(object.params, profile)
-    case 'lid':
-      return null
   }
 }
 

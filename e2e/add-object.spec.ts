@@ -10,16 +10,6 @@ test.describe('Add Object', () => {
 
     await expect(page.getByRole('menuitem', { name: 'Baseplate' })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: /Bin/ })).toBeVisible()
-    await expect(page.getByRole('menuitem', { name: /Lid/ })).toBeVisible()
-  })
-
-  test('disabled menu items for future phases', async ({ page }) => {
-    await page.getByRole('button', { name: /Add Object/i }).click()
-
-    const lidItem = page.getByRole('menuitem', { name: /Lid/ })
-
-    // Bin is now enabled (Phase 2), only Lid remains disabled
-    await expect(lidItem).toHaveAttribute('data-disabled', '')
   })
 
   test('adds a baseplate to the object list', async ({ page }) => {

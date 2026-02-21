@@ -37,12 +37,6 @@ export function PropertiesPanel() {
               )}
 
               {selectedObject.kind === 'bin' && <BinProperties object={selectedObject} />}
-
-              {selectedObject.kind === 'lid' && (
-                <div className="text-xs text-muted-foreground">
-                  Lid properties coming in Phase 4.
-                </div>
-              )}
             </>
           )}
         </div>

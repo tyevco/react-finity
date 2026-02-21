@@ -3,6 +3,7 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { ProfileSelector } from './ProfileSelector'
+import { ModifierSection } from './ModifierSection'
 import type { BinObject } from '@/types/gridfinity'
 import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
@@ -112,6 +113,25 @@ export function BinProperties({ object }: BinPropertiesProps) {
         />
       </div>
 
+      {/* Inner Fillet */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs">Inner Fillet</Label>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {object.params.innerFillet === 0 ? 'None' : `${object.params.innerFillet.toFixed(1)}mm`}
+          </span>
+        </div>
+        <Slider
+          value={[object.params.innerFillet]}
+          onValueChange={([v]) => {
+            updateObjectParams(object.id, { innerFillet: Math.round(v * 10) / 10 })
+          }}
+          min={0}
+          max={3.0}
+          step={0.5}
+        />
+      </div>
+
       <Separator />
 
       {/* Dimensions readout */}
@@ -124,6 +144,9 @@ export function BinProperties({ object }: BinPropertiesProps) {
           {dims.width} x {dims.depth} x {dims.height} mm
         </div>
       </div>
+
+      {/* Modifiers */}
+      <ModifierSection parentId={object.id} />
     </div>
   )
 }

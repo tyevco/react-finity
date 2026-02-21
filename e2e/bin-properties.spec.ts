@@ -152,4 +152,147 @@ test.describe('Bin Properties Panel', () => {
     // Grid dimensions remain the same (gridSize=42)
     await expect(page.getByTestId('dimensions-readout')).toHaveText('42 x 42 x 21 mm')
   })
+
+  test('inner fillet slider visible and defaults to None', async ({ page }) => {
+    await expect(page.getByText('Inner Fillet')).toBeVisible()
+    await expect(page.getByText('None')).toBeVisible()
+  })
+
+  test('inner fillet slider updates value', async ({ page }) => {
+    // Inner fillet slider is the 5th slider (after width, depth, height, wallThickness)
+    const filletSlider = page.getByRole('slider').nth(4)
+    await filletSlider.focus()
+    await page.keyboard.press('ArrowRight')
+
+    // Should update from 0 to 0.5mm
+    await expect(page.getByText('0.5mm')).toBeVisible()
+  })
+})
+
+test.describe('Bin Modifiers', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await addBin(page)
+  })
+
+  test('shows modifiers section for bins', async ({ page }) => {
+    await expect(page.getByText('Modifiers', { exact: true })).toBeVisible()
+    await expect(page.getByText('No modifiers added.')).toBeVisible()
+  })
+
+  test('add modifier dropdown shows all modifier types', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+
+    await expect(page.getByRole('menuitem', { name: 'Divider Grid' })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: 'Label Tab' })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: 'Scoop' })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: 'Insert' })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: 'Lid' })).toBeVisible()
+  })
+
+  test('can add a divider grid modifier', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Divider Grid' }).click()
+
+    await expect(page.getByTestId('modifier-dividerGrid')).toBeVisible()
+    await expect(page.getByText('Divider Grid')).toBeVisible()
+  })
+
+  test('divider grid controls render correctly', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Divider Grid' }).click()
+
+    await expect(page.getByText('Dividers (Width)')).toBeVisible()
+    await expect(page.getByText('Dividers (Depth)')).toBeVisible()
+  })
+
+  test('can add a label tab modifier', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Label Tab' }).click()
+
+    await expect(page.getByTestId('modifier-labelTab')).toBeVisible()
+    await expect(page.getByText('Label Tab')).toBeVisible()
+  })
+
+  test('label tab controls render correctly', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Label Tab' }).click()
+
+    await expect(page.getByText('Angle')).toBeVisible()
+  })
+
+  test('can add a scoop modifier', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Scoop' }).click()
+
+    await expect(page.getByTestId('modifier-scoop')).toBeVisible()
+    await expect(page.getByText('Scoop')).toBeVisible()
+  })
+
+  test('scoop controls render correctly', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Scoop' }).click()
+
+    await expect(page.getByText('Radius')).toBeVisible()
+  })
+
+  test('can add an insert modifier', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Insert' }).click()
+
+    await expect(page.getByTestId('modifier-insert')).toBeVisible()
+    await expect(page.getByText('Insert')).toBeVisible()
+  })
+
+  test('insert controls render correctly', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Insert' }).click()
+
+    await expect(page.getByText('Compartments (Width)')).toBeVisible()
+    await expect(page.getByText('Compartments (Depth)')).toBeVisible()
+  })
+
+  test('can add a lid modifier', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Lid' }).click()
+
+    await expect(page.getByTestId('modifier-lid')).toBeVisible()
+    await expect(page.getByText('Lid')).toBeVisible()
+  })
+
+  test('lid modifier shows stacking toggle', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Lid' }).click()
+
+    const lidCard = page.getByTestId('modifier-lid')
+    await expect(lidCard.getByText('Stacking')).toBeVisible()
+  })
+
+  test('can remove a modifier', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Divider Grid' }).click()
+
+    await expect(page.getByTestId('modifier-dividerGrid')).toBeVisible()
+
+    await page.getByTestId('remove-modifier-btn').click()
+
+    await expect(page.getByTestId('modifier-dividerGrid')).not.toBeVisible()
+    await expect(page.getByText('No modifiers added.')).toBeVisible()
+  })
+
+  test('multiple modifiers can coexist on one bin', async ({ page }) => {
+    // Add divider grid
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Divider Grid' }).click()
+    await expect(page.getByTestId('modifier-dividerGrid')).toBeVisible()
+
+    // Add lid (use the top-level add-modifier-btn, first one)
+    await page.getByTestId('add-modifier-btn').first().click()
+    await page.getByRole('menuitem', { name: 'Lid' }).click()
+    await expect(page.getByTestId('modifier-lid')).toBeVisible()
+
+    // Both should be present
+    await expect(page.getByTestId('modifier-dividerGrid')).toBeVisible()
+    await expect(page.getByTestId('modifier-lid')).toBeVisible()
+  })
 })

@@ -9,7 +9,6 @@ import type { GridfinityObjectKind } from '@/types/gridfinity'
 const kindIcons: Record<GridfinityObjectKind, typeof Grid3x3> = {
   baseplate: Grid3x3,
   bin: Box,
-  lid: Box,
 }
 
 export function ObjectListPanel() {

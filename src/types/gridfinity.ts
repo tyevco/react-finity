@@ -31,15 +31,10 @@ export interface BinParams {
   heightUnits: number // height in 7mm units (1-10)
   stackingLip: boolean
   wallThickness: number // override or use profile default
+  innerFillet: number // internal edge fillet radius in mm (0 = sharp, max 3)
 }
 
-export interface LidParams {
-  gridWidth: number
-  gridDepth: number
-  stacking: boolean // flat vs stacking lid
-}
-
-export type GridfinityObjectKind = 'baseplate' | 'bin' | 'lid'
+export type GridfinityObjectKind = 'baseplate' | 'bin'
 
 export interface GridfinityObjectBase {
   id: string
@@ -57,12 +52,82 @@ export interface BinObject extends GridfinityObjectBase {
   params: BinParams
 }
 
-export interface LidObject extends GridfinityObjectBase {
-  kind: 'lid'
-  params: LidParams
+export type GridfinityObject = BaseplateObject | BinObject
+
+// --- Modifier system ---
+
+export type WallFace = 'front' | 'back' | 'left' | 'right'
+
+export type ModifierKind = 'dividerGrid' | 'labelTab' | 'scoop' | 'insert' | 'lid'
+
+export interface ModifierBase {
+  id: string
+  parentId: string // can be an object ID or another modifier's ID
+  kind: ModifierKind
 }
 
-export type GridfinityObject = BaseplateObject | BinObject | LidObject
+export interface ModifierContext {
+  innerWidth: number // available width in mm
+  innerDepth: number // available depth in mm
+  wallHeight: number // available height in mm
+  floorY: number // Y position of the floor
+  centerX: number // center X offset
+  centerZ: number // center Z offset
+}
+
+export interface DividerGridModifierParams {
+  dividersX: number // walls along width (0-9)
+  dividersY: number // walls along depth (0-9)
+  wallThickness: number
+}
+export interface DividerGridModifier extends ModifierBase {
+  kind: 'dividerGrid'
+  params: DividerGridModifierParams
+}
+
+export interface LabelTabModifierParams {
+  wall: WallFace
+  angle: number // degrees (30-60)
+  height: number // mm (5-14)
+}
+export interface LabelTabModifier extends ModifierBase {
+  kind: 'labelTab'
+  params: LabelTabModifierParams
+}
+
+export interface ScoopModifierParams {
+  wall: WallFace
+  radius: number // mm (0 = auto from wall height)
+}
+export interface ScoopModifier extends ModifierBase {
+  kind: 'scoop'
+  params: ScoopModifierParams
+}
+
+export interface InsertModifierParams {
+  compartmentsX: number // 1-10
+  compartmentsY: number // 1-10
+  wallThickness: number
+}
+export interface InsertModifier extends ModifierBase {
+  kind: 'insert'
+  params: InsertModifierParams
+}
+
+export interface LidModifierParams {
+  stacking: boolean // flat vs stacking
+}
+export interface LidModifier extends ModifierBase {
+  kind: 'lid'
+  params: LidModifierParams
+}
+
+export type Modifier =
+  | DividerGridModifier
+  | LabelTabModifier
+  | ScoopModifier
+  | InsertModifier
+  | LidModifier
 
 export type ViewportBackground = 'dark' | 'light' | 'neutral'
 export type LightingPreset = 'studio' | 'outdoor' | 'soft'

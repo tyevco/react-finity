@@ -10,6 +10,7 @@ describe('generateBin', () => {
     heightUnits: 3,
     stackingLip: false,
     wallThickness: 1.2,
+    innerFillet: 0,
   }
 
   it('generates geometry with vertices and faces', () => {
@@ -83,12 +84,56 @@ describe('generateBin', () => {
     short.dispose()
     tall.dispose()
   })
+
+  it('inner fillet adds vertices compared to no fillet', () => {
+    const noFillet = generateBin({ ...defaultParams, innerFillet: 0 }, PROFILE_OFFICIAL)
+    const withFillet = generateBin({ ...defaultParams, innerFillet: 1.5 }, PROFILE_OFFICIAL)
+
+    expect(withFillet.attributes.position.count).toBeGreaterThan(noFillet.attributes.position.count)
+
+    noFillet.dispose()
+    withFillet.dispose()
+  })
+
+  it('inner fillet does not change outer bounding box', () => {
+    const noFillet = generateBin({ ...defaultParams, innerFillet: 0 }, PROFILE_OFFICIAL)
+    const withFillet = generateBin({ ...defaultParams, innerFillet: 2 }, PROFILE_OFFICIAL)
+
+    noFillet.computeBoundingBox()
+    withFillet.computeBoundingBox()
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const noFilletWidth = noFillet.boundingBox!.max.x - noFillet.boundingBox!.min.x
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const withFilletWidth = withFillet.boundingBox!.max.x - withFillet.boundingBox!.min.x
+
+    // Outer dimensions should be the same
+    expect(withFilletWidth).toBeCloseTo(noFilletWidth, 1)
+
+    noFillet.dispose()
+    withFillet.dispose()
+  })
+
+  it('default bin with innerFillet=0 matches existing behavior', () => {
+    const geometry = generateBin(defaultParams, PROFILE_OFFICIAL)
+    expect(geometry).toBeDefined()
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
 })
 
 describe('getBinDimensions', () => {
   it('returns correct dimensions for a 2x3x4 bin', () => {
     const dims = getBinDimensions(
-      { gridWidth: 2, gridDepth: 3, heightUnits: 4, stackingLip: true, wallThickness: 1.2 },
+      {
+        gridWidth: 2,
+        gridDepth: 3,
+        heightUnits: 4,
+        stackingLip: true,
+        wallThickness: 1.2,
+        innerFillet: 0,
+      },
       PROFILE_OFFICIAL,
     )
 
@@ -99,7 +144,14 @@ describe('getBinDimensions', () => {
 
   it('returns correct dimensions for a 1x1x1 bin', () => {
     const dims = getBinDimensions(
-      { gridWidth: 1, gridDepth: 1, heightUnits: 1, stackingLip: false, wallThickness: 1.2 },
+      {
+        gridWidth: 1,
+        gridDepth: 1,
+        heightUnits: 1,
+        stackingLip: false,
+        wallThickness: 1.2,
+        innerFillet: 0,
+      },
       PROFILE_OFFICIAL,
     )
 
