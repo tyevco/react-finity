@@ -16,9 +16,7 @@ test.describe('Object List', () => {
     await page.goto('/')
   })
 
-  test('clicking an object in the list selects it and shows properties', async ({
-    page,
-  }) => {
+  test('clicking an object in the list selects it and shows properties', async ({ page }) => {
     await addBaseplate(page)
 
     // The first baseplate is auto-selected, so properties should already show
@@ -31,17 +29,13 @@ test.describe('Object List', () => {
     await addBaseplate(page)
 
     // Click on Baseplate 1 in the object list
-    await page.locator('.group').getByText('Baseplate 1').click()
+    await page.locator('.group').filter({ hasText: 'Baseplate 1' }).click({ force: true })
     // Properties panel should show Baseplate 1
-    await expect(
-      page.locator('.text-sm.font-medium', { hasText: 'Baseplate 1' }),
-    ).toBeVisible()
+    await expect(page.locator('.text-sm.font-medium', { hasText: 'Baseplate 1' })).toBeVisible()
 
     // Click on Baseplate 2
-    await page.locator('.group').getByText('Baseplate 2').click()
-    await expect(
-      page.locator('.text-sm.font-medium', { hasText: 'Baseplate 2' }),
-    ).toBeVisible()
+    await page.locator('.group').filter({ hasText: 'Baseplate 2' }).click({ force: true })
+    await expect(page.locator('.text-sm.font-medium', { hasText: 'Baseplate 2' })).toBeVisible()
   })
 
   test('delete button removes an object from the list', async ({ page }) => {
@@ -57,18 +51,12 @@ test.describe('Object List', () => {
     await deleteButton.click({ force: true })
 
     // Object should be removed
-    await expect(
-      page.locator('.group').getByText('Baseplate 1'),
-    ).not.toBeVisible()
+    await expect(page.locator('.group').getByText('Baseplate 1')).not.toBeVisible()
     // Should show empty state
-    await expect(
-      page.getByText('No objects yet. Use "Add Object" to get started.'),
-    ).toBeVisible()
+    await expect(page.getByText('No objects yet. Use "Add Object" to get started.')).toBeVisible()
   })
 
-  test('deleting the selected object clears properties panel', async ({
-    page,
-  }) => {
+  test('deleting the selected object clears properties panel', async ({ page }) => {
     await addBaseplate(page)
     await expect(page.getByText('(baseplate)')).toBeVisible()
 
@@ -80,14 +68,10 @@ test.describe('Object List', () => {
     await deleteButton.click({ force: true })
 
     // Properties panel should show empty state
-    await expect(
-      page.getByText('Select an object to view its properties.'),
-    ).toBeVisible()
+    await expect(page.getByText('Select an object to view its properties.')).toBeVisible()
   })
 
-  test('deleting one of multiple objects leaves others intact', async ({
-    page,
-  }) => {
+  test('deleting one of multiple objects leaves others intact', async ({ page }) => {
     await addBaseplate(page)
     await addBaseplate(page)
 
@@ -99,12 +83,8 @@ test.describe('Object List', () => {
     await deleteButton.click({ force: true })
 
     // Baseplate 1 gone, Baseplate 2 still present
-    await expect(
-      page.locator('.group').getByText('Baseplate 1'),
-    ).not.toBeVisible()
-    await expect(
-      page.locator('.group').getByText('Baseplate 2'),
-    ).toBeVisible()
+    await expect(page.locator('.group').getByText('Baseplate 1')).not.toBeVisible()
+    await expect(page.locator('.group').getByText('Baseplate 2')).toBeVisible()
   })
 
   test('deleting all objects returns to empty state', async ({ page }) => {
@@ -112,21 +92,13 @@ test.describe('Object List', () => {
     await addBaseplate(page)
 
     // Delete both baseplates
-    const deleteBtn1 = page
-      .locator('.group')
-      .filter({ hasText: 'Baseplate 1' })
-      .getByRole('button')
+    const deleteBtn1 = page.locator('.group').filter({ hasText: 'Baseplate 1' }).getByRole('button')
     await deleteBtn1.click({ force: true })
 
-    const deleteBtn2 = page
-      .locator('.group')
-      .filter({ hasText: 'Baseplate 2' })
-      .getByRole('button')
+    const deleteBtn2 = page.locator('.group').filter({ hasText: 'Baseplate 2' }).getByRole('button')
     await deleteBtn2.click({ force: true })
 
-    await expect(
-      page.getByText('No objects yet. Use "Add Object" to get started.'),
-    ).toBeVisible()
+    await expect(page.getByText('No objects yet. Use "Add Object" to get started.')).toBeVisible()
   })
 
   test('switching selection between baseplates and bins shows correct properties', async ({
@@ -150,17 +122,12 @@ test.describe('Object List', () => {
     await expect(page.getByText('Stacking Lip')).toBeVisible()
   })
 
-  test('deleting a bin from a mixed list leaves baseplate intact', async ({
-    page,
-  }) => {
+  test('deleting a bin from a mixed list leaves baseplate intact', async ({ page }) => {
     await addBaseplate(page)
     await addBin(page)
 
     // Delete the bin
-    const deleteBinBtn = page
-      .locator('.group')
-      .filter({ hasText: 'Bin 2' })
-      .getByRole('button')
+    const deleteBinBtn = page.locator('.group').filter({ hasText: 'Bin 2' }).getByRole('button')
     await deleteBinBtn.click({ force: true })
 
     // Bin is gone, baseplate remains
