@@ -3,6 +3,7 @@ import type { Mesh } from 'three'
 import { Edges } from '@react-three/drei'
 import type { GridfinityObject } from '@/types/gridfinity'
 import { generateBaseplate } from '@/engine/geometry/baseplate'
+import { generateBin } from '@/engine/geometry/bin'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
 
@@ -22,6 +23,8 @@ export function SceneObject({ object }: SceneObjectProps) {
     switch (object.kind) {
       case 'baseplate':
         return generateBaseplate(object.params, activeProfile)
+      case 'bin':
+        return generateBin(object.params, activeProfile)
       default:
         return null
     }

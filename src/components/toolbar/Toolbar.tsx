@@ -20,6 +20,11 @@ export function Toolbar() {
     selectObject(id)
   }
 
+  const handleAddBin = () => {
+    const id = addObject('bin')
+    selectObject(id)
+  }
+
   return (
     <div className="flex h-10 items-center gap-2 border-b border-border bg-background px-3">
       {/* Left panel toggle */}
@@ -39,7 +44,7 @@ export function Toolbar() {
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuItem onClick={handleAddBaseplate}>Baseplate</DropdownMenuItem>
-          <DropdownMenuItem disabled>Bin (Phase 2)</DropdownMenuItem>
+          <DropdownMenuItem onClick={handleAddBin}>Bin</DropdownMenuItem>
           <DropdownMenuItem disabled>Lid (Phase 4)</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

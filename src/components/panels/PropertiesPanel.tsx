@@ -1,5 +1,6 @@
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { BaseplateProperties } from './BaseplateProperties'
+import { BinProperties } from './BinProperties'
 import { useProjectStore } from '@/store/projectStore'
 import { useUIStore } from '@/store/uiStore'
 
@@ -40,9 +41,7 @@ export function PropertiesPanel() {
               )}
 
               {selectedObject.kind === 'bin' && (
-                <div className="text-xs text-muted-foreground">
-                  Bin properties coming in Phase 2.
-                </div>
+                <BinProperties object={selectedObject} />
               )}
 
               {selectedObject.kind === 'lid' && (
