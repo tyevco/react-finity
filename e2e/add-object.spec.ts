@@ -16,10 +16,9 @@ test.describe('Add Object', () => {
   test('disabled menu items for future phases', async ({ page }) => {
     await page.getByRole('button', { name: /Add Object/i }).click()
 
-    const binItem = page.getByRole('menuitem', { name: /Bin/ })
     const lidItem = page.getByRole('menuitem', { name: /Lid/ })
 
-    await expect(binItem).toHaveAttribute('data-disabled', '')
+    // Bin is now enabled (Phase 2), only Lid remains disabled
     await expect(lidItem).toHaveAttribute('data-disabled', '')
   })
 
@@ -29,6 +28,13 @@ test.describe('Add Object', () => {
 
     // Check in object list panel (left panel)
     await expect(page.locator('.group').getByText('Baseplate 1')).toBeVisible()
+  })
+
+  test('adds a bin to the object list', async ({ page }) => {
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Bin' }).click()
+
+    await expect(page.locator('.group').getByText('Bin 1')).toBeVisible()
   })
 
   test('auto-selects the newly added baseplate', async ({ page }) => {
@@ -54,5 +60,37 @@ test.describe('Add Object', () => {
     await page.getByRole('button', { name: /Add Object/i }).click()
     await page.getByRole('menuitem', { name: 'Baseplate' }).click()
     await expect(page.locator('.group').getByText('Baseplate 3')).toBeVisible()
+  })
+
+  test('auto-selects the newly added bin', async ({ page }) => {
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Bin' }).click()
+
+    // Properties panel should show the bin kind
+    await expect(page.getByText('(bin)')).toBeVisible()
+  })
+
+  test('increments names for multiple bins', async ({ page }) => {
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Bin' }).click()
+    await expect(page.locator('.group').getByText('Bin 1')).toBeVisible()
+
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Bin' }).click()
+    await expect(page.locator('.group').getByText('Bin 2')).toBeVisible()
+  })
+
+  test('can add both baseplates and bins to the scene', async ({ page }) => {
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Baseplate' }).click()
+    await expect(page.locator('.group').getByText('Baseplate 1')).toBeVisible()
+
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Bin' }).click()
+    await expect(page.locator('.group').getByText('Bin 2')).toBeVisible()
+
+    // Both should be in the list
+    await expect(page.locator('.group').getByText('Baseplate 1')).toBeVisible()
+    await expect(page.locator('.group').getByText('Bin 2')).toBeVisible()
   })
 })

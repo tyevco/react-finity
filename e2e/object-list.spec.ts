@@ -5,6 +5,11 @@ async function addBaseplate(page: import('@playwright/test').Page) {
   await page.getByRole('menuitem', { name: 'Baseplate' }).click()
 }
 
+async function addBin(page: import('@playwright/test').Page) {
+  await page.getByRole('button', { name: /Add Object/i }).click()
+  await page.getByRole('menuitem', { name: 'Bin' }).click()
+}
+
 test.describe('Object List', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
@@ -121,5 +126,44 @@ test.describe('Object List', () => {
     await expect(
       page.getByText('No objects yet. Use "Add Object" to get started.'),
     ).toBeVisible()
+  })
+
+  test('switching selection between baseplates and bins shows correct properties', async ({
+    page,
+  }) => {
+    await addBaseplate(page)
+    await addBin(page)
+
+    // Bin is auto-selected (last added), should show bin properties
+    await expect(page.getByText('(bin)')).toBeVisible()
+    await expect(page.getByText('Stacking Lip')).toBeVisible()
+
+    // Click on the baseplate in the object list
+    await page.locator('.group').getByText('Baseplate 1').click()
+    await expect(page.getByText('(baseplate)')).toBeVisible()
+    await expect(page.getByText('Magnet Holes')).toBeVisible()
+
+    // Click back on the bin
+    await page.locator('.group').getByText('Bin 2').click()
+    await expect(page.getByText('(bin)')).toBeVisible()
+    await expect(page.getByText('Stacking Lip')).toBeVisible()
+  })
+
+  test('deleting a bin from a mixed list leaves baseplate intact', async ({
+    page,
+  }) => {
+    await addBaseplate(page)
+    await addBin(page)
+
+    // Delete the bin
+    const deleteBinBtn = page
+      .locator('.group')
+      .filter({ hasText: 'Bin 2' })
+      .getByRole('button')
+    await deleteBinBtn.click({ force: true })
+
+    // Bin is gone, baseplate remains
+    await expect(page.locator('.group').getByText('Bin 2')).not.toBeVisible()
+    await expect(page.locator('.group').getByText('Baseplate 1')).toBeVisible()
   })
 })
