@@ -33,7 +33,9 @@ export function BaseplateProperties({ object }: BaseplatePropertiesProps) {
         </div>
         <Slider
           value={[object.params.gridWidth]}
-          onValueChange={([v]) => updateObjectParams(object.id, { gridWidth: v })}
+          onValueChange={([v]) => {
+            updateObjectParams(object.id, { gridWidth: v })
+          }}
           min={1}
           max={10}
           step={1}
@@ -50,7 +52,9 @@ export function BaseplateProperties({ object }: BaseplatePropertiesProps) {
         </div>
         <Slider
           value={[object.params.gridDepth]}
-          onValueChange={([v]) => updateObjectParams(object.id, { gridDepth: v })}
+          onValueChange={([v]) => {
+            updateObjectParams(object.id, { gridDepth: v })
+          }}
           min={1}
           max={10}
           step={1}
@@ -64,7 +68,9 @@ export function BaseplateProperties({ object }: BaseplatePropertiesProps) {
         <Label className="text-xs">Magnet Holes</Label>
         <Switch
           checked={object.params.magnetHoles}
-          onCheckedChange={(checked) => updateObjectParams(object.id, { magnetHoles: checked })}
+          onCheckedChange={(checked) => {
+            updateObjectParams(object.id, { magnetHoles: checked })
+          }}
         />
       </div>
 
@@ -73,7 +79,9 @@ export function BaseplateProperties({ object }: BaseplatePropertiesProps) {
         <Label className="text-xs">Screw Holes</Label>
         <Switch
           checked={object.params.screwHoles}
-          onCheckedChange={(checked) => updateObjectParams(object.id, { screwHoles: checked })}
+          onCheckedChange={(checked) => {
+            updateObjectParams(object.id, { screwHoles: checked })
+          }}
         />
       </div>
 

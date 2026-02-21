@@ -1,5 +1,7 @@
 import * as THREE from 'three'
+
 import type { BaseplateParams, GridfinityProfile } from '@/types/gridfinity'
+
 import { roundedRectShape, extrudeShape } from './primitives'
 
 /**
@@ -23,29 +25,25 @@ export function generateBaseplate(
   const { gridWidth, gridDepth, magnetHoles, screwHoles } = params
   const { gridSize, baseplateHeight, baseplateCornerRadius, tolerance } = profile
 
-  // Overall dimensions
+  // Overall dimensions (1 unit = 1mm)
   const totalWidth = gridWidth * gridSize
   const totalDepth = gridDepth * gridSize
 
-  // Scale factor: we work in mm but Three.js scenes use arbitrary units
-  // We'll use 1 unit = 1mm for accuracy, then the viewport can scale as needed
-  const s = 1
-
   // Create the base slab
-  const baseShape = roundedRectShape(totalWidth * s, totalDepth * s, baseplateCornerRadius * s)
-  const baseGeometry = extrudeShape(baseShape, baseplateHeight * s)
+  const baseShape = roundedRectShape(totalWidth, totalDepth, baseplateCornerRadius)
+  const baseGeometry = extrudeShape(baseShape, baseplateHeight)
 
   // Build socket geometry for each grid cell
   const socketGeometries: THREE.BufferGeometry[] = []
   const holeGeometries: THREE.BufferGeometry[] = []
 
-  const cellSize = gridSize * s
-  const cellInnerSize = (gridSize - tolerance * 2) * s
+  const cellSize = gridSize
+  const cellInnerSize = gridSize - tolerance * 2
 
   // Socket profile dimensions
-  const socketFloorHeight = 0.6 * s // bottom of the socket from base top
-  const socketMidStep = 2.6 * s // mid-step height from base bottom
-  const socketTopRim = baseplateHeight * s // top of socket walls
+  const socketFloorHeight = 0.6 // bottom of the socket from base top
+  const socketMidStep = 2.6 // mid-step height from base bottom
+  const socketTopRim = baseplateHeight // top of socket walls
 
   for (let gx = 0; gx < gridWidth; gx++) {
     for (let gz = 0; gz < gridDepth; gz++) {
@@ -54,28 +52,24 @@ export function generateBaseplate(
       const cz = (gz - (gridDepth - 1) / 2) * cellSize
 
       // Socket walls: outer raised rim per cell
-      // Create by extruding a rounded rect and subtracting an inner one
       const outerShape = roundedRectShape(
         cellInnerSize,
         cellInnerSize,
-        (baseplateCornerRadius - tolerance) * s,
+        (baseplateCornerRadius - tolerance),
       )
 
       // Inner cutout for socket (the hollow part bins sit in)
-      const innerWallThickness = 1.6 * s
+      const innerWallThickness = 1.6
       const innerSize = cellInnerSize - innerWallThickness * 2
       const innerRadius = Math.max(
         0.1,
-        (baseplateCornerRadius - tolerance) * s - innerWallThickness,
+        baseplateCornerRadius - tolerance - innerWallThickness,
       )
+
       // Create outer wall extrusion
       const outerGeo = extrudeShape(outerShape, socketTopRim)
       outerGeo.translate(cx, 0, cz)
       socketGeometries.push(outerGeo)
-
-      // Create inner cutout (will be "subtracted" by building it as a shorter block)
-      // Instead of CSG, we build the socket as stacked layers:
-      // Bottom floor (thin slab) + socket walls (ring)
 
       // Socket floor - fills the inner area at floor level
       const floorShape = roundedRectShape(innerSize, innerSize, innerRadius)
@@ -84,8 +78,8 @@ export function generateBaseplate(
       socketGeometries.push(floorGeo)
 
       // Mid-step ring: between floor and top, a stepped intermediate wall
-      const midRingOuterSize = innerSize + 0.6 * s
-      const midRingRadius = innerRadius + 0.3 * s
+      const midRingOuterSize = innerSize + 0.6
+      const midRingRadius = innerRadius + 0.3
       const midRingShape = roundedRectShape(midRingOuterSize, midRingOuterSize, midRingRadius)
       const midRingGeo = extrudeShape(midRingShape, socketMidStep)
       midRingGeo.translate(cx, 0, cz)
@@ -93,7 +87,7 @@ export function generateBaseplate(
 
       // Magnet and screw holes at corners
       if (magnetHoles || screwHoles) {
-        const cornerOffset = cellInnerSize / 2 - 4.0 * s // ~4mm from edge
+        const cornerOffset = cellInnerSize / 2 - 4.0 // ~4mm from edge
         const corners = [
           [cx - cornerOffset, cz - cornerOffset],
           [cx + cornerOffset, cz - cornerOffset],
@@ -103,16 +97,16 @@ export function generateBaseplate(
 
         for (const [hx, hz] of corners) {
           if (magnetHoles) {
-            const magnetRadius = (profile.magnetDiameter / 2) * s
-            const magnetDepth = profile.magnetDepth * s
+            const magnetRadius = profile.magnetDiameter / 2
+            const magnetDepth = profile.magnetDepth
             const magnetGeo = new THREE.CylinderGeometry(magnetRadius, magnetRadius, magnetDepth, 24)
             magnetGeo.translate(hx, magnetDepth / 2, hz)
             holeGeometries.push(magnetGeo)
           }
 
           if (screwHoles) {
-            const screwRadius = (profile.screwDiameter / 2) * s
-            const screwDepth = baseplateHeight * s
+            const screwRadius = profile.screwDiameter / 2
+            const screwDepth = baseplateHeight
             const screwGeo = new THREE.CylinderGeometry(screwRadius, screwRadius, screwDepth, 16)
             screwGeo.translate(hx, screwDepth / 2, hz)
             holeGeometries.push(screwGeo)
@@ -122,51 +116,34 @@ export function generateBaseplate(
     }
   }
 
-  // For Phase 1, we use a simplified approach: render the base slab with socket detail
-  // as a merged additive geometry. CSG subtraction for holes will be added in Phase 2
-  // with @react-three/csg.
-
-  // For now, we'll return the base geometry with socket detail overlaid.
-  // The visual result shows the socket profile structure correctly.
-
   // Merge all geometries
   const allGeometries = [baseGeometry, ...socketGeometries]
   const result = mergeBufferGeometries(allGeometries)
 
   // Store hole data as userData for future CSG operations
-  if (result) {
-    result.userData = {
-      holeGeometries: holeGeometries.length > 0 ? holeGeometries : undefined,
-    }
+  result.userData = {
+    holeGeometries: holeGeometries.length > 0 ? holeGeometries : undefined,
   }
 
-  // Clean up
+  // Clean up source geometries
   baseGeometry.dispose()
   for (const g of socketGeometries) g.dispose()
 
-  return result || baseGeometry
+  return result
 }
 
 /**
  * Simple geometry merge using Three.js BufferGeometryUtils pattern.
  */
-function mergeBufferGeometries(geometries: THREE.BufferGeometry[]): THREE.BufferGeometry | null {
-  if (geometries.length === 0) return null
+function mergeBufferGeometries(geometries: THREE.BufferGeometry[]): THREE.BufferGeometry {
+  if (geometries.length === 0) return new THREE.BufferGeometry()
   if (geometries.length === 1) return geometries[0].clone()
 
   let totalPositions = 0
-  let totalIndices = 0
 
   // Calculate totals
   for (const geo of geometries) {
-    const posCount = geo.attributes.position.count
-    totalPositions += posCount
-
-    if (geo.index) {
-      totalIndices += geo.index.count
-    } else {
-      totalIndices += posCount
-    }
+    totalPositions += geo.attributes.position.count
   }
 
   const mergedPositions = new Float32Array(totalPositions * 3)
@@ -178,7 +155,7 @@ function mergeBufferGeometries(geometries: THREE.BufferGeometry[]): THREE.Buffer
 
   for (const geo of geometries) {
     const positions = geo.attributes.position as THREE.BufferAttribute
-    const normals = geo.attributes.normal as THREE.BufferAttribute
+    const normals = geo.attributes.normal as THREE.BufferAttribute | undefined
 
     // Copy positions
     for (let i = 0; i < positions.count * 3; i++) {

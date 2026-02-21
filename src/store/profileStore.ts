@@ -20,7 +20,7 @@ export const useProfileStore = create<ProfileStore>()(
       activeProfile: PROFILE_OFFICIAL,
 
       setActiveProfile: (key: string) => {
-        const profile = get().profiles[key]
+        const profile = get().profiles[key] as GridfinityProfile | undefined
         if (profile) {
           set({ activeProfileKey: key, activeProfile: profile })
         }

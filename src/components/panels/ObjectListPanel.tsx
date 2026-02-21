@@ -42,7 +42,9 @@ export function ObjectListPanel() {
                     'group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm',
                     isSelected ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
                   )}
-                  onClick={() => selectObject(obj.id)}
+                  onClick={() => {
+                    selectObject(obj.id)
+                  }}
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <span className="flex-1 truncate">{obj.name}</span>

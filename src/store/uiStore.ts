@@ -16,13 +16,23 @@ export const useUIStore = create<UIStore>()((set) => ({
   leftPanelOpen: true,
   rightPanelOpen: true,
 
-  selectObject: (id) => set({ selectedObjectId: id }),
+  selectObject: (id) => {
+    set({ selectedObjectId: id })
+  },
 
-  toggleLeftPanel: () => set((state) => ({ leftPanelOpen: !state.leftPanelOpen })),
+  toggleLeftPanel: () => {
+    set((state) => ({ leftPanelOpen: !state.leftPanelOpen }))
+  },
 
-  toggleRightPanel: () => set((state) => ({ rightPanelOpen: !state.rightPanelOpen })),
+  toggleRightPanel: () => {
+    set((state) => ({ rightPanelOpen: !state.rightPanelOpen }))
+  },
 
-  setLeftPanelOpen: (open) => set({ leftPanelOpen: open }),
+  setLeftPanelOpen: (open) => {
+    set({ leftPanelOpen: open })
+  },
 
-  setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
+  setRightPanelOpen: (open) => {
+    set({ rightPanelOpen: open })
+  },
 }))

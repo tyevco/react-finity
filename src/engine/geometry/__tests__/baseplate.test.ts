@@ -55,6 +55,7 @@ describe('generateBaseplate', () => {
   it('bounding box matches expected dimensions for 1x1 grid', () => {
     const geometry = generateBaseplate(defaultParams, PROFILE_OFFICIAL)
     geometry.computeBoundingBox()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const box = geometry.boundingBox!
 
     // Width and depth should be approximately 42mm

@@ -50,7 +50,7 @@ export function extrudeShape(
 export function createCylinder(
   radius: number,
   height: number,
-  segments: number = 24,
+  segments = 24,
 ): THREE.BufferGeometry {
   return new THREE.CylinderGeometry(radius, radius, height, segments)
 }
@@ -83,7 +83,7 @@ export function mergeGeometries(geometries: THREE.BufferGeometry[]): THREE.Buffe
 
   for (const geo of geometries) {
     const posAttr = geo.attributes.position as THREE.BufferAttribute
-    const normAttr = geo.attributes.normal as THREE.BufferAttribute
+    const normAttr = geo.attributes.normal as THREE.BufferAttribute | undefined
 
     // Copy positions
     for (let i = 0; i < posAttr.count * 3; i++) {

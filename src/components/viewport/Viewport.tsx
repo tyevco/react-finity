@@ -71,7 +71,9 @@ export function Viewport() {
         }}
         shadows
         gl={{ antialias: true }}
-        onPointerMissed={() => selectObject(null)}
+        onPointerMissed={() => {
+          selectObject(null)
+        }}
       >
         <color attach="background" args={['#1a1a2e']} />
         <fog attach="fog" args={['#1a1a2e', 1000, 3000]} />
