@@ -8,11 +8,7 @@ import { roundedRectShape, extrudeShape, mergeGeometries } from './primitives'
  * Create a rounded rectangle Path (clockwise winding) for use as a hole
  * in a THREE.Shape. Opposite winding to roundedRectShape (CCW).
  */
-function roundedRectHolePath(
-  width: number,
-  depth: number,
-  radius: number,
-): THREE.Path {
+function roundedRectHolePath(width: number, depth: number, radius: number): THREE.Path {
   const r = Math.min(radius, width / 2, depth / 2)
   const hw = width / 2
   const hd = depth / 2
@@ -59,19 +55,10 @@ function createHollowExtrusion(
  * 3. Interior floor — solid slab at the base of the hollow interior
  * 4. Stacking lip (optional) — raised rim at top edge for bin stacking
  */
-export function generateBin(
-  params: BinParams,
-  profile: GridfinityProfile,
-): THREE.BufferGeometry {
+export function generateBin(params: BinParams, profile: GridfinityProfile): THREE.BufferGeometry {
   const { gridWidth, gridDepth, heightUnits, stackingLip, wallThickness } = params
-  const {
-    gridSize,
-    heightUnit,
-    binCornerRadius,
-    tolerance,
-    socketWallHeight,
-    stackingLipHeight,
-  } = profile
+  const { gridSize, heightUnit, binCornerRadius, tolerance, socketWallHeight, stackingLipHeight } =
+    profile
 
   // Outer dimensions — fits within baseplate grid with clearance
   const outerWidth = gridWidth * gridSize - tolerance * 2

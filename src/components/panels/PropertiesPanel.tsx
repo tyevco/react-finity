@@ -8,9 +8,7 @@ export function PropertiesPanel() {
   const objects = useProjectStore((s) => s.objects)
   const selectedObjectId = useUIStore((s) => s.selectedObjectId)
 
-  const selectedObject = selectedObjectId
-    ? objects.find((o) => o.id === selectedObjectId)
-    : null
+  const selectedObject = selectedObjectId ? objects.find((o) => o.id === selectedObjectId) : null
 
   return (
     <div className="flex h-full flex-col">
@@ -30,9 +28,7 @@ export function PropertiesPanel() {
               {/* Object name */}
               <div className="mb-4">
                 <span className="text-sm font-medium">{selectedObject.name}</span>
-                <span className="ml-2 text-xs text-muted-foreground">
-                  ({selectedObject.kind})
-                </span>
+                <span className="ml-2 text-xs text-muted-foreground">({selectedObject.kind})</span>
               </div>
 
               {/* Kind-specific properties */}
@@ -40,9 +36,7 @@ export function PropertiesPanel() {
                 <BaseplateProperties object={selectedObject} />
               )}
 
-              {selectedObject.kind === 'bin' && (
-                <BinProperties object={selectedObject} />
-              )}
+              {selectedObject.kind === 'bin' && <BinProperties object={selectedObject} />}
 
               {selectedObject.kind === 'lid' && (
                 <div className="text-xs text-muted-foreground">

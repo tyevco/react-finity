@@ -23,10 +23,7 @@ describe('generateBin', () => {
 
   it('generates larger geometry for bigger grids', () => {
     const small = generateBin(defaultParams, PROFILE_OFFICIAL)
-    const large = generateBin(
-      { ...defaultParams, gridWidth: 3, gridDepth: 3 },
-      PROFILE_OFFICIAL,
-    )
+    const large = generateBin({ ...defaultParams, gridWidth: 3, gridDepth: 3 }, PROFILE_OFFICIAL)
 
     // Larger grid should have more vertices (more base plugs)
     expect(large.attributes.position.count).toBeGreaterThan(small.attributes.position.count)
@@ -36,19 +33,11 @@ describe('generateBin', () => {
   })
 
   it('generates additional geometry when stacking lip is enabled', () => {
-    const withoutLip = generateBin(
-      { ...defaultParams, stackingLip: false },
-      PROFILE_OFFICIAL,
-    )
-    const withLip = generateBin(
-      { ...defaultParams, stackingLip: true },
-      PROFILE_OFFICIAL,
-    )
+    const withoutLip = generateBin({ ...defaultParams, stackingLip: false }, PROFILE_OFFICIAL)
+    const withLip = generateBin({ ...defaultParams, stackingLip: true }, PROFILE_OFFICIAL)
 
     // Stacking lip adds more vertices
-    expect(withLip.attributes.position.count).toBeGreaterThan(
-      withoutLip.attributes.position.count,
-    )
+    expect(withLip.attributes.position.count).toBeGreaterThan(withoutLip.attributes.position.count)
 
     withoutLip.dispose()
     withLip.dispose()
@@ -78,14 +67,8 @@ describe('generateBin', () => {
   })
 
   it('taller bins have greater bounding box height', () => {
-    const short = generateBin(
-      { ...defaultParams, heightUnits: 1 },
-      PROFILE_OFFICIAL,
-    )
-    const tall = generateBin(
-      { ...defaultParams, heightUnits: 6 },
-      PROFILE_OFFICIAL,
-    )
+    const short = generateBin({ ...defaultParams, heightUnits: 1 }, PROFILE_OFFICIAL)
+    const tall = generateBin({ ...defaultParams, heightUnits: 6 }, PROFILE_OFFICIAL)
 
     short.computeBoundingBox()
     tall.computeBoundingBox()

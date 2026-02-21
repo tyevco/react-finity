@@ -48,10 +48,7 @@ function Scene() {
 
       {/* Gizmo helper - axis indicator in corner */}
       <GizmoHelper alignment="bottom-right" margin={[60, 60]}>
-        <GizmoViewport
-          axisColors={['#e74c3c', '#2ecc71', '#3498db']}
-          labelColor="white"
-        />
+        <GizmoViewport axisColors={['#e74c3c', '#2ecc71', '#3498db']} labelColor="white" />
       </GizmoHelper>
     </>
   )

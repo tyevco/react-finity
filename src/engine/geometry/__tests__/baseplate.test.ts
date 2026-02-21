@@ -39,10 +39,7 @@ describe('generateBaseplate', () => {
       { ...defaultParams, magnetHoles: false },
       PROFILE_OFFICIAL,
     )
-    const withHoles = generateBaseplate(
-      { ...defaultParams, magnetHoles: true },
-      PROFILE_OFFICIAL,
-    )
+    const withHoles = generateBaseplate({ ...defaultParams, magnetHoles: true }, PROFILE_OFFICIAL)
 
     // With holes should store hole geometries in userData
     expect(withHoles.userData.holeGeometries).toBeDefined()
@@ -81,7 +78,7 @@ describe('getBaseplateDimensions', () => {
 
     expect(dims.width).toBe(126) // 3 * 42mm
     expect(dims.depth).toBe(126) // 3 * 42mm
-    expect(dims.height).toBe(7)  // 7mm standard
+    expect(dims.height).toBe(7) // 7mm standard
   })
 
   it('returns correct dimensions for a 1x1 baseplate', () => {

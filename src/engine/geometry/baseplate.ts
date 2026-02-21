@@ -55,16 +55,13 @@ export function generateBaseplate(
       const outerShape = roundedRectShape(
         cellInnerSize,
         cellInnerSize,
-        (baseplateCornerRadius - tolerance),
+        baseplateCornerRadius - tolerance,
       )
 
       // Inner cutout for socket (the hollow part bins sit in)
       const innerWallThickness = 1.6
       const innerSize = cellInnerSize - innerWallThickness * 2
-      const innerRadius = Math.max(
-        0.1,
-        baseplateCornerRadius - tolerance - innerWallThickness,
-      )
+      const innerRadius = Math.max(0.1, baseplateCornerRadius - tolerance - innerWallThickness)
 
       // Create outer wall extrusion
       const outerGeo = extrudeShape(outerShape, socketTopRim)
@@ -99,7 +96,12 @@ export function generateBaseplate(
           if (magnetHoles) {
             const magnetRadius = profile.magnetDiameter / 2
             const magnetDepth = profile.magnetDepth
-            const magnetGeo = new THREE.CylinderGeometry(magnetRadius, magnetRadius, magnetDepth, 24)
+            const magnetGeo = new THREE.CylinderGeometry(
+              magnetRadius,
+              magnetRadius,
+              magnetDepth,
+              24,
+            )
             magnetGeo.translate(hx, magnetDepth / 2, hz)
             holeGeometries.push(magnetGeo)
           }
