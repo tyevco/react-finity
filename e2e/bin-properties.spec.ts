@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
-async function addBin(page: import('@playwright/test').Page) {
+async function addBin(page: Page) {
   await page.getByRole('button', { name: /Add Object/i }).click()
   await page.getByRole('menuitem', { name: 'Bin' }).click()
 }
