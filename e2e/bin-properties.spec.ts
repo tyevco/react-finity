@@ -20,15 +20,13 @@ test.describe('Bin Properties Panel', () => {
     await expect(page.getByText('Height')).toBeVisible()
     await expect(page.getByText('Stacking Lip')).toBeVisible()
     await expect(page.getByText('Wall Thickness')).toBeVisible()
-    await expect(
-      page.getByText('Dimensions', { exact: true }),
-    ).toBeVisible()
+    await expect(page.getByText('Dimensions', { exact: true })).toBeVisible()
   })
 
   test('shows default dimensions for 1x1x3 bin', async ({ page }) => {
     // Default: gridWidth=1, gridDepth=1, heightUnits=3, Official profile
     // 1*42=42, 1*42=42, 3*7=21
-    await expect(page.getByText('42 x 42 x 21 mm')).toBeVisible()
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('42 x 42 x 21 mm')
   })
 
   test('shows default grid and height values', async ({ page }) => {
@@ -61,7 +59,7 @@ test.describe('Bin Properties Panel', () => {
 
     // Width should now be 3: 3*42=126
     await expect(widthSlider).toHaveAttribute('aria-valuenow', '3')
-    await expect(page.getByText('126 x 42 x 21 mm')).toBeVisible()
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('126 x 42 x 21 mm')
   })
 
   test('changing grid depth slider updates dimensions', async ({ page }) => {
@@ -73,7 +71,7 @@ test.describe('Bin Properties Panel', () => {
 
     // Depth should now be 2: 2*42=84
     await expect(depthSlider).toHaveAttribute('aria-valuenow', '2')
-    await expect(page.getByText('42 x 84 x 21 mm')).toBeVisible()
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('42 x 84 x 21 mm')
   })
 
   test('changing height slider updates dimensions', async ({ page }) => {
@@ -86,7 +84,7 @@ test.describe('Bin Properties Panel', () => {
 
     // Height should now be 5: 5*7=35
     await expect(heightSlider).toHaveAttribute('aria-valuenow', '5')
-    await expect(page.getByText('42 x 42 x 35 mm')).toBeVisible()
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('42 x 42 x 35 mm')
   })
 
   test('toggling stacking lip switch changes state', async ({ page }) => {
@@ -152,6 +150,6 @@ test.describe('Bin Properties Panel', () => {
     await page.getByRole('option', { name: 'Tight Fit' }).click()
 
     // Grid dimensions remain the same (gridSize=42)
-    await expect(page.getByText('42 x 42 x 21 mm')).toBeVisible()
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('42 x 42 x 21 mm')
   })
 })

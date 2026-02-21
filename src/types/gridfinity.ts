@@ -63,3 +63,7 @@ export interface LidObject extends GridfinityObjectBase {
 }
 
 export type GridfinityObject = BaseplateObject | BinObject | LidObject
+
+export type ViewportBackground = 'dark' | 'light' | 'neutral'
+export type LightingPreset = 'studio' | 'outdoor' | 'soft'
+export type CameraPreset = 'top' | 'front' | 'side' | 'isometric'

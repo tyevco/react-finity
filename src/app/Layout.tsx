@@ -3,11 +3,14 @@ import { ObjectListPanel } from '@/components/panels/ObjectListPanel'
 import { PropertiesPanel } from '@/components/panels/PropertiesPanel'
 import { Viewport } from '@/components/viewport/Viewport'
 import { useUIStore } from '@/store/uiStore'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { cn } from '@/lib/utils'
 
 export function Layout() {
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen)
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen)
+
+  useKeyboardShortcuts()
 
   return (
     <div className="flex h-full flex-col">

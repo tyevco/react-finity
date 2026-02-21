@@ -1,4 +1,4 @@
-import { Plus, PanelLeft, PanelRight } from 'lucide-react'
+import { Plus, PanelLeft, PanelRight, Grid3x3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -6,14 +6,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { CameraPresets } from './CameraPresets'
+import { ViewportSettings } from './ViewportSettings'
 import { useProjectStore } from '@/store/projectStore'
 import { useUIStore } from '@/store/uiStore'
+import { cn } from '@/lib/utils'
 
 export function Toolbar() {
   const addObject = useProjectStore((s) => s.addObject)
   const selectObject = useUIStore((s) => s.selectObject)
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel)
   const toggleRightPanel = useUIStore((s) => s.toggleRightPanel)
+  const snapToGrid = useUIStore((s) => s.snapToGrid)
+  const toggleSnapToGrid = useUIStore((s) => s.toggleSnapToGrid)
 
   const handleAddBaseplate = () => {
     const id = addObject('baseplate')
@@ -49,6 +55,32 @@ export function Toolbar() {
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <div className="h-5 w-px bg-border" />
+
+      {/* Camera presets */}
+      <CameraPresets />
+
+      <div className="h-5 w-px bg-border" />
+
+      {/* Snap to grid toggle */}
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn('h-7 w-7', snapToGrid && 'bg-accent text-accent-foreground')}
+              onClick={toggleSnapToGrid}
+              aria-label="Snap to grid"
+              aria-pressed={snapToGrid}
+            >
+              <Grid3x3 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Snap to grid</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
       {/* Spacer */}
       <div className="flex-1" />
 
@@ -57,6 +89,9 @@ export function Toolbar() {
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Viewport settings */}
+      <ViewportSettings />
 
       <div className="h-5 w-px bg-border" />
 

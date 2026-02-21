@@ -90,7 +90,10 @@ export function BaseplateProperties({ object }: BaseplatePropertiesProps) {
       {/* Dimensions readout */}
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">Dimensions</Label>
-        <div className="rounded-md bg-muted px-3 py-2 text-xs tabular-nums">
+        <div
+          className="rounded-md bg-muted px-3 py-2 text-xs tabular-nums"
+          data-testid="dimensions-readout"
+        >
           {dims.width} x {dims.depth} x {dims.height} mm
         </div>
       </div>

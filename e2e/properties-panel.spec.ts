@@ -19,15 +19,13 @@ test.describe('Properties Panel', () => {
     await expect(page.getByText('Grid Depth')).toBeVisible()
     await expect(page.getByText('Magnet Holes')).toBeVisible()
     await expect(page.getByText('Screw Holes')).toBeVisible()
-    await expect(
-      page.getByText('Dimensions', { exact: true }),
-    ).toBeVisible()
+    await expect(page.getByText('Dimensions', { exact: true })).toBeVisible()
   })
 
   test('shows default dimensions for 3x3 baseplate', async ({ page }) => {
     // Default: gridWidth=3, gridDepth=3, Official profile (gridSize=42, height=7)
     // 3*42=126, 3*42=126, height=7
-    await expect(page.getByText('126 x 126 x 7 mm')).toBeVisible()
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('126 x 126 x 7 mm')
   })
 
   test('shows default grid values', async ({ page }) => {
@@ -62,7 +60,7 @@ test.describe('Properties Panel', () => {
 
     // Width should now be 5: 5*42=210
     await expect(widthSlider).toHaveAttribute('aria-valuenow', '5')
-    await expect(page.getByText('210 x 126 x 7 mm')).toBeVisible()
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('210 x 126 x 7 mm')
   })
 
   test('changing grid depth slider updates dimensions', async ({ page }) => {
@@ -75,7 +73,7 @@ test.describe('Properties Panel', () => {
 
     // Depth should now be 1: 1*42=42
     await expect(depthSlider).toHaveAttribute('aria-valuenow', '1')
-    await expect(page.getByText('126 x 42 x 7 mm')).toBeVisible()
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('126 x 42 x 7 mm')
   })
 
   test('toggling magnet holes switch changes state', async ({ page }) => {
@@ -115,17 +113,17 @@ test.describe('Properties Panel', () => {
     // Tight Fit has tolerance=0.1 vs Official tolerance=0.25
     // But the grid dimensions are the same (gridSize=42) so the mm dimensions
     // remain 126 x 126 x 7. The profile name should be shown though.
-    await expect(page.getByText('126 x 126 x 7 mm')).toBeVisible()
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('126 x 126 x 7 mm')
 
     // Switch to "Loose Fit"
     await selectTrigger.click()
     await page.getByRole('option', { name: 'Loose Fit' }).click()
-    await expect(page.getByText('126 x 126 x 7 mm')).toBeVisible()
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('126 x 126 x 7 mm')
 
     // Switch back to "Official"
     await selectTrigger.click()
     await page.getByRole('option', { name: 'Official' }).click()
-    await expect(page.getByText('126 x 126 x 7 mm')).toBeVisible()
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('126 x 126 x 7 mm')
   })
 
   test('grid width value display updates with slider', async ({ page }) => {
