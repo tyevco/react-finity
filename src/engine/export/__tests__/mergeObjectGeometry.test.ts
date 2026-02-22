@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { mergeObjectWithModifiers, computeBinContext, generateModifierGeometry } from '../mergeObjectGeometry'
+import {
+  mergeObjectWithModifiers,
+  computeBinContext,
+  generateModifierGeometry,
+} from '../mergeObjectGeometry'
 import { PROFILE_OFFICIAL } from '../../constants'
 import type {
   BaseplateObject,

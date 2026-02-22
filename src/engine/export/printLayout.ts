@@ -70,8 +70,7 @@ export function computePrintLayout(
     const posX = currentX + bounds.width / 2
     const posZ = currentZ + bounds.depth / 2
 
-    const fitsOnBed =
-      currentX + bounds.width <= bedWidth && currentZ + bounds.depth <= bedDepth
+    const fitsOnBed = currentX + bounds.width <= bedWidth && currentZ + bounds.depth <= bedDepth
 
     result.push({
       object: item.object,

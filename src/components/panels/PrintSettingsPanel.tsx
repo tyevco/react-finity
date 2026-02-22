@@ -19,7 +19,11 @@ import { PRINT_BED_PRESETS } from '@/engine/constants'
 import { computePrintLayout, disposePrintLayout } from '@/engine/export/printLayout'
 import { mergeObjectWithModifiers } from '@/engine/export/mergeObjectGeometry'
 import { getPrintRotation, applyPrintOrientation } from '@/engine/export/printOrientation'
-import { exportObjectAsSTL, exportAllAsZip, exportAllAsSingleSTL } from '@/engine/export/stlExporter'
+import {
+  exportObjectAsSTL,
+  exportAllAsZip,
+  exportAllAsSingleSTL,
+} from '@/engine/export/stlExporter'
 
 export function PrintSettingsPanel() {
   const objects = useProjectStore((s) => s.objects)
@@ -34,12 +38,21 @@ export function PrintSettingsPanel() {
 
   const layoutItems = useMemo(() => {
     if (objects.length === 0) return []
-    return computePrintLayout(objects, modifiers, activeProfile, bed.width, bed.depth, printBedSpacing)
+    return computePrintLayout(
+      objects,
+      modifiers,
+      activeProfile,
+      bed.width,
+      bed.depth,
+      printBedSpacing,
+    )
   }, [objects, modifiers, activeProfile, bed.width, bed.depth, printBedSpacing])
 
   // Dispose on recompute
   useMemo(() => {
-    return () => { disposePrintLayout(layoutItems) }
+    return () => {
+      disposePrintLayout(layoutItems)
+    }
   }, [layoutItems])
 
   const allFit = layoutItems.every((item) => item.fitsOnBed)
@@ -102,7 +115,9 @@ export function PrintSettingsPanel() {
               max={30}
               step={1}
               value={[printBedSpacing]}
-              onValueChange={([v]) => { setPrintBedSpacing(v) }}
+              onValueChange={([v]) => {
+                setPrintBedSpacing(v)
+              }}
               aria-label="Object spacing"
             />
           </div>
@@ -139,7 +154,9 @@ export function PrintSettingsPanel() {
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 shrink-0"
-                      onClick={() => { handleExportOne(item.object.id) }}
+                      onClick={() => {
+                        handleExportOne(item.object.id)
+                      }}
                       aria-label={`Export ${item.object.name}`}
                     >
                       <Download className="h-3 w-3" />

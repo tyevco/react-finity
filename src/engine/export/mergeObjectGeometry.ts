@@ -75,10 +75,8 @@ function computeChildContext(modifier: Modifier, parentContext: ModifierContext)
     const { compartmentsX, compartmentsY, wallThickness } = modifier.params
     const rimInnerWidth = parentContext.innerWidth - wallThickness * 2
     const rimInnerDepth = parentContext.innerDepth - wallThickness * 2
-    const compartmentWidth =
-      (rimInnerWidth - wallThickness * (compartmentsX - 1)) / compartmentsX
-    const compartmentDepth =
-      (rimInnerDepth - wallThickness * (compartmentsY - 1)) / compartmentsY
+    const compartmentWidth = (rimInnerWidth - wallThickness * (compartmentsX - 1)) / compartmentsX
+    const compartmentDepth = (rimInnerDepth - wallThickness * (compartmentsY - 1)) / compartmentsY
     return {
       innerWidth: compartmentWidth,
       innerDepth: compartmentDepth,

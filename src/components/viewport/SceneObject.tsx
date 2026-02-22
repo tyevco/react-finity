@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import type { Mesh } from 'three'
 import { Edges } from '@react-three/drei'
-import type { GridfinityObject, GridfinityProfile, Modifier, ModifierContext } from '@/types/gridfinity'
+import type {
+  GridfinityObject,
+  GridfinityProfile,
+  Modifier,
+  ModifierContext,
+} from '@/types/gridfinity'
 import { generateBaseplate } from '@/engine/geometry/baseplate'
 import { generateBin } from '@/engine/geometry/bin'
-import {
-  generateModifierGeometry,
-  computeBinContext,
-} from '@/engine/export/mergeObjectGeometry'
+import { generateModifierGeometry, computeBinContext } from '@/engine/export/mergeObjectGeometry'
 import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'

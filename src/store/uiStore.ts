@@ -1,10 +1,5 @@
 import { create } from 'zustand'
-import type {
-  ViewportBackground,
-  LightingPreset,
-  CameraPreset,
-  AppView,
-} from '@/types/gridfinity'
+import type { ViewportBackground, LightingPreset, CameraPreset, AppView } from '@/types/gridfinity'
 
 interface UIStore {
   selectedObjectId: string | null

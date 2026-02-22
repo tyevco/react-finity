@@ -78,7 +78,9 @@ export function Toolbar() {
                   'h-6 gap-1 px-2 text-xs',
                   isEditView && 'bg-accent text-accent-foreground',
                 )}
-                onClick={() => { setActiveView('edit') }}
+                onClick={() => {
+                  setActiveView('edit')
+                }}
                 aria-label="Edit view"
                 aria-pressed={isEditView}
               >
@@ -97,7 +99,9 @@ export function Toolbar() {
                   'h-6 gap-1 px-2 text-xs',
                   !isEditView && 'bg-accent text-accent-foreground',
                 )}
-                onClick={() => { setActiveView('printLayout') }}
+                onClick={() => {
+                  setActiveView('printLayout')
+                }}
                 aria-label="Print layout view"
                 aria-pressed={!isEditView}
               >
@@ -183,7 +187,9 @@ export function Toolbar() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => { setActiveView('printLayout') }}
+            onClick={() => {
+              setActiveView('printLayout')
+            }}
             disabled={!isEditView}
           >
             Open Print Layout

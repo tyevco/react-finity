@@ -37,9 +37,7 @@ export function Layout() {
         )}
 
         {/* Center - 3D Viewport */}
-        <div className="flex-1">
-          {isEditView ? <Viewport /> : <PrintLayoutViewport />}
-        </div>
+        <div className="flex-1">{isEditView ? <Viewport /> : <PrintLayoutViewport />}</div>
 
         {/* Right panel - Properties (edit) or Print Settings (print layout) */}
         <div
