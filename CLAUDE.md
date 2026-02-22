@@ -49,6 +49,7 @@ src/
 ├── types/                 # TypeScript interfaces
 └── lib/                   # Utility functions
 e2e/                       # Playwright e2e tests
+docs/                      # Architecture decision records & research documents
 ```
 
 ### Key Patterns
@@ -157,6 +158,16 @@ Keep project documentation up to date as features are added, modified, or remove
 - **CLAUDE.md** — Update architecture docs, directory structure, key patterns, or step-by-step guides when the codebase structure or conventions change.
 
 Documentation updates should be included in the same commit as the code change they relate to, not deferred to a separate task.
+
+### Architecture Decision Records (ADRs)
+
+Research documents and architecture decision records live in the `docs/` directory. When creating or updating ADRs:
+
+- **Location**: `docs/` at the project root
+- **Naming**: Use descriptive kebab-case filenames (e.g., `slicer-export-research.md`)
+- **Maintenance**: Keep ADRs up to date when the decisions they describe are implemented, revised, or superseded. If an implementation diverges from a research doc, update the doc to reflect the actual state.
+- **Cross-references**: When implementing a feature described in an ADR, reference it in commit messages and link back to the relevant section from code comments if the rationale is non-obvious.
+- **Status tracking**: Note what has been implemented vs. what remains proposed. Mark sections as "Implemented in Phase X" or "Superseded by Y" as the project evolves.
 
 ## Roadmap
 
