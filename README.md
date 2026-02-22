@@ -1,73 +1,121 @@
-# React + TypeScript + Vite
+# React-Finity
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A browser-based parametric 3D modeling application for the [Gridfinity](https://www.youtube.com/watch?v=ra_9zU-mnl8) modular storage system. Define storage components through parameters, attach modifiers, preview in real-time 3D, and export print-ready models.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Parametric baseplate generation** -- configurable grid size with socket profiles, magnet holes, and screw holes
+- **Bin/container generation** -- configurable width, depth, and height with corner fillets, stacking lip, and hollow interior
+- **Modifier system** -- composable modifiers that attach to bins:
+  - Divider Grid -- internal divider walls with configurable count and thickness
+  - Label Tab -- angled label surface on any wall face
+  - Scoop -- curved cutout for easy part access
+  - Insert -- open-top compartment grid with rim and internal walls
+  - Lid -- flat or stacking lid variant
+- **Real-time 3D viewport** -- orbit camera, transform gizmo, grid snapping, measurement overlay
+- **Camera presets** -- top, front, side, and isometric views
+- **Dimension profiles** -- Official, Tight Fit, and Loose Fit presets for all Gridfinity dimensions
+- **Keyboard shortcuts** -- Delete/Backspace to remove objects, Escape to deselect
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vite.dev/) for bundling and dev server
+- [React Three Fiber](https://r3f.docs.pmnd.rs/) for 3D rendering
+- [Zustand](https://zustand.docs.pmnd.rs/) for state management
+- [Tailwind CSS v4](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) for the interface
+- [Vitest](https://vitest.dev/) for unit tests
+- [Playwright](https://playwright.dev/) for end-to-end tests
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- [Node.js](https://nodejs.org/) (v18 or later)
+- npm
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/tyevco/react-finity.git
+cd react-finity
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Build
+
+```bash
+npm run build
+```
+
+### Lint & Format
+
+```bash
+npm run lint
+npm run format
+```
+
+### Testing
+
+```bash
+# Unit tests
+npm run test
+
+# Unit tests in watch mode
+npm run test:watch
+
+# End-to-end tests (requires Playwright browsers)
+npx playwright install chromium
+npm run test:e2e
+```
+
+## Project Structure
+
+```
+src/
+  app/                    App entry point & layout
+  components/
+    panels/               Left (object list) & right (properties) panels
+      modifiers/          Per-modifier control components
+    viewport/             3D viewport (React Three Fiber canvas)
+    toolbar/              Top toolbar
+    ui/                   shadcn/ui primitives
+  engine/
+    geometry/             Parametric geometry generators
+      modifiers/          Modifier geometry generators
+    constants.ts          Dimension profiles & default params
+    snapping.ts           Grid snapping logic
+  hooks/                  Custom React hooks
+  store/                  Zustand stores
+  types/                  TypeScript interfaces
+  lib/                    Utility functions
+e2e/                      Playwright end-to-end tests
+```
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for the full development plan. Current status:
+
+- Phase 1: Foundation & App Shell -- Complete
+- Phase 2: Bin Generation & Core Features -- Complete
+- Phase 3: Interactivity & Manipulation -- Complete
+- Phase 4: Modifier System & Advanced Geometry -- Complete
+- Phase 5: Export & Persistence -- Planned
+- Phase 6: Polish & Advanced UX -- Planned
+- Phase 7: Desktop App (Tauri) -- Planned
+
+## Contributing
+
+Contributions are welcome. Please open an issue to discuss proposed changes before submitting a pull request.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
