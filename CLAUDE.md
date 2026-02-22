@@ -136,6 +136,17 @@ Always verify:
 - No emojis in code or commit messages
 - Follow existing patterns — read a similar file before creating a new one
 
+## Documentation Requirements
+
+Keep project documentation up to date as features are added, modified, or removed. When making code changes, update the following files as needed:
+
+- **README.md** — Update the feature list, tech stack, setup instructions, or project structure if the change affects any of these areas.
+- **ROADMAP.md** — Mark phases/deliverables as complete when finished. Add new items if scope changes.
+- **SECURITY.md** — Update the supported versions table when new versions are released. Revise the scope section if the architecture changes (e.g., adding a backend server or authentication).
+- **CLAUDE.md** — Update architecture docs, directory structure, key patterns, or step-by-step guides when the codebase structure or conventions change.
+
+Documentation updates should be included in the same commit as the code change they relate to, not deferred to a separate task.
+
 ## Roadmap
 
 See `ROADMAP.md` for the full project phases. Current status:
