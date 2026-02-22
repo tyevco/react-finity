@@ -1,7 +1,7 @@
 # React-Finity Roadmap
 
 > A web-based parametric 3D modeling application for the Gridfinity modular storage system.
-> Generate, customize, and export Gridfinity baseplates, bins, lids, and inserts — all from your browser.
+> Generate, customize, and export Gridfinity baseplates, bins, and modular accessories — all from your browser.
 
 ## Project Vision
 
@@ -31,13 +31,13 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 
 ---
 
-## Phase 2: Bin Generation & Core Features 🔲
+## Phase 2: Bin Generation & Core Features ✅
 
-**Status:** Planned
+**Status:** Complete
 
 **Goal:** Full bin/container generation with stacking lip and internal geometry.
 
-**Deliverables:**
+**Delivered:**
 - Bin geometry generator — configurable width (grid units), depth (grid units), height (7mm units)
   - Outer shell with correct corner fillets (3.75mm radius)
   - Bottom base profile matching baseplate socket interlock
@@ -46,42 +46,52 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 - Bin properties panel with all parameters
 - Multiple object types in scene (baseplates + bins)
 - Object selection via click in viewport (raycasting)
-- Selected object highlighting (outline effect)
+- Selected object highlighting (outline edge effect)
 - Profile selector integrated into properties panel
 
 ---
 
-## Phase 3: Interactivity & Manipulation 🔲
+## Phase 3: Interactivity & Manipulation ✅
 
-**Status:** Planned
+**Status:** Complete
 
 **Goal:** Interactive editing with gizmos, grid snapping, and real-time parameter updates.
 
-**Deliverables:**
+**Delivered:**
 - Transform gizmo (translate mode) via @react-three/drei TransformControls
-- Grid snapping — objects snap to 42mm grid positions
+- Grid snapping — objects snap to 42mm grid positions (toggleable)
 - Real-time parameter editing — slider/input changes instantly regenerate geometry
-- Camera view presets (top, front, side, isometric)
-- Keyboard shortcuts (Delete to remove, Ctrl+Z undo stub)
-- Viewport environment toggle (background color, lighting presets)
-- Measurement overlay showing dimensions on selected object
+- Camera view presets (top, front, side, isometric) in toolbar
+- Keyboard shortcuts (Delete/Backspace to remove, Escape to deselect)
+- Viewport environment settings (background color: dark/light/neutral; lighting presets: studio/outdoor/soft)
+- Measurement overlay showing width/depth/height dimensions on selected object
+- Collapsible left and right panels
 
 ---
 
-## Phase 4: Advanced Geometry Features 🔲
+## Phase 4: Modifier System & Advanced Geometry ✅
 
-**Status:** Planned
+**Status:** Complete
 
-**Goal:** Feature-complete Gridfinity generation with dividers, label tabs, scoops, and lids.
+**Goal:** Extensible modifier system for bins with dividers, label tabs, scoops, inserts, and lids.
 
-**Deliverables:**
-- Bin dividers — configurable internal divider walls (count per axis)
-- Label tabs — angled label surface on bin front wall
-- Scoop front — curved scoop cutout on front wall for easy part access
-- Lid generator — flat lid and stacking lid variants
-- Bin insert generator — open-top compartment grids for tool organization
-- Wall thickness customization
-- Fillet/chamfer options for internal edges
+**Delivered:**
+- **Modifier architecture** — composable modifier system where modifiers attach to bins (or other modifiers) via a parent-child relationship. Each modifier has typed params, its own geometry generator, and UI controls. Modifiers are stored flat in the project store with `parentId` references and rendered recursively in both the properties panel and the 3D viewport.
+- **Divider Grid** modifier — configurable internal divider walls (dividersX 0-9, dividersY 0-9, wall thickness). Sub-modifiers can nest inside divider compartments.
+- **Label Tab** modifier — angled label surface on a selectable wall face (front/back/left/right), with configurable angle (30-60 deg) and height (5-14mm).
+- **Scoop** modifier — curved scoop cutout on a selectable wall face with configurable radius (0 = auto-calculated from wall height).
+- **Insert** modifier — open-top compartment grid (compartmentsX/Y 1-10, wall thickness) that generates a rim and internal divider walls. Sub-modifiers can nest inside insert compartments.
+- **Lid** modifier — flat or stacking lid variant (boolean toggle), replacing the original standalone lid object type. Attaches as a modifier on a bin.
+- **Inner fillet** on bins — configurable fillet radius (0-3mm) for internal bottom edges of the bin cavity.
+- **Modifier UI** — "Modifiers" section in BinProperties with an Add dropdown menu, per-modifier cards with controls and a remove button, and recursive sub-modifier support.
+- **Modifier rendering** — each modifier generates its own `BufferGeometry` and is rendered as a separate mesh in the viewport. `ModifierContext` provides inner dimensions so modifiers adapt to their parent's geometry.
+- Unit tests for all 5 modifier geometry generators (29 tests) and modifier store actions
+- E2E tests for modifier UI workflows (adding, configuring, removing modifiers)
+
+**Deferred to Phase 6:**
+- Fillet/chamfer on divider and insert internal edges
+- Modifier reordering in the UI
+- Visual differentiation of modifier meshes (color-coded by type)
 
 ---
 
@@ -94,10 +104,11 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 **Deliverables:**
 - STL export (binary) via Three.js STLExporter — single object or entire scene
 - 3MF export via three-3mf-exporter
-- Local storage persistence — save/load projects as JSON (parameters, not geometry)
+- Local storage persistence — save/load projects as JSON (parameters + modifiers, not geometry)
 - Project management — new, save, load, rename, delete
 - Export settings — scale, orientation, polygon quality
 - ZIP download for multi-object exports
+- Ensure modifier geometries are merged/included in exports
 
 ---
 
@@ -110,14 +121,16 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 **Deliverables:**
 - Undo/redo system (command pattern over Zustand store)
 - Multi-object selection (shift-click, box select)
-- Copy/paste/duplicate objects
+- Copy/paste/duplicate objects (including their modifiers)
 - Scene arrangement — drag-to-reorder in object list
+- Modifier reordering — drag-to-reorder within a bin's modifier list
+- Visual modifier differentiation — color-coded modifier meshes by type
+- Fillet/chamfer on divider and insert internal edges
 - Performance — Web Worker geometry generation for complex objects
 - Viewport enhancements — wireframe toggle, section view, transparency mode
 - Print-ready validation — wall thickness checks, overhang warnings
 - Responsive layout — collapsible panels, mobile-friendly viewport
 - Onboarding — first-run tutorial / tooltips
-- Comprehensive unit test coverage for all geometry generators
 
 ---
 

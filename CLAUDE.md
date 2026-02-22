@@ -4,7 +4,7 @@ Project guidance for AI-assisted development of React-Finity.
 
 ## Project Overview
 
-React-Finity is a browser-based parametric 3D modeling app for the Gridfinity modular storage system. Users define storage components (baseplates, bins, lids) through parameters and get real-time 3D previews with STL/3MF export.
+React-Finity is a browser-based parametric 3D modeling app for the Gridfinity modular storage system. Users define storage components (baseplates, bins) through parameters, attach modifiers (dividers, label tabs, scoops, inserts, lids), and get real-time 3D previews with STL/3MF export.
 
 **Tech stack:** React 19, TypeScript, Vite, React Three Fiber, Zustand, Tailwind CSS v4, shadcn/ui
 
@@ -26,13 +26,18 @@ src/
 ├── app/                    # App entry point & layout
 ├── components/
 │   ├── panels/            # Left (object list) & right (properties) panels
+│   │   └── modifiers/     # Per-modifier control components
 │   ├── viewport/          # 3D viewport (React Three Fiber canvas)
 │   ├── toolbar/           # Top toolbar
 │   └── ui/                # shadcn/ui primitives
 ├── engine/
 │   ├── geometry/          # Parametric geometry generators (baseplate, bin)
+│   │   ├── modifiers/     # Modifier geometry generators (divider, label, scoop, insert, lid)
 │   │   └── __tests__/     # Unit tests for geometry
-│   └── constants.ts       # Dimension profiles & default params
+│   │       └── modifiers/ # Unit tests for modifier geometry
+│   ├── constants.ts       # Dimension profiles & default params
+│   └── snapping.ts        # Grid snapping logic
+├── hooks/                 # Custom React hooks (keyboard shortcuts)
 ├── store/                 # Zustand stores (project, UI, profile)
 │   └── __tests__/         # Unit tests for stores
 ├── types/                 # TypeScript interfaces
@@ -42,11 +47,13 @@ e2e/                       # Playwright e2e tests
 
 ### Key Patterns
 
-- **Discriminated unions** for object types: `GridfinityObject = BaseplateObject | BinObject | LidObject`, switched on `object.kind`
-- **Geometry generators** are pure functions: `generate*(params, profile) → BufferGeometry`. They use `roundedRectShape()`, `extrudeShape()`, and `mergeGeometries()` from `primitives.ts`
+- **Discriminated unions** for object types: `GridfinityObject = BaseplateObject | BinObject`, switched on `object.kind`
+- **Modifier system**: Modifiers are composable entities that attach to bins (or other modifiers) via `parentId`. The union type `Modifier = DividerGridModifier | LabelTabModifier | ScoopModifier | InsertModifier | LidModifier` is switched on `modifier.kind`. Modifiers are stored flat in the project store and rendered recursively.
+- **ModifierContext**: When rendering modifier geometry, a `ModifierContext` object provides the available inner dimensions (width, depth, wall height, floor Y). This context flows from bin params down through nested modifiers, allowing each modifier to adapt to its parent's geometry.
+- **Geometry generators** are pure functions: `generate*(params, profile) → BufferGeometry`. They use `roundedRectShape()`, `extrudeShape()`, and `mergeGeometries()` from `primitives.ts`. Modifier generators take the form: `generate*(params, context, profile) → BufferGeometry`.
 - **Zustand stores** are the single source of truth. Components read from stores via selectors. No prop drilling for shared state.
 - **Profile system**: All dimension constants come from `GridfinityProfile` objects (Official, Tight Fit, Loose Fit). Geometry generators receive the active profile, not raw constants.
-- **Properties panels**: One component per object kind (`BaseplateProperties`, `BinProperties`), following the same pattern of sliders/switches with label + value display.
+- **Properties panels**: One component per object kind (`BaseplateProperties`, `BinProperties`), following the same pattern of sliders/switches with label + value display. BinProperties includes a `ModifierSection` that renders modifier cards recursively.
 - **Path alias**: `@/` maps to `src/` (configured in vite.config.ts and tsconfig)
 
 ### Adding a New Object Kind
@@ -59,6 +66,18 @@ e2e/                       # Playwright e2e tests
 6. Wire into `PropertiesPanel.tsx` (replace placeholder)
 7. Enable in `Toolbar.tsx` (remove `disabled`, add click handler)
 
+### Adding a New Modifier Kind
+
+1. Add params interface and modifier interface to `src/types/gridfinity.ts`, add to `Modifier` union and `ModifierKind` type
+2. Add default params in `getDefaultModifierParams()` in `src/store/projectStore.ts`
+3. Create geometry generator in `src/engine/geometry/modifiers/<kind>.ts` — export `generate<Kind>(params, context, profile) → BufferGeometry`
+4. Create controls component in `src/components/panels/modifiers/<Kind>Controls.tsx`
+5. Wire into `ModifierSection.tsx` (import controls, add to switch + dropdown menu)
+6. Wire into `SceneObject.tsx` `generateModifierGeometry()` switch
+7. If the modifier subdivides space (like dividers or inserts), compute child `ModifierContext` in `ModifierMesh` and in `getModifierContext()` in the store
+8. Add unit tests in `src/engine/geometry/__tests__/modifiers/<kind>.test.ts`
+9. Add E2E tests in `e2e/bin-properties.spec.ts` (modifier UI section)
+
 ## Testing Requirements
 
 **Every code change must include both unit tests and e2e tests.** This is non-negotiable.
@@ -68,11 +87,16 @@ e2e/                       # Playwright e2e tests
 - Location: colocated in `__tests__/` directories next to source files
 - Geometry generators must have tests for:
   - Valid geometry output (vertices > 0, index defined)
-  - Scaling behavior (larger params → more vertices)
+  - Scaling behavior (larger params produce more vertices)
   - Optional features (toggleable params change geometry)
   - Bounding box matches expected dimensions
   - Dimension helper returns correct mm values
-- Store tests verify state mutations and action behavior
+- Modifier generators must have tests for:
+  - Valid geometry output
+  - Edge cases (e.g., 0 dividers returns empty geometry)
+  - Scaling with params (more dividers/compartments produce more vertices)
+  - Wall face targeting where applicable
+- Store tests verify state mutations and action behavior (including modifier add/update/remove/cascade-delete)
 - Run with: `npm run test`
 
 ### E2E Tests (Playwright)
@@ -86,11 +110,14 @@ e2e/                       # Playwright e2e tests
   - Object list selection, deletion, and multi-type interactions
   - Panel toggle visibility
   - Profile switching
+  - Modifier add/remove/configure workflows
+  - Camera presets, keyboard shortcuts, viewport settings
 - When adding a new object kind, add tests in:
   - `e2e/add-object.spec.ts` — adding from menu, auto-selection, name incrementing
   - `e2e/<kind>-properties.spec.ts` — all properties controls
   - `e2e/object-list.spec.ts` — mixed object type selection/deletion
-- Update existing tests if behavior changes (e.g., menu items becoming enabled)
+- When adding a new modifier kind, add tests in:
+  - `e2e/bin-properties.spec.ts` — adding modifier, controls rendering, removing
 - Run with: `npm run test:e2e`
 
 ### Before Committing
@@ -114,4 +141,6 @@ Always verify:
 See `ROADMAP.md` for the full project phases. Current status:
 - Phase 1: Foundation & App Shell — Complete
 - Phase 2: Bin Generation & Core Features — Complete
-- Phase 3+: See ROADMAP.md
+- Phase 3: Interactivity & Manipulation — Complete
+- Phase 4: Modifier System & Advanced Geometry — Complete
+- Phase 5+: See ROADMAP.md
