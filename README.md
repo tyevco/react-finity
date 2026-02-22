@@ -21,7 +21,12 @@ A browser-based parametric 3D modeling application for the [Gridfinity](https://
 - **Real-time 3D viewport** -- orbit camera, transform gizmo, grid snapping, measurement overlay
 - **Camera presets** -- top, front, side, and isometric views
 - **Dimension profiles** -- Official, Tight Fit, and Loose Fit presets for all Gridfinity dimensions
-- **Keyboard shortcuts** -- Delete/Backspace to remove, Escape to deselect, Ctrl+P for print layout, Ctrl+Shift+E to export, Ctrl+S to save
+- **Undo/redo** -- snapshot-based history with Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y and toolbar buttons
+- **Multi-object selection** -- shift/ctrl/meta-click to select multiple objects, bulk delete, selection count display
+- **Copy/paste/duplicate** -- Ctrl+D duplicates objects with all modifiers, Ctrl+C/Ctrl+V for internal clipboard
+- **Drag reordering** -- drag-to-reorder objects in the list and modifiers within a bin
+- **Viewport display modes** -- wireframe toggle, transparency mode, section view with adjustable clipping plane, color-coded modifier meshes
+- **Keyboard shortcuts** -- Delete/Backspace to remove, Escape to deselect, Ctrl+Z/Y undo/redo, Ctrl+D duplicate, Ctrl+C/V copy/paste, Ctrl+P for print layout, Ctrl+Shift+E to export, Ctrl+S to save
 - **Mobile-responsive layout** -- panels slide in as overlay sheets on small screens, toolbar collapses secondary actions into overflow menu, touch-friendly button sizes
 
 ## Tech Stack
@@ -117,7 +122,7 @@ See [ROADMAP.md](ROADMAP.md) for the full development plan. Current status:
 - Phase 3: Interactivity & Manipulation -- Complete
 - Phase 4: Modifier System & Advanced Geometry -- Complete
 - Phase 5: Export & Print Layout -- Complete
-- Phase 6: Polish & Advanced UX -- Planned
+- Phase 6: Polish & Advanced UX -- Complete
 - Phase 7: Desktop App (Tauri) -- Planned
 
 ## Contributing

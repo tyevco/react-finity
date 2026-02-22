@@ -97,9 +97,7 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
         } else {
           set((s) => ({
             isDirty: false,
-            projects: s.projects.map((p) =>
-              p.id === projectId ? { ...p, updatedAt: now } : p,
-            ),
+            projects: s.projects.map((p) => (p.id === projectId ? { ...p, updatedAt: now } : p)),
           }))
         }
 
@@ -156,9 +154,7 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
 
       renameProject: (id: string, name: string) => {
         set((s) => ({
-          projects: s.projects.map((p) =>
-            p.id === id ? { ...p, name } : p,
-          ),
+          projects: s.projects.map((p) => (p.id === id ? { ...p, name } : p)),
           currentProjectName: s.currentProjectId === id ? name : s.currentProjectName,
         }))
       },
@@ -212,8 +208,16 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
   ),
 )
 
-// Flag to prevent auto-save triggering during project load operations.
+// Flag to prevent auto-save and history tracking during project load/undo operations.
 let isLoadingProject = false
+
+export function getIsLoadingProject(): boolean {
+  return isLoadingProject
+}
+
+export function setIsLoadingProject(value: boolean): void {
+  isLoadingProject = value
+}
 
 // Subscribe to projectStore changes and trigger auto-save.
 const originalLoadProjectData = useProjectStore.getState().loadProjectData

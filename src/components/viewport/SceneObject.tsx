@@ -1,17 +1,28 @@
 import { useMemo, useState } from 'react'
 import type { Mesh } from 'three'
 import { Edges } from '@react-three/drei'
-import type { GridfinityObject, GridfinityProfile, Modifier, ModifierContext } from '@/types/gridfinity'
+import type {
+  GridfinityObject,
+  GridfinityProfile,
+  Modifier,
+  ModifierContext,
+  ModifierKind,
+} from '@/types/gridfinity'
 import { generateBaseplate } from '@/engine/geometry/baseplate'
 import { generateBin } from '@/engine/geometry/bin'
-import {
-  generateModifierGeometry,
-  computeBinContext,
-} from '@/engine/export/mergeObjectGeometry'
+import { generateModifierGeometry, computeBinContext } from '@/engine/export/mergeObjectGeometry'
 import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
 import { TransformGizmo } from './TransformGizmo'
+
+const MODIFIER_COLORS: Record<ModifierKind, string> = {
+  dividerGrid: '#a8d8ea',
+  labelTab: '#f9c784',
+  scoop: '#b5e8b5',
+  insert: '#d4a5e5',
+  lid: '#f5a5a5',
+}
 
 interface SceneObjectProps {
   object: GridfinityObject
@@ -52,6 +63,9 @@ interface ModifierMeshProps {
 
 function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
   const curveQuality = useUIStore((s) => s.curveQuality)
+  const showWireframe = useUIStore((s) => s.showWireframe)
+  const transparencyMode = useUIStore((s) => s.transparencyMode)
+
   const geometry = useMemo(() => {
     return generateModifierGeometry(modifier, context, profile)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,15 +107,19 @@ function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
 
   if (!geometry || !('position' in geometry.attributes)) return null
 
+  const color = MODIFIER_COLORS[modifier.kind]
+  const opacity = transparencyMode ? 0.4 : 0.9
+
   return (
     <>
       <mesh geometry={geometry}>
         <meshStandardMaterial
-          color="#c8c8c8"
+          color={color}
           roughness={0.6}
           metalness={0.1}
           transparent
-          opacity={0.9}
+          opacity={opacity}
+          wireframe={showWireframe}
         />
       </mesh>
       {childContext && <ModifierMeshes parentId={modifier.id} context={childContext} />}
@@ -112,11 +130,14 @@ function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
 export function SceneObject({ object }: SceneObjectProps) {
   const [meshNode, setMeshNode] = useState<Mesh | null>(null)
   const activeProfile = useProfileStore((s) => s.activeProfile)
-  const selectedObjectId = useUIStore((s) => s.selectedObjectId)
+  const selectedObjectIds = useUIStore((s) => s.selectedObjectIds)
   const selectObject = useUIStore((s) => s.selectObject)
+  const showWireframe = useUIStore((s) => s.showWireframe)
+  const transparencyMode = useUIStore((s) => s.transparencyMode)
 
   const curveQuality = useUIStore((s) => s.curveQuality)
-  const isSelected = selectedObjectId === object.id
+  const isSelected = selectedObjectIds.includes(object.id)
+  const isSingleSelected = selectedObjectIds.length === 1 && isSelected
 
   const geometry = useMemo(() => {
     switch (object.kind) {
@@ -135,6 +156,8 @@ export function SceneObject({ object }: SceneObjectProps) {
     return null
   }, [object.kind, object.params, activeProfile])
 
+  const objectOpacity = transparencyMode ? 0.5 : 1.0
+
   return (
     <>
       <mesh
@@ -143,17 +166,20 @@ export function SceneObject({ object }: SceneObjectProps) {
         position={object.position}
         onClick={(e) => {
           e.stopPropagation()
-          selectObject(object.id)
+          selectObject(object.id, e.shiftKey || e.ctrlKey || e.metaKey)
         }}
       >
         <meshStandardMaterial
           color={isSelected ? '#6b9bd2' : '#b0b0b0'}
           roughness={0.6}
           metalness={0.1}
+          transparent={transparencyMode}
+          opacity={objectOpacity}
+          wireframe={showWireframe}
         />
-        {isSelected && <Edges threshold={15} color="#4a90d9" lineWidth={2} />}
+        {isSelected && !showWireframe && <Edges threshold={15} color="#4a90d9" lineWidth={2} />}
       </mesh>
-      {isSelected && meshNode && <TransformGizmo target={meshNode} objectId={object.id} />}
+      {isSingleSelected && meshNode && <TransformGizmo target={meshNode} objectId={object.id} />}
       {binContext && (
         <group position={object.position}>
           <ModifierMeshes parentId={object.id} context={binContext} />

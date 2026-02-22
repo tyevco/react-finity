@@ -60,4 +60,41 @@ test.describe('Viewport Settings', () => {
     const outdoorItem = page.getByRole('menuitemradio', { name: 'Outdoor' })
     await expect(outdoorItem).toHaveAttribute('data-state', 'checked')
   })
+
+  test('shows Display section with wireframe toggle', async ({ page }) => {
+    await page.getByRole('button', { name: 'Viewport settings' }).click()
+    await expect(page.getByText('Display')).toBeVisible()
+    await expect(page.getByTestId('toggle-wireframe')).toBeVisible()
+  })
+
+  test('shows transparency toggle', async ({ page }) => {
+    await page.getByRole('button', { name: 'Viewport settings' }).click()
+    await expect(page.getByTestId('toggle-transparency')).toBeVisible()
+  })
+
+  test('shows section view toggle', async ({ page }) => {
+    await page.getByRole('button', { name: 'Viewport settings' }).click()
+    await expect(page.getByTestId('toggle-section')).toBeVisible()
+  })
+
+  test('wireframe toggle text changes when clicked', async ({ page }) => {
+    await page.getByRole('button', { name: 'Viewport settings' }).click()
+    const toggle = page.getByTestId('toggle-wireframe')
+    await expect(toggle).toHaveText('Enable Wireframe')
+    await toggle.click()
+
+    // Reopen to verify
+    await page.getByRole('button', { name: 'Viewport settings' }).click()
+    await expect(page.getByTestId('toggle-wireframe')).toHaveText('Disable Wireframe')
+  })
+
+  test('transparency toggle text changes when clicked', async ({ page }) => {
+    await page.getByRole('button', { name: 'Viewport settings' }).click()
+    const toggle = page.getByTestId('toggle-transparency')
+    await expect(toggle).toHaveText('Enable Transparency')
+    await toggle.click()
+
+    await page.getByRole('button', { name: 'Viewport settings' }).click()
+    await expect(page.getByTestId('toggle-transparency')).toHaveText('Disable Transparency')
+  })
 })

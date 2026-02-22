@@ -4,7 +4,7 @@ import { useUIStore } from '../uiStore'
 describe('uiStore', () => {
   beforeEach(() => {
     useUIStore.setState({
-      selectedObjectId: null,
+      selectedObjectIds: [],
       leftPanelOpen: true,
       rightPanelOpen: true,
       viewportBackground: 'dark',
@@ -17,12 +17,16 @@ describe('uiStore', () => {
       printBedSpacing: 10,
       exportScale: 1.0,
       curveQuality: 'medium',
+      showWireframe: false,
+      transparencyMode: false,
+      sectionView: false,
+      sectionPlaneY: 20,
     })
   })
 
   it('has correct default values', () => {
     const state = useUIStore.getState()
-    expect(state.selectedObjectId).toBeNull()
+    expect(state.selectedObjectIds).toEqual([])
     expect(state.leftPanelOpen).toBe(true)
     expect(state.rightPanelOpen).toBe(true)
     expect(state.viewportBackground).toBe('dark')
@@ -30,17 +34,61 @@ describe('uiStore', () => {
     expect(state.cameraPreset).toBeNull()
     expect(state.snapToGrid).toBe(true)
     expect(state.showMeasurements).toBe(true)
+    expect(state.showWireframe).toBe(false)
+    expect(state.transparencyMode).toBe(false)
+    expect(state.sectionView).toBe(false)
+    expect(state.sectionPlaneY).toBe(20)
   })
 
   it('selects an object', () => {
     useUIStore.getState().selectObject('test-id')
-    expect(useUIStore.getState().selectedObjectId).toBe('test-id')
+    expect(useUIStore.getState().selectedObjectIds).toEqual(['test-id'])
   })
 
-  it('deselects an object', () => {
+  it('deselects all objects with null', () => {
     useUIStore.getState().selectObject('test-id')
     useUIStore.getState().selectObject(null)
-    expect(useUIStore.getState().selectedObjectId).toBeNull()
+    expect(useUIStore.getState().selectedObjectIds).toEqual([])
+  })
+
+  it('replaces selection without additive flag', () => {
+    useUIStore.getState().selectObject('id-1')
+    useUIStore.getState().selectObject('id-2')
+    expect(useUIStore.getState().selectedObjectIds).toEqual(['id-2'])
+  })
+
+  it('adds to selection with additive flag', () => {
+    useUIStore.getState().selectObject('id-1')
+    useUIStore.getState().selectObject('id-2', true)
+    expect(useUIStore.getState().selectedObjectIds).toEqual(['id-1', 'id-2'])
+  })
+
+  it('removes from selection with additive flag when already selected', () => {
+    useUIStore.getState().selectObject('id-1')
+    useUIStore.getState().selectObject('id-2', true)
+    useUIStore.getState().selectObject('id-1', true)
+    expect(useUIStore.getState().selectedObjectIds).toEqual(['id-2'])
+  })
+
+  it('toggles object selection', () => {
+    useUIStore.getState().toggleObjectSelection('id-1')
+    expect(useUIStore.getState().selectedObjectIds).toEqual(['id-1'])
+    useUIStore.getState().toggleObjectSelection('id-2')
+    expect(useUIStore.getState().selectedObjectIds).toEqual(['id-1', 'id-2'])
+    useUIStore.getState().toggleObjectSelection('id-1')
+    expect(useUIStore.getState().selectedObjectIds).toEqual(['id-2'])
+  })
+
+  it('clears selection', () => {
+    useUIStore.getState().selectObject('id-1')
+    useUIStore.getState().selectObject('id-2', true)
+    useUIStore.getState().clearSelection()
+    expect(useUIStore.getState().selectedObjectIds).toEqual([])
+  })
+
+  it('sets selected object ids directly', () => {
+    useUIStore.getState().setSelectedObjectIds(['a', 'b', 'c'])
+    expect(useUIStore.getState().selectedObjectIds).toEqual(['a', 'b', 'c'])
   })
 
   it('toggles left panel', () => {
@@ -155,5 +203,36 @@ describe('uiStore', () => {
     expect(useUIStore.getState().curveQuality).toBe('high')
     useUIStore.getState().setCurveQuality('medium')
     expect(useUIStore.getState().curveQuality).toBe('medium')
+  })
+
+  it('toggles wireframe', () => {
+    expect(useUIStore.getState().showWireframe).toBe(false)
+    useUIStore.getState().toggleWireframe()
+    expect(useUIStore.getState().showWireframe).toBe(true)
+    useUIStore.getState().toggleWireframe()
+    expect(useUIStore.getState().showWireframe).toBe(false)
+  })
+
+  it('toggles transparency mode', () => {
+    expect(useUIStore.getState().transparencyMode).toBe(false)
+    useUIStore.getState().toggleTransparencyMode()
+    expect(useUIStore.getState().transparencyMode).toBe(true)
+    useUIStore.getState().toggleTransparencyMode()
+    expect(useUIStore.getState().transparencyMode).toBe(false)
+  })
+
+  it('toggles section view', () => {
+    expect(useUIStore.getState().sectionView).toBe(false)
+    useUIStore.getState().toggleSectionView()
+    expect(useUIStore.getState().sectionView).toBe(true)
+    useUIStore.getState().toggleSectionView()
+    expect(useUIStore.getState().sectionView).toBe(false)
+  })
+
+  it('sets section plane Y', () => {
+    useUIStore.getState().setSectionPlaneY(50)
+    expect(useUIStore.getState().sectionPlaneY).toBe(50)
+    useUIStore.getState().setSectionPlaneY(10)
+    expect(useUIStore.getState().sectionPlaneY).toBe(10)
   })
 })

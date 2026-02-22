@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
-import { Canvas, useThree } from '@react-three/fiber'
+import { useEffect, useMemo } from 'react'
+import * as THREE from 'three'
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, GizmoHelper, GizmoViewport } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GridOverlay } from './GridOverlay'
@@ -74,15 +75,42 @@ function CameraController() {
   return null
 }
 
+function SectionPlane() {
+  const sectionView = useUIStore((s) => s.sectionView)
+  const sectionPlaneY = useUIStore((s) => s.sectionPlaneY)
+
+  const clippingPlane = useMemo(
+    () => new THREE.Plane(new THREE.Vector3(0, -1, 0), sectionPlaneY),
+    [sectionPlaneY],
+  )
+
+  useFrame(({ gl }) => {
+    if (sectionView) {
+      gl.clippingPlanes = [clippingPlane]
+      gl.localClippingEnabled = true
+    } else if (gl.localClippingEnabled) {
+      gl.clippingPlanes = []
+      gl.localClippingEnabled = false
+    }
+  })
+
+  return null
+}
+
 function Scene() {
   const objects = useProjectStore((s) => s.objects)
-  const selectObject = useUIStore((s) => s.selectObject)
-  const selectedObjectId = useUIStore((s) => s.selectedObjectId)
+  const clearSelection = useUIStore((s) => s.clearSelection)
+  const selectedObjectIds = useUIStore((s) => s.selectedObjectIds)
   const lightingPreset = useUIStore((s) => s.lightingPreset)
   const showMeasurements = useUIStore((s) => s.showMeasurements)
 
   const lighting = LIGHTING_PRESETS[lightingPreset]
-  const selectedObject = objects.find((o) => o.id === selectedObjectId) ?? null
+
+  // Only show measurement overlay for single selection
+  const singleSelectedObject =
+    selectedObjectIds.length === 1
+      ? (objects.find((o) => o.id === selectedObjectIds[0]) ?? null)
+      : null
 
   return (
     <>
@@ -110,6 +138,9 @@ function Scene() {
       {/* Camera preset controller */}
       <CameraController />
 
+      {/* Section plane */}
+      <SectionPlane />
+
       {/* Grid */}
       <GridOverlay />
 
@@ -118,7 +149,7 @@ function Scene() {
         onClick={(e) => {
           // Only deselect if clicking on empty space (not on an object)
           if (e.object.type === 'GridHelper' || e.object.type === 'Mesh') return
-          selectObject(null)
+          clearSelection()
         }}
       >
         {objects.map((obj) => (
@@ -127,7 +158,9 @@ function Scene() {
       </group>
 
       {/* Measurement overlay */}
-      {showMeasurements && selectedObject && <MeasurementOverlay object={selectedObject} />}
+      {showMeasurements && singleSelectedObject && (
+        <MeasurementOverlay object={singleSelectedObject} />
+      )}
 
       {/* Gizmo helper - axis indicator in corner */}
       <GizmoHelper alignment="bottom-right" margin={[60, 60]}>
@@ -138,7 +171,7 @@ function Scene() {
 }
 
 export function Viewport() {
-  const selectObject = useUIStore((s) => s.selectObject)
+  const clearSelection = useUIStore((s) => s.clearSelection)
   const viewportBackground = useUIStore((s) => s.viewportBackground)
   const bgColor = BACKGROUND_COLORS[viewportBackground]
 
@@ -154,7 +187,7 @@ export function Viewport() {
         shadows
         gl={{ antialias: true }}
         onPointerMissed={() => {
-          selectObject(null)
+          clearSelection()
         }}
       >
         <color attach="background" args={[bgColor]} />

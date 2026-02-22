@@ -49,6 +49,9 @@ interface ProjectStore {
   getModifiersForParent: (parentId: string) => Modifier[]
   getRootObjectId: (modifierId: string) => string | null
   getModifierContext: (parentId: string) => ModifierContext | null
+  duplicateObjects: (ids: string[]) => string[]
+  reorderObject: (fromIndex: number, toIndex: number) => void
+  reorderModifier: (parentId: string, fromIndex: number, toIndex: number) => void
 }
 
 let objectCounter = 0
@@ -229,6 +232,86 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     }
 
     return null
+  },
+
+  duplicateObjects: (ids: string[]) => {
+    const state = get()
+    const newObjectIds: string[] = []
+    const newObjects: GridfinityObject[] = []
+    const newModifiers: Modifier[] = []
+
+    for (const objectId of ids) {
+      const obj = state.objects.find((o) => o.id === objectId)
+      if (!obj) continue
+
+      const newId = uuidv4()
+      const name = getNextName(obj.kind)
+      const newObj = {
+        ...obj,
+        id: newId,
+        name,
+        position: [obj.position[0] + 42, obj.position[1], obj.position[2]] as [
+          number,
+          number,
+          number,
+        ],
+        params: { ...obj.params },
+      } as GridfinityObject
+
+      newObjectIds.push(newId)
+      newObjects.push(newObj)
+
+      // Deep-copy modifiers recursively
+      const idMap = new Map<string, string>()
+      idMap.set(objectId, newId)
+
+      const queue = [objectId]
+      while (queue.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const parentId = queue.pop()!
+        const childModifiers = state.modifiers.filter((m) => m.parentId === parentId)
+        for (const mod of childModifiers) {
+          const newModId = uuidv4()
+          idMap.set(mod.id, newModId)
+          const newMod = {
+            ...mod,
+            id: newModId,
+            parentId: idMap.get(mod.parentId) ?? mod.parentId,
+            params: { ...mod.params },
+          } as Modifier
+          newModifiers.push(newMod)
+          queue.push(mod.id)
+        }
+      }
+    }
+
+    set((s) => ({
+      objects: [...s.objects, ...newObjects],
+      modifiers: [...s.modifiers, ...newModifiers],
+    }))
+
+    return newObjectIds
+  },
+
+  reorderObject: (fromIndex: number, toIndex: number) => {
+    set((state) => {
+      const objects = [...state.objects]
+      const [moved] = objects.splice(fromIndex, 1)
+      objects.splice(toIndex, 0, moved)
+      return { objects }
+    })
+  },
+
+  reorderModifier: (parentId: string, fromIndex: number, toIndex: number) => {
+    set((state) => {
+      const parentMods = state.modifiers.filter((m) => m.parentId === parentId)
+      const otherMods = state.modifiers.filter((m) => m.parentId !== parentId)
+
+      const [moved] = parentMods.splice(fromIndex, 1)
+      parentMods.splice(toIndex, 0, moved)
+
+      return { modifiers: [...otherMods, ...parentMods] }
+    })
   },
 
   getModifierContext: (parentId: string) => {

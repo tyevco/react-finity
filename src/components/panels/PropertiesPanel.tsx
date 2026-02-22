@@ -6,9 +6,13 @@ import { useUIStore } from '@/store/uiStore'
 
 export function PropertiesPanel() {
   const objects = useProjectStore((s) => s.objects)
-  const selectedObjectId = useUIStore((s) => s.selectedObjectId)
+  const selectedObjectIds = useUIStore((s) => s.selectedObjectIds)
 
-  const selectedObject = selectedObjectId ? objects.find((o) => o.id === selectedObjectId) : null
+  const selectedObjects = selectedObjectIds
+    .map((id) => objects.find((o) => o.id === id))
+    .filter(Boolean)
+
+  const singleSelected = selectedObjects.length === 1 ? selectedObjects[0] : null
 
   return (
     <div className="flex h-full flex-col">
@@ -19,25 +23,33 @@ export function PropertiesPanel() {
       </div>
       <ScrollArea className="flex-1">
         <div className="p-3">
-          {!selectedObject ? (
+          {selectedObjects.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">
               Select an object to view its properties.
             </div>
+          ) : selectedObjects.length > 1 ? (
+            <div className="py-8 text-center text-xs text-muted-foreground">
+              {selectedObjects.length} objects selected
+            </div>
           ) : (
-            <>
-              {/* Object name */}
-              <div className="mb-4">
-                <span className="text-sm font-medium">{selectedObject.name}</span>
-                <span className="ml-2 text-xs text-muted-foreground">({selectedObject.kind})</span>
-              </div>
+            singleSelected && (
+              <>
+                {/* Object name */}
+                <div className="mb-4">
+                  <span className="text-sm font-medium">{singleSelected.name}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    ({singleSelected.kind})
+                  </span>
+                </div>
 
-              {/* Kind-specific properties */}
-              {selectedObject.kind === 'baseplate' && (
-                <BaseplateProperties object={selectedObject} />
-              )}
+                {/* Kind-specific properties */}
+                {singleSelected.kind === 'baseplate' && (
+                  <BaseplateProperties object={singleSelected} />
+                )}
 
-              {selectedObject.kind === 'bin' && <BinProperties object={selectedObject} />}
-            </>
+                {singleSelected.kind === 'bin' && <BinProperties object={singleSelected} />}
+              </>
+            )
           )}
         </div>
       </ScrollArea>

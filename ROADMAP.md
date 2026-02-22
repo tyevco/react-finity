@@ -121,24 +121,31 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 
 ---
 
-## Phase 6: Polish & Advanced UX 🔲
+## Phase 6: Polish & Advanced UX ✅
 
-**Status:** Planned
+**Status:** Complete
 
-**Goal:** Production-quality UX with undo/redo, multi-select, and performance optimization.
+**Goal:** Production-quality UX with undo/redo, multi-select, drag reordering, and viewport polish.
 
-**Deliverables:**
-- Undo/redo system (command pattern over Zustand store)
-- Multi-object selection (shift-click, box select)
-- Copy/paste/duplicate objects (including their modifiers)
-- Scene arrangement — drag-to-reorder in object list
-- Modifier reordering — drag-to-reorder within a bin's modifier list
-- Visual modifier differentiation — color-coded modifier meshes by type
+**Delivered:**
+- **Undo/redo system** — snapshot-based history over `projectStore` state with 300ms debounce, max 50 snapshots. Toolbar buttons (Undo/Redo) and keyboard shortcuts (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y). History clears on project change.
+- **Multi-object selection** — shift/ctrl/meta-click adds to selection in both object list and viewport. Properties panel shows "N objects selected" for multi-select. Escape clears selection.
+- **Copy/paste/duplicate** — Ctrl+D duplicates selected objects with all their modifiers (deep copy with new UUIDs, offset by one grid unit). Ctrl+C/Ctrl+V for internal clipboard copy/paste.
+- **Bulk operations** — Delete/Backspace removes all selected objects at once.
+- **Drag-to-reorder objects** — HTML5 drag and drop in the object list with grip handle and visual drop indicator.
+- **Drag-to-reorder modifiers** — drag and drop modifier cards within a bin's modifier list.
+- **Color-coded modifier meshes** — each modifier kind has a distinct color in the viewport (blue for dividers, orange for labels, green for scoops, purple for inserts, red for lids).
+- **Wireframe toggle** — toggle wireframe rendering on all meshes via Viewport Settings.
+- **Transparency mode** — toggle semi-transparent rendering (50% opacity) for all meshes.
+- **Section view** — clipping plane at configurable Y position to see internal geometry cross-sections.
+- Unit tests for history store, selection model, duplicate/reorder actions, and viewport state (45+ new tests)
+- E2E tests for undo/redo, multi-select, copy/paste/duplicate, and viewport display toggles (18+ new tests)
+
+**Deferred to later phases:**
+- Box select (marquee selection)
 - Fillet/chamfer on divider and insert internal edges
 - Performance — Web Worker geometry generation for complex objects
-- Viewport enhancements — wireframe toggle, section view, transparency mode
 - Print-ready validation — wall thickness checks, overhang warnings
-- Responsive layout — collapsible panels, mobile-friendly viewport
 - Onboarding — first-run tutorial / tooltips
 
 ---

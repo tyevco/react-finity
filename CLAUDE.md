@@ -45,7 +45,7 @@ src/
 │   ├── constants.ts       # Dimension profiles, default params, print bed presets
 │   └── snapping.ts        # Grid snapping logic
 ├── hooks/                 # Custom React hooks (keyboard shortcuts, mobile detection)
-├── store/                 # Zustand stores (project, UI, profile, project manager)
+├── store/                 # Zustand stores (project, UI, profile, project manager, history)
 │   └── __tests__/         # Unit tests for stores
 ├── types/                 # TypeScript interfaces
 └── lib/                   # Utility functions
@@ -68,6 +68,11 @@ docs/                      # Architecture decision records & research documents
 - **Export pipeline**: `mergeObjectGeometry.ts` merges an object with all its modifiers into a single `BufferGeometry`. `printOrientation.ts` computes the optimal FDM print rotation. `printLayout.ts` arranges objects on a virtual print bed. `stlExporter.ts` exports to binary STL with optional ZIP bundling and configurable scale factor. `threeMfExporter.ts` exports to 3MF format using JSZip for OPC archive creation, sharing the same `PrintLayoutItem[]` interface as the STL exporter.
 - **Shared geometry functions**: `generateModifierGeometry()` and `computeBinContext()` are defined in `src/engine/export/mergeObjectGeometry.ts` and imported by both `SceneObject.tsx` (for viewport rendering) and the export pipeline (for merging). Avoid duplicating these.
 - **Responsive design**: The `md:` breakpoint (768px) divides mobile from desktop. The `useIsMobile()` hook in `src/hooks/useIsMobile.ts` provides JS-level detection via `matchMedia`. On mobile, panels render as Sheet overlays (`src/components/ui/sheet.tsx`) instead of inline sidebars; the toolbar collapses secondary actions (camera presets, snap-to-grid, viewport settings, project dropdown) into an overflow menu. All interactive elements use responsive Tailwind classes (e.g., `h-9 w-9 md:h-7 md:w-7`) to meet minimum touch target sizes on mobile.
+- **Undo/redo system**: `historyStore` maintains past/future snapshot stacks (max 50) of `{objects, modifiers}` state. A module-level subscription to `projectStore` captures state changes with 300ms debounce to avoid flooding history during slider drags. The `isLoadingProject` flag and `isUndoRedoInProgress` flag prevent re-entrant pushes during undo/redo and project load operations. History clears when `currentProjectId` changes. `undo()`/`redo()` set `projectStore` state directly via `setState()`.
+- **Multi-select**: `uiStore` tracks `selectedObjectIds: string[]` (not a single ID). `selectObject(id, additive?)` replaces or adds to selection. `toggleObjectSelection(id)` toggles. `clearSelection()` resets. Components check `selectedObjectIds.includes(id)` for highlighting. Properties panel shows single-object properties for one selection, "N objects selected" for multi, and empty state for none. Transform gizmo only renders for single selection.
+- **Copy/paste/duplicate**: `duplicateObjects(ids)` in `projectStore` deep-copies objects and their modifiers with new UUIDs, remapping parent-child relationships. Position offset by [42, 0, 0] (one grid unit). Module-level `clipboard: string[]` in `useKeyboardShortcuts.ts` for Ctrl+C/Ctrl+V.
+- **Drag reordering**: HTML5 Drag and Drop API (no external library) for object list and modifier cards. `reorderObject(fromIndex, toIndex)` and `reorderModifier(parentId, fromIndex, toIndex)` actions in `projectStore`. Visual feedback via opacity and border indicators during drag.
+- **Viewport display modes**: `uiStore` holds `showWireframe`, `transparencyMode`, `sectionView`, `sectionPlaneY`. `SceneObject.tsx` applies wireframe/transparency to materials. `Viewport.tsx` manages `gl.clippingPlanes` for section view. Modifier meshes use `MODIFIER_COLORS` map for color-coding by kind.
 - **Path alias**: `@/` maps to `src/` (configured in vite.config.ts and tsconfig)
 
 ### Adding a New Object Kind
@@ -186,4 +191,5 @@ See `ROADMAP.md` for the full project phases. Current status:
 - Phase 3: Interactivity & Manipulation — Complete
 - Phase 4: Modifier System & Advanced Geometry — Complete
 - Phase 5: Export & Print Layout — Complete
-- Phase 6+: See ROADMAP.md
+- Phase 6: Polish & Advanced UX — Complete
+- Phase 7+: See ROADMAP.md

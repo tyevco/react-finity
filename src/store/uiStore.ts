@@ -9,7 +9,7 @@ import type {
 import { setCurveQuality as setPrimitivesCurveQuality } from '@/engine/geometry/primitives'
 
 interface UIStore {
-  selectedObjectId: string | null
+  selectedObjectIds: string[]
   leftPanelOpen: boolean
   rightPanelOpen: boolean
   viewportBackground: ViewportBackground
@@ -22,7 +22,14 @@ interface UIStore {
   printBedSpacing: number
   exportScale: number
   curveQuality: CurveQuality
-  selectObject: (id: string | null) => void
+  showWireframe: boolean
+  transparencyMode: boolean
+  sectionView: boolean
+  sectionPlaneY: number
+  selectObject: (id: string | null, additive?: boolean) => void
+  toggleObjectSelection: (id: string) => void
+  clearSelection: () => void
+  setSelectedObjectIds: (ids: string[]) => void
   toggleLeftPanel: () => void
   toggleRightPanel: () => void
   setLeftPanelOpen: (open: boolean) => void
@@ -37,10 +44,14 @@ interface UIStore {
   setPrintBedSpacing: (spacing: number) => void
   setExportScale: (scale: number) => void
   setCurveQuality: (quality: CurveQuality) => void
+  toggleWireframe: () => void
+  toggleTransparencyMode: () => void
+  toggleSectionView: () => void
+  setSectionPlaneY: (y: number) => void
 }
 
 export const useUIStore = create<UIStore>()((set) => ({
-  selectedObjectId: null,
+  selectedObjectIds: [],
   leftPanelOpen: true,
   rightPanelOpen: true,
   viewportBackground: 'dark',
@@ -53,9 +64,41 @@ export const useUIStore = create<UIStore>()((set) => ({
   printBedSpacing: 10,
   exportScale: 1.0,
   curveQuality: 'medium',
+  showWireframe: false,
+  transparencyMode: false,
+  sectionView: false,
+  sectionPlaneY: 20,
 
-  selectObject: (id) => {
-    set({ selectedObjectId: id })
+  selectObject: (id, additive = false) => {
+    if (id === null) {
+      set({ selectedObjectIds: [] })
+    } else if (additive) {
+      set((state) => {
+        if (state.selectedObjectIds.includes(id)) {
+          return { selectedObjectIds: state.selectedObjectIds.filter((oid) => oid !== id) }
+        }
+        return { selectedObjectIds: [...state.selectedObjectIds, id] }
+      })
+    } else {
+      set({ selectedObjectIds: [id] })
+    }
+  },
+
+  toggleObjectSelection: (id) => {
+    set((state) => {
+      if (state.selectedObjectIds.includes(id)) {
+        return { selectedObjectIds: state.selectedObjectIds.filter((oid) => oid !== id) }
+      }
+      return { selectedObjectIds: [...state.selectedObjectIds, id] }
+    })
+  },
+
+  clearSelection: () => {
+    set({ selectedObjectIds: [] })
+  },
+
+  setSelectedObjectIds: (ids) => {
+    set({ selectedObjectIds: ids })
   },
 
   toggleLeftPanel: () => {
@@ -113,5 +156,21 @@ export const useUIStore = create<UIStore>()((set) => ({
   setCurveQuality: (quality) => {
     setPrimitivesCurveQuality(quality)
     set({ curveQuality: quality })
+  },
+
+  toggleWireframe: () => {
+    set((state) => ({ showWireframe: !state.showWireframe }))
+  },
+
+  toggleTransparencyMode: () => {
+    set((state) => ({ transparencyMode: !state.transparencyMode }))
+  },
+
+  toggleSectionView: () => {
+    set((state) => ({ sectionView: !state.sectionView }))
+  },
+
+  setSectionPlaneY: (y) => {
+    set({ sectionPlaneY: y })
   },
 }))

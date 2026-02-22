@@ -405,4 +405,132 @@ describe('modifier CRUD', () => {
     const num = parseInt(/\d+$/.exec(obj!.name)?.[0] ?? '0', 10) // eslint-disable-line @typescript-eslint/no-non-null-assertion
     expect(num).toBe(11)
   })
+
+  describe('duplicateObjects', () => {
+    it('duplicates a single object with new id and name', () => {
+      resetObjectCounter([])
+      const id = useProjectStore.getState().addObject('bin')
+      const newIds = useProjectStore.getState().duplicateObjects([id])
+
+      expect(newIds).toHaveLength(1)
+      expect(newIds[0]).not.toBe(id)
+
+      const { objects } = useProjectStore.getState()
+      expect(objects).toHaveLength(2)
+
+      const original = objects.find((o) => o.id === id)
+      const duplicate = objects.find((o) => o.id === newIds[0])
+      expect(original).toBeDefined()
+      expect(duplicate).toBeDefined()
+      expect(duplicate!.kind).toBe('bin') // eslint-disable-line @typescript-eslint/no-non-null-assertion
+      expect(duplicate!.name).not.toBe(original!.name) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    })
+
+    it('offsets duplicate position by 42 on x-axis', () => {
+      const id = useProjectStore.getState().addObject('bin')
+      const newIds = useProjectStore.getState().duplicateObjects([id])
+
+      const { objects } = useProjectStore.getState()
+      const original = objects.find((o) => o.id === id)
+      const duplicate = objects.find((o) => o.id === newIds[0])
+      expect(duplicate!.position[0]).toBe(original!.position[0] + 42) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    })
+
+    it('deep-copies modifiers with new ids', () => {
+      const objId = useProjectStore.getState().addObject('bin')
+      const modId = useProjectStore.getState().addModifier(objId, 'dividerGrid')
+
+      const newIds = useProjectStore.getState().duplicateObjects([objId])
+      const { modifiers } = useProjectStore.getState()
+
+      // Should have 2 modifiers (original + duplicate)
+      expect(modifiers).toHaveLength(2)
+
+      const originalMod = modifiers.find((m) => m.id === modId)
+      const duplicateMod = modifiers.find((m) => m.parentId === newIds[0])
+
+      expect(originalMod).toBeDefined()
+      expect(duplicateMod).toBeDefined()
+      expect(duplicateMod!.id).not.toBe(modId) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+      expect(duplicateMod!.kind).toBe('dividerGrid') // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    })
+
+    it('duplicates multiple objects at once', () => {
+      const id1 = useProjectStore.getState().addObject('bin')
+      const id2 = useProjectStore.getState().addObject('baseplate')
+
+      const newIds = useProjectStore.getState().duplicateObjects([id1, id2])
+
+      expect(newIds).toHaveLength(2)
+      expect(useProjectStore.getState().objects).toHaveLength(4)
+    })
+
+    it('skips non-existent object ids', () => {
+      const id = useProjectStore.getState().addObject('bin')
+      const newIds = useProjectStore.getState().duplicateObjects([id, 'nonexistent'])
+
+      expect(newIds).toHaveLength(1)
+      expect(useProjectStore.getState().objects).toHaveLength(2)
+    })
+  })
+
+  describe('reorderObject', () => {
+    it('moves an object from one position to another', () => {
+      resetObjectCounter([])
+      const id1 = useProjectStore.getState().addObject('baseplate')
+      const id2 = useProjectStore.getState().addObject('bin')
+      const id3 = useProjectStore.getState().addObject('baseplate')
+
+      useProjectStore.getState().reorderObject(0, 2)
+
+      const { objects } = useProjectStore.getState()
+      expect(objects[0].id).toBe(id2)
+      expect(objects[1].id).toBe(id3)
+      expect(objects[2].id).toBe(id1)
+    })
+
+    it('moves an object forward in the list', () => {
+      resetObjectCounter([])
+      const id1 = useProjectStore.getState().addObject('baseplate')
+      const id2 = useProjectStore.getState().addObject('bin')
+      const id3 = useProjectStore.getState().addObject('baseplate')
+
+      useProjectStore.getState().reorderObject(2, 0)
+
+      const { objects } = useProjectStore.getState()
+      expect(objects[0].id).toBe(id3)
+      expect(objects[1].id).toBe(id1)
+      expect(objects[2].id).toBe(id2)
+    })
+  })
+
+  describe('reorderModifier', () => {
+    it('reorders modifiers within the same parent', () => {
+      const objId = useProjectStore.getState().addObject('bin')
+      const mod1 = useProjectStore.getState().addModifier(objId, 'dividerGrid')
+      const mod2 = useProjectStore.getState().addModifier(objId, 'labelTab')
+      const mod3 = useProjectStore.getState().addModifier(objId, 'scoop')
+
+      useProjectStore.getState().reorderModifier(objId, 0, 2)
+
+      const parentMods = useProjectStore.getState().modifiers.filter((m) => m.parentId === objId)
+      expect(parentMods[0].id).toBe(mod2)
+      expect(parentMods[1].id).toBe(mod3)
+      expect(parentMods[2].id).toBe(mod1)
+    })
+
+    it('does not affect modifiers of other parents', () => {
+      const obj1 = useProjectStore.getState().addObject('bin')
+      const obj2 = useProjectStore.getState().addObject('bin')
+      useProjectStore.getState().addModifier(obj1, 'dividerGrid')
+      useProjectStore.getState().addModifier(obj1, 'labelTab')
+      const otherMod = useProjectStore.getState().addModifier(obj2, 'scoop')
+
+      useProjectStore.getState().reorderModifier(obj1, 0, 1)
+
+      const obj2Mods = useProjectStore.getState().modifiers.filter((m) => m.parentId === obj2)
+      expect(obj2Mods).toHaveLength(1)
+      expect(obj2Mods[0].id).toBe(otherMod)
+    })
+  })
 })

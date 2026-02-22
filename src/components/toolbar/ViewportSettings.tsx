@@ -8,6 +8,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
 import { useUIStore } from '@/store/uiStore'
 import type { ViewportBackground, LightingPreset } from '@/types/gridfinity'
@@ -17,6 +18,12 @@ export function ViewportSettings() {
   const lightingPreset = useUIStore((s) => s.lightingPreset)
   const setViewportBackground = useUIStore((s) => s.setViewportBackground)
   const setLightingPreset = useUIStore((s) => s.setLightingPreset)
+  const showWireframe = useUIStore((s) => s.showWireframe)
+  const toggleWireframe = useUIStore((s) => s.toggleWireframe)
+  const transparencyMode = useUIStore((s) => s.transparencyMode)
+  const toggleTransparencyMode = useUIStore((s) => s.toggleTransparencyMode)
+  const sectionView = useUIStore((s) => s.sectionView)
+  const toggleSectionView = useUIStore((s) => s.toggleSectionView)
 
   return (
     <DropdownMenu>
@@ -54,6 +61,17 @@ export function ViewportSettings() {
           <DropdownMenuRadioItem value="outdoor">Outdoor</DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="soft">Soft</DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Display</DropdownMenuLabel>
+        <DropdownMenuItem onClick={toggleWireframe} data-testid="toggle-wireframe">
+          {showWireframe ? 'Disable' : 'Enable'} Wireframe
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={toggleTransparencyMode} data-testid="toggle-transparency">
+          {transparencyMode ? 'Disable' : 'Enable'} Transparency
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={toggleSectionView} data-testid="toggle-section">
+          {sectionView ? 'Disable' : 'Enable'} Section View
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

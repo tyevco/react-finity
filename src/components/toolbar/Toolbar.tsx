@@ -12,6 +12,8 @@ import {
   FilePlus,
   FolderCog,
   MoreHorizontal,
+  Undo2,
+  Redo2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -35,6 +37,7 @@ import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
 import { useProjectManagerStore } from '@/store/projectManagerStore'
+import { useHistoryStore } from '@/store/historyStore'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { cn } from '@/lib/utils'
 import { mergeObjectWithModifiers } from '@/engine/export/mergeObjectGeometry'
@@ -48,7 +51,7 @@ export function Toolbar() {
   const objects = useProjectStore((s) => s.objects)
   const modifiers = useProjectStore((s) => s.modifiers)
   const selectObject = useUIStore((s) => s.selectObject)
-  const selectedObjectId = useUIStore((s) => s.selectedObjectId)
+  const selectedObjectIds = useUIStore((s) => s.selectedObjectIds)
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel)
   const toggleRightPanel = useUIStore((s) => s.toggleRightPanel)
   const snapToGrid = useUIStore((s) => s.snapToGrid)
@@ -62,12 +65,23 @@ export function Toolbar() {
   const lightingPreset = useUIStore((s) => s.lightingPreset)
   const setLightingPreset = useUIStore((s) => s.setLightingPreset)
   const activeProfile = useProfileStore((s) => s.activeProfile)
+  const showWireframe = useUIStore((s) => s.showWireframe)
+  const toggleWireframe = useUIStore((s) => s.toggleWireframe)
+  const transparencyMode = useUIStore((s) => s.transparencyMode)
+  const toggleTransparencyMode = useUIStore((s) => s.toggleTransparencyMode)
+  const sectionView = useUIStore((s) => s.sectionView)
+  const toggleSectionView = useUIStore((s) => s.toggleSectionView)
 
   const currentProjectName = useProjectManagerStore((s) => s.currentProjectName)
   const isDirty = useProjectManagerStore((s) => s.isDirty)
   const newProject = useProjectManagerStore((s) => s.newProject)
   const saveProject = useProjectManagerStore((s) => s.saveProject)
   const saveProjectAs = useProjectManagerStore((s) => s.saveProjectAs)
+
+  const canUndo = useHistoryStore((s) => s.canUndo)
+  const canRedo = useHistoryStore((s) => s.canRedo)
+  const undo = useHistoryStore((s) => s.undo)
+  const redo = useHistoryStore((s) => s.redo)
 
   const [projectDialogOpen, setProjectDialogOpen] = useState(false)
   const [saveAsPrompt, setSaveAsPrompt] = useState(false)
@@ -85,9 +99,11 @@ export function Toolbar() {
     selectObject(id)
   }
 
+  const singleSelectedId = selectedObjectIds.length === 1 ? selectedObjectIds[0] : null
+
   const handleExportSelected = () => {
-    if (!selectedObjectId) return
-    const obj = objects.find((o) => o.id === selectedObjectId)
+    if (!singleSelectedId) return
+    const obj = objects.find((o) => o.id === singleSelectedId)
     if (!obj) return
 
     const merged = mergeObjectWithModifiers(obj, modifiers, activeProfile)
@@ -99,8 +115,8 @@ export function Toolbar() {
   }
 
   const handleExportSelected3MF = () => {
-    if (!selectedObjectId) return
-    const obj = objects.find((o) => o.id === selectedObjectId)
+    if (!singleSelectedId) return
+    const obj = objects.find((o) => o.id === singleSelectedId)
     if (!obj) return
 
     const merged = mergeObjectWithModifiers(obj, modifiers, activeProfile)
@@ -177,6 +193,48 @@ export function Toolbar() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        )}
+
+        {!isMobile && <div className="h-5 w-px bg-border" />}
+
+        {/* Undo/Redo buttons - desktop */}
+        {!isMobile && (
+          <TooltipProvider delayDuration={300}>
+            <div className="flex items-center gap-0.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={undo}
+                    disabled={!canUndo}
+                    aria-label="Undo"
+                    data-testid="undo-btn"
+                  >
+                    <Undo2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={redo}
+                    disabled={!canRedo}
+                    aria-label="Redo"
+                    data-testid="redo-btn"
+                  >
+                    <Redo2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Redo (Ctrl+Shift+Z)</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         )}
 
         {!isMobile && <div className="h-5 w-px bg-border" />}
@@ -318,13 +376,13 @@ export function Toolbar() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={handleExportSelected}
-              disabled={!selectedObjectId || !isEditView}
+              disabled={!singleSelectedId || !isEditView}
             >
               Export Selected (STL)
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleExportSelected3MF}
-              disabled={!selectedObjectId || !isEditView}
+              disabled={!singleSelectedId || !isEditView}
             >
               Export Selected (3MF)
             </DropdownMenuItem>
@@ -391,6 +449,15 @@ export function Toolbar() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={toggleSnapToGrid}>
                     {snapToGrid ? 'Disable' : 'Enable'} Snap to Grid
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={toggleWireframe}>
+                    {showWireframe ? 'Disable' : 'Enable'} Wireframe
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={toggleTransparencyMode}>
+                    {transparencyMode ? 'Disable' : 'Enable'} Transparency
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={toggleSectionView}>
+                    {sectionView ? 'Disable' : 'Enable'} Section View
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuSub>
