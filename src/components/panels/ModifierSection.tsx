@@ -49,8 +49,13 @@ export function ModifierSection({ parentId, depth = 0 }: ModifierSectionProps) {
         </Label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-6 w-6" data-testid="add-modifier-btn">
-              <Plus className="h-3 w-3" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 md:h-6 md:w-6"
+              data-testid="add-modifier-btn"
+            >
+              <Plus className="h-4 w-4 md:h-3 md:w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -111,11 +116,11 @@ function ModifierCard({ modifier, depth, onRemove }: ModifierCardProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-5 w-5"
+          className="h-7 w-7 md:h-5 md:w-5"
           onClick={onRemove}
           data-testid="remove-modifier-btn"
         >
-          <X className="h-3 w-3" />
+          <X className="h-4 w-4 md:h-3 md:w-3" />
         </Button>
       </div>
 

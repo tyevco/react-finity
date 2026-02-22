@@ -1,7 +1,17 @@
 import { useState } from 'react'
 import {
-  Plus, PanelLeft, PanelRight, Grid3x3, Download, Pencil, Printer,
-  FolderOpen, Save, FilePlus, FolderCog,
+  Plus,
+  PanelLeft,
+  PanelRight,
+  Grid3x3,
+  Download,
+  Pencil,
+  Printer,
+  FolderOpen,
+  Save,
+  FilePlus,
+  FolderCog,
+  MoreHorizontal,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,6 +20,12 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { CameraPresets } from './CameraPresets'
@@ -19,10 +35,12 @@ import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
 import { useProjectManagerStore } from '@/store/projectManagerStore'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { cn } from '@/lib/utils'
 import { mergeObjectWithModifiers } from '@/engine/export/mergeObjectGeometry'
 import { getPrintRotation, applyPrintOrientation } from '@/engine/export/printOrientation'
 import { exportObjectAsSTL } from '@/engine/export/stlExporter'
+import type { ViewportBackground, LightingPreset, CameraPreset } from '@/types/gridfinity'
 
 export function Toolbar() {
   const addObject = useProjectStore((s) => s.addObject)
@@ -37,6 +55,11 @@ export function Toolbar() {
   const activeView = useUIStore((s) => s.activeView)
   const setActiveView = useUIStore((s) => s.setActiveView)
   const exportScale = useUIStore((s) => s.exportScale)
+  const setCameraPreset = useUIStore((s) => s.setCameraPreset)
+  const viewportBackground = useUIStore((s) => s.viewportBackground)
+  const setViewportBackground = useUIStore((s) => s.setViewportBackground)
+  const lightingPreset = useUIStore((s) => s.lightingPreset)
+  const setLightingPreset = useUIStore((s) => s.setLightingPreset)
   const activeProfile = useProfileStore((s) => s.activeProfile)
 
   const currentProjectName = useProjectManagerStore((s) => s.currentProjectName)
@@ -48,6 +71,8 @@ export function Toolbar() {
   const [projectDialogOpen, setProjectDialogOpen] = useState(false)
   const [saveAsPrompt, setSaveAsPrompt] = useState(false)
   const [saveAsName, setSaveAsName] = useState('')
+
+  const isMobile = useIsMobile()
 
   const handleAddBaseplate = () => {
     const id = addObject('baseplate')
@@ -89,44 +114,58 @@ export function Toolbar() {
 
   return (
     <>
-      <div className="flex h-10 items-center gap-2 border-b border-border bg-background px-3">
+      <div
+        className="flex h-12 items-center gap-2 border-b border-border bg-background px-3 md:h-10"
+        data-testid="toolbar"
+      >
         {/* Left panel toggle */}
-        <Button variant="ghost" size="icon" onClick={toggleLeftPanel} className="h-7 w-7">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleLeftPanel}
+          className="h-9 w-9 md:h-7 md:w-7"
+        >
           <PanelLeft className="h-4 w-4" />
         </Button>
 
-        <div className="h-5 w-px bg-border" />
+        {!isMobile && <div className="h-5 w-px bg-border" />}
 
-        {/* Project dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-7 gap-1">
-              <FolderOpen className="h-4 w-4" />
-              Project
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={newProject}>
-              <FilePlus className="mr-2 h-4 w-4" />
-              New Project
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={saveProject}>
-              <Save className="mr-2 h-4 w-4" />
-              Save
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSaveAs}>
-              <Save className="mr-2 h-4 w-4" />
-              Save As...
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { setProjectDialogOpen(true) }}>
-              <FolderCog className="mr-2 h-4 w-4" />
-              Manage Projects...
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Project dropdown - desktop only */}
+        {!isMobile && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 gap-1">
+                <FolderOpen className="h-4 w-4" />
+                Project
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={newProject}>
+                <FilePlus className="mr-2 h-4 w-4" />
+                New Project
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={saveProject}>
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSaveAs}>
+                <Save className="mr-2 h-4 w-4" />
+                Save As...
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  setProjectDialogOpen(true)
+                }}
+              >
+                <FolderCog className="mr-2 h-4 w-4" />
+                Manage Projects...
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
-        <div className="h-5 w-px bg-border" />
+        {!isMobile && <div className="h-5 w-px bg-border" />}
 
         {/* View mode toggle */}
         <TooltipProvider delayDuration={300}>
@@ -137,10 +176,12 @@ export function Toolbar() {
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    'h-6 gap-1 px-2 text-xs',
+                    'h-8 gap-1 px-2 text-xs md:h-6',
                     isEditView && 'bg-accent text-accent-foreground',
                   )}
-                  onClick={() => { setActiveView('edit') }}
+                  onClick={() => {
+                    setActiveView('edit')
+                  }}
                   aria-label="Edit view"
                   aria-pressed={isEditView}
                 >
@@ -156,10 +197,12 @@ export function Toolbar() {
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    'h-6 gap-1 px-2 text-xs',
+                    'h-8 gap-1 px-2 text-xs md:h-6',
                     !isEditView && 'bg-accent text-accent-foreground',
                   )}
-                  onClick={() => { setActiveView('printLayout') }}
+                  onClick={() => {
+                    setActiveView('printLayout')
+                  }}
                   aria-label="Print layout view"
                   aria-pressed={!isEditView}
                 >
@@ -172,10 +215,10 @@ export function Toolbar() {
           </div>
         </TooltipProvider>
 
-        <div className="h-5 w-px bg-border" />
+        {!isMobile && <div className="h-5 w-px bg-border" />}
 
-        {/* Edit view controls */}
-        {isEditView && (
+        {/* Edit view controls - desktop */}
+        {!isMobile && isEditView && (
           <>
             {/* Add object dropdown */}
             <DropdownMenu>
@@ -219,23 +262,43 @@ export function Toolbar() {
           </>
         )}
 
+        {/* Add object dropdown - mobile */}
+        {isMobile && isEditView && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-9 gap-1">
+                <Plus className="h-4 w-4" />
+                Add
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={handleAddBaseplate}>Baseplate</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleAddBin}>Bin</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Project name */}
-        <span className="text-xs font-medium text-muted-foreground" data-testid="project-name">
-          {currentProjectName}{isDirty ? ' *' : ''}
+        {/* Project name - desktop only */}
+        <span
+          className="hidden text-xs font-medium text-muted-foreground md:inline"
+          data-testid="project-name"
+        >
+          {currentProjectName}
+          {isDirty ? ' *' : ''}
         </span>
 
-        {/* Spacer */}
-        <div className="flex-1" />
+        {/* Spacer - desktop only */}
+        <div className="hidden flex-1 md:block" />
 
         {/* Export dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-7 gap-1">
+            <Button variant="ghost" size="sm" className="h-9 gap-1 md:h-7">
               <Download className="h-4 w-4" />
-              Export
+              <span className="hidden md:inline">Export</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -247,7 +310,9 @@ export function Toolbar() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => { setActiveView('printLayout') }}
+              onClick={() => {
+                setActiveView('printLayout')
+              }}
               disabled={!isEditView}
             >
               Open Print Layout
@@ -255,18 +320,116 @@ export function Toolbar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Viewport settings (edit view only) */}
-        {isEditView && (
+        {/* Viewport settings - desktop only */}
+        {!isMobile && isEditView && (
           <>
             <div className="h-5 w-px bg-border" />
             <ViewportSettings />
           </>
         )}
 
-        <div className="h-5 w-px bg-border" />
+        {/* Overflow menu - mobile only */}
+        {isMobile && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="More options">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {isEditView && (
+                <>
+                  <DropdownMenuLabel>Camera</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setCameraPreset('top' as CameraPreset)
+                    }}
+                  >
+                    Top View
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setCameraPreset('front' as CameraPreset)
+                    }}
+                  >
+                    Front View
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setCameraPreset('side' as CameraPreset)
+                    }}
+                  >
+                    Side View
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setCameraPreset('isometric' as CameraPreset)
+                    }}
+                  >
+                    Isometric View
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={toggleSnapToGrid}>
+                    {snapToGrid ? 'Disable' : 'Enable'} Snap to Grid
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>Background</DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup
+                        value={viewportBackground}
+                        onValueChange={(v) => {
+                          setViewportBackground(v as ViewportBackground)
+                        }}
+                      >
+                        <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="neutral">Neutral</DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>Lighting</DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup
+                        value={lightingPreset}
+                        onValueChange={(v) => {
+                          setLightingPreset(v as LightingPreset)
+                        }}
+                      >
+                        <DropdownMenuRadioItem value="studio">Studio</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="outdoor">Outdoor</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="soft">Soft</DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuLabel>Project</DropdownMenuLabel>
+              <DropdownMenuItem onClick={newProject}>New Project</DropdownMenuItem>
+              <DropdownMenuItem onClick={saveProject}>Save Project</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSaveAs}>Save As...</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setProjectDialogOpen(true)
+                }}
+              >
+                Manage Projects...
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        {!isMobile && <div className="h-5 w-px bg-border" />}
 
         {/* Right panel toggle */}
-        <Button variant="ghost" size="icon" onClick={toggleRightPanel} className="h-7 w-7">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleRightPanel}
+          className="h-9 w-9 md:h-7 md:w-7"
+        >
           <PanelRight className="h-4 w-4" />
         </Button>
       </div>
@@ -282,7 +445,9 @@ export function Toolbar() {
             <input
               type="text"
               value={saveAsName}
-              onChange={(e) => { setSaveAsName(e.target.value) }}
+              onChange={(e) => {
+                setSaveAsName(e.target.value)
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleConfirmSaveAs()
                 if (e.key === 'Escape') setSaveAsPrompt(false)
@@ -293,7 +458,13 @@ export function Toolbar() {
               aria-label="Project name"
             />
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => { setSaveAsPrompt(false) }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSaveAsPrompt(false)
+                }}
+              >
                 Cancel
               </Button>
               <Button size="sm" onClick={handleConfirmSaveAs} disabled={!saveAsName.trim()}>

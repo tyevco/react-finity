@@ -22,6 +22,7 @@ A browser-based parametric 3D modeling application for the [Gridfinity](https://
 - **Camera presets** -- top, front, side, and isometric views
 - **Dimension profiles** -- Official, Tight Fit, and Loose Fit presets for all Gridfinity dimensions
 - **Keyboard shortcuts** -- Delete/Backspace to remove, Escape to deselect, Ctrl+P for print layout, Ctrl+Shift+E to export, Ctrl+S to save
+- **Mobile-responsive layout** -- panels slide in as overlay sheets on small screens, toolbar collapses secondary actions into overflow menu, touch-friendly button sizes
 
 ## Tech Stack
 

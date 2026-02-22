@@ -143,7 +143,7 @@ export function Viewport() {
   const bgColor = BACKGROUND_COLORS[viewportBackground]
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full touch-manipulation">
       <Canvas
         camera={{
           position: [200, 150, 200],

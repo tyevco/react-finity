@@ -32,9 +32,7 @@ function PrintBed({ width, depth }: { width: number; depth: number }) {
 
       {/* Bed outline */}
       <lineSegments position={[width / 2, 0.05, depth / 2]}>
-        <edgesGeometry
-          args={[new THREE.PlaneGeometry(width, depth)]}
-        />
+        <edgesGeometry args={[new THREE.PlaneGeometry(width, depth)]} />
         <lineBasicMaterial color="#6b9bd2" linewidth={2} />
       </lineSegments>
 
@@ -84,7 +82,9 @@ function PrintScene() {
 
   // Dispose previous layout geometries on unmount/recompute
   useMemo(() => {
-    return () => { disposePrintLayout(layoutItems) }
+    return () => {
+      disposePrintLayout(layoutItems)
+    }
   }, [layoutItems])
 
   return (
@@ -121,7 +121,7 @@ function PrintScene() {
 
 export function PrintLayoutViewport() {
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full touch-manipulation">
       <Canvas
         camera={{
           position: [200, 300, 200],
