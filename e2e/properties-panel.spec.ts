@@ -1,10 +1,5 @@
 import { test, expect } from '@playwright/test'
-import type { Page } from '@playwright/test'
-
-async function addBaseplate(page: Page) {
-  await page.getByRole('button', { name: /Add Object/i }).click()
-  await page.getByRole('menuitem', { name: 'Baseplate' }).click()
-}
+import { addBaseplate } from './fixtures'
 
 test.describe('Properties Panel', () => {
   test.beforeEach(async ({ page }) => {

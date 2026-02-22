@@ -255,7 +255,7 @@ jobs:
         run: exit 1
 
   e2e-tests:
-    name: E2E Tests
+    name: E2E Tests (shard ${{ matrix.shardIndex }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
     needs: [changes]
     if: >-
@@ -263,6 +263,11 @@ jobs:
       needs.changes.outputs.e2e == 'true' ||
       needs.changes.outputs.config == 'true' ||
       needs.changes.outputs.ci == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3]
+        shardTotal: [3]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -280,13 +285,49 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E tests
-        id: tests
-        continue-on-error: true
-        run: npx playwright test
+        run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+
+      - name: Upload blob report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blob-report-${{ matrix.shardIndex }}
+          path: blob-report
+          retention-days: 1
+
+  e2e-report:
+    name: E2E Test Report
+    runs-on: ubuntu-latest
+    needs: [e2e-tests]
+    if: always() && needs.e2e-tests.result != 'skipped'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download blob reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: blob-report-*
+          merge-multiple: true
+          path: all-blob-reports
+
+      - name: Merge reports
+        run: npx playwright merge-reports --reporter=html,junit ./all-blob-reports
+        env:
+          PLAYWRIGHT_JUNIT_OUTPUT_NAME: test-results/playwright-junit.xml
 
       - name: Test report
         uses: dorny/test-reporter@v1
-        if: success() || failure()
+        if: always()
         with:
           name: Playwright Results
           path: test-results/playwright-junit.xml
@@ -298,7 +339,7 @@ jobs:
           echo "## E2E Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ steps.tests.outcome }}" = "success" ]; then
+          if [ "${{ needs.e2e-tests.result }}" = "success" ]; then
             echo ":white_check_mark: **All E2E tests passed**" >> $GITHUB_STEP_SUMMARY
           else
             echo ":x: **E2E test failures detected**" >> $GITHUB_STEP_SUMMARY
@@ -308,23 +349,11 @@ jobs:
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
-        if: success() || failure()
+        if: always()
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 14
-
-      - name: Upload trace results
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-traces
-          path: test-results/
-          retention-days: 14
-
-      - name: Fail on test failures
-        if: steps.tests.outcome == 'failure'
-        run: exit 1
 
   build:
     name: Build
@@ -383,7 +412,7 @@ jobs:
   validation-complete:
     name: Validation Complete
     if: always()
-    needs: [lint, typecheck, unit-tests, e2e-tests, build]
+    needs: [lint, typecheck, unit-tests, e2e-tests, e2e-report, build]
     runs-on: ubuntu-latest
     steps:
       - name: Check job results

@@ -1,15 +1,5 @@
 import { test, expect } from '@playwright/test'
-import type { Page } from '@playwright/test'
-
-async function addBaseplate(page: Page) {
-  await page.getByRole('button', { name: /Add Object/i }).click()
-  await page.getByRole('menuitem', { name: 'Baseplate' }).click()
-}
-
-async function addBin(page: Page) {
-  await page.getByRole('button', { name: /Add Object/i }).click()
-  await page.getByRole('menuitem', { name: 'Bin' }).click()
-}
+import { addBaseplate, addBin } from './fixtures'
 
 test.describe('Measurement Overlay', () => {
   test.beforeEach(async ({ page }) => {

@@ -2,12 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Project Management', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage before each test
     await page.goto('/')
-    await page.evaluate(() => {
-      localStorage.clear()
-    })
-    await page.reload()
   })
 
   test('shows Project dropdown in toolbar', async ({ page }) => {
@@ -71,9 +66,8 @@ test.describe('Project Management', () => {
     // Wait for the object to appear in the object list
     await expect(page.getByText(/Bin \d+/).first()).toBeVisible()
 
-    // Click somewhere to ensure no dropdown is open
-    await page.mouse.click(400, 300)
-    await page.waitForTimeout(200)
+    // Ensure no dropdown is open before opening the Project menu
+    await page.keyboard.press('Escape')
 
     // New Project
     await page.getByRole('button', { name: /Project/ }).click()
@@ -137,17 +131,17 @@ test.describe('Project Management', () => {
     await page.getByLabel('Project name').fill('Persist Test')
     await page.getByRole('button', { name: /^Save$/ }).click()
 
-    // Wait for save to complete
-    await page.waitForTimeout(500)
+    // Wait for project name to confirm save completed
+    await expect(page.getByTestId('project-name')).toHaveText('Persist Test')
 
     // Reload the page
     await page.reload()
 
-    // Project name should be restored
+    // Project name should be restored (extra timeout for hydration)
     const projectName = page.getByTestId('project-name')
-    await expect(projectName).toHaveText('Persist Test', { timeout: 10000 })
+    await expect(projectName).toHaveText('Persist Test', { timeout: 7000 })
 
-    // Objects should be restored in the object list (with extra timeout for hydration)
-    await expect(page.getByText(/Bin \d+/).first()).toBeVisible({ timeout: 10000 })
+    // Objects should be restored in the object list
+    await expect(page.getByText(/Bin \d+/).first()).toBeVisible({ timeout: 7000 })
   })
 })
