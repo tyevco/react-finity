@@ -171,6 +171,11 @@ Research documents and architecture decision records live in the `docs/` directo
 - **Cross-references**: When implementing a feature described in an ADR, reference it in commit messages and link back to the relevant section from code comments if the rationale is non-obvious.
 - **Status tracking**: Note what has been implemented vs. what remains proposed. Mark sections as "Implemented in Phase X" or "Superseded by Y" as the project evolves.
 
+#### Current ADRs
+
+- `docs/slicer-export-research.md` — Slicer export integration (3MF format, slicer deep links, CLI integration)
+- `docs/extensible-framework-design.md` — Extensible object/modifier framework (registry pattern, plugin architecture, schema-driven UI)
+
 ## Roadmap
 
 See `ROADMAP.md` for the full project phases. Current status:
