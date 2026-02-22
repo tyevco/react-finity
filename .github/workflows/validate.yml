@@ -14,9 +14,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      config: ${{ steps.filter.outputs.config }}
+      ci: ${{ steps.filter.outputs.ci }}
+    steps:
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - 'src/**'
+            e2e:
+              - 'e2e/**'
+              - 'playwright.config.ts'
+            config:
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig*.json'
+              - 'vite.config.ts'
+              - 'vitest.config.ts'
+              - 'eslint.config.js'
+              - '.prettierrc'
+              - 'index.html'
+              - 'public/**'
+            ci:
+              - '.github/**'
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: >-
+      needs.changes.outputs.src == 'true' ||
+      needs.changes.outputs.e2e == 'true' ||
+      needs.changes.outputs.config == 'true' ||
+      needs.changes.outputs.ci == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,6 +127,12 @@ jobs:
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: >-
+      needs.changes.outputs.src == 'true' ||
+      needs.changes.outputs.e2e == 'true' ||
+      needs.changes.outputs.config == 'true' ||
+      needs.changes.outputs.ci == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -140,6 +184,11 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: >-
+      needs.changes.outputs.src == 'true' ||
+      needs.changes.outputs.config == 'true' ||
+      needs.changes.outputs.ci == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -208,6 +257,12 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: >-
+      needs.changes.outputs.src == 'true' ||
+      needs.changes.outputs.e2e == 'true' ||
+      needs.changes.outputs.config == 'true' ||
+      needs.changes.outputs.ci == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -274,7 +329,14 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, unit-tests]
+    needs: [changes, lint, typecheck, unit-tests]
+    if: >-
+      always() &&
+      !cancelled() &&
+      (needs.changes.outputs.src == 'true' ||
+       needs.changes.outputs.config == 'true' ||
+       needs.changes.outputs.ci == 'true') &&
+      !contains(needs.*.result, 'failure')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -317,3 +379,17 @@ jobs:
             tail -50 build-output.txt >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
+
+  validation-complete:
+    name: Validation Complete
+    if: always()
+    needs: [lint, typecheck, unit-tests, e2e-tests, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "One or more validation jobs failed"
+            exit 1
+          fi
+          echo "All validations passed (or were skipped)"
