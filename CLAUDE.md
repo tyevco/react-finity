@@ -44,7 +44,7 @@ src/
 │   ├── constants.ts       # Dimension profiles, default params, print bed presets
 │   └── snapping.ts        # Grid snapping logic
 ├── hooks/                 # Custom React hooks (keyboard shortcuts)
-├── store/                 # Zustand stores (project, UI, profile)
+├── store/                 # Zustand stores (project, UI, profile, project manager)
 │   └── __tests__/         # Unit tests for stores
 ├── types/                 # TypeScript interfaces
 └── lib/                   # Utility functions
@@ -57,11 +57,13 @@ e2e/                       # Playwright e2e tests
 - **Modifier system**: Modifiers are composable entities that attach to bins (or other modifiers) via `parentId`. The union type `Modifier = DividerGridModifier | LabelTabModifier | ScoopModifier | InsertModifier | LidModifier` is switched on `modifier.kind`. Modifiers are stored flat in the project store and rendered recursively.
 - **ModifierContext**: When rendering modifier geometry, a `ModifierContext` object provides the available inner dimensions (width, depth, wall height, floor Y). This context flows from bin params down through nested modifiers, allowing each modifier to adapt to its parent's geometry.
 - **Geometry generators** are pure functions: `generate*(params, profile) → BufferGeometry`. They use `roundedRectShape()`, `extrudeShape()`, and `mergeGeometries()` from `primitives.ts`. Modifier generators take the form: `generate*(params, context, profile) → BufferGeometry`.
-- **Zustand stores** are the single source of truth. Components read from stores via selectors. No prop drilling for shared state.
+- **Polygon quality system**: `primitives.ts` exposes a module-level `setCurveQuality(quality)` / `getCurveSegments()` API. The `curveQuality` setting in `uiStore` drives segment counts (low=4, medium=8, high=16) used by `extrudeShape()`, `createCylinder()`, and `scoop.ts`. Viewport components include `curveQuality` in useMemo deps to trigger geometry regeneration on quality changes.
+- **Project persistence**: `projectManagerStore` manages project metadata and auto-save. Cross-store dirty tracking uses `useProjectStore.subscribe()` with an `isLoadingProject` flag to prevent marking dirty during project load. `initializeProject()` loads project data after Zustand persist middleware rehydrates.
+- **Zustand stores** are the single source of truth. Components read from stores via selectors. No prop drilling for shared state. The `projectManagerStore` uses Zustand's `persist` middleware for localStorage persistence of project metadata, while project data (objects + modifiers) is stored separately at `react-finity-project-{id}` localStorage keys.
 - **Profile system**: All dimension constants come from `GridfinityProfile` objects (Official, Tight Fit, Loose Fit). Geometry generators receive the active profile, not raw constants.
 - **Properties panels**: One component per object kind (`BaseplateProperties`, `BinProperties`), following the same pattern of sliders/switches with label + value display. BinProperties includes a `ModifierSection` that renders modifier cards recursively.
 - **View mode system**: The app has two views — Edit (design with panels + viewport) and Print Layout (print bed preview + export). `activeView` in `uiStore` controls which view is rendered. The toolbar shows a toggle and conditionally renders view-specific controls.
-- **Export pipeline**: `mergeObjectGeometry.ts` merges an object with all its modifiers into a single `BufferGeometry`. `printOrientation.ts` computes the optimal FDM print rotation. `printLayout.ts` arranges objects on a virtual print bed. `stlExporter.ts` exports to binary STL with optional ZIP bundling.
+- **Export pipeline**: `mergeObjectGeometry.ts` merges an object with all its modifiers into a single `BufferGeometry`. `printOrientation.ts` computes the optimal FDM print rotation. `printLayout.ts` arranges objects on a virtual print bed. `stlExporter.ts` exports to binary STL with optional ZIP bundling and configurable scale factor.
 - **Shared geometry functions**: `generateModifierGeometry()` and `computeBinContext()` are defined in `src/engine/export/mergeObjectGeometry.ts` and imported by both `SceneObject.tsx` (for viewport rendering) and the export pipeline (for merging). Avoid duplicating these.
 - **Path alias**: `@/` maps to `src/` (configured in vite.config.ts and tsconfig)
 
@@ -163,5 +165,5 @@ See `ROADMAP.md` for the full project phases. Current status:
 - Phase 2: Bin Generation & Core Features — Complete
 - Phase 3: Interactivity & Manipulation — Complete
 - Phase 4: Modifier System & Advanced Geometry — Complete
-- Phase 5: Export & Print Layout — Complete (persistence deferred)
+- Phase 5: Export & Print Layout — Complete
 - Phase 6+: See ROADMAP.md

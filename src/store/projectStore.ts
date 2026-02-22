@@ -13,6 +13,7 @@ import type {
   InsertModifierParams,
   LidModifierParams,
   ModifierContext,
+  ProjectData,
 } from '@/types/gridfinity'
 import {
   DEFAULT_BASEPLATE_PARAMS,
@@ -44,6 +45,7 @@ interface ProjectStore {
   addModifier: (parentId: string, kind: ModifierKind) => string
   updateModifierParams: (id: string, params: AnyModifierParams) => void
   removeModifier: (id: string) => void
+  loadProjectData: (data: ProjectData) => void
   getModifiersForParent: (parentId: string) => Modifier[]
   getRootObjectId: (modifierId: string) => string | null
   getModifierContext: (parentId: string) => ModifierContext | null
@@ -73,6 +75,18 @@ function getDefaultModifierParams(kind: ModifierKind): Modifier['params'] {
     case 'lid':
       return { ...DEFAULT_LID_PARAMS }
   }
+}
+
+export function resetObjectCounter(objects: GridfinityObject[]): void {
+  let maxCounter = 0
+  for (const obj of objects) {
+    const match = obj.name.match(/\s(\d+)$/)
+    if (match) {
+      const n = parseInt(match[1], 10)
+      if (n > maxCounter) maxCounter = n
+    }
+  }
+  objectCounter = maxCounter
 }
 
 function collectDescendantModifierIds(modifiers: Modifier[], rootId: string): Set<string> {
@@ -162,6 +176,11 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
   clearObjects: () => {
     set({ objects: [], modifiers: [] })
+  },
+
+  loadProjectData: (data: ProjectData) => {
+    resetObjectCounter(data.objects)
+    set({ objects: data.objects, modifiers: data.modifiers })
   },
 
   addModifier: (parentId: string, kind: ModifierKind) => {

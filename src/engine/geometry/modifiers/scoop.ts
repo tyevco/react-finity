@@ -2,7 +2,7 @@ import * as THREE from 'three'
 
 import type { ScoopModifierParams, ModifierContext, GridfinityProfile } from '@/types/gridfinity'
 
-import { mergeGeometries } from '../primitives'
+import { mergeGeometries, getCurveSegments } from '../primitives'
 
 export function generateScoop(
   params: ScoopModifierParams,
@@ -19,7 +19,7 @@ export function generateScoop(
   // Create half-cylinder geometry
   const isXWall = wall === 'front' || wall === 'back'
   const span = isXWall ? innerWidth : innerDepth
-  const segments = 16
+  const segments = getCurveSegments() * 2
 
   // Build a half-cylinder as a custom geometry
   const geo = new THREE.CylinderGeometry(

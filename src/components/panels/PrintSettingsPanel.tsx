@@ -20,6 +20,7 @@ import { computePrintLayout, disposePrintLayout } from '@/engine/export/printLay
 import { mergeObjectWithModifiers } from '@/engine/export/mergeObjectGeometry'
 import { getPrintRotation, applyPrintOrientation } from '@/engine/export/printOrientation'
 import { exportObjectAsSTL, exportAllAsZip, exportAllAsSingleSTL } from '@/engine/export/stlExporter'
+import type { CurveQuality } from '@/types/gridfinity'
 
 export function PrintSettingsPanel() {
   const objects = useProjectStore((s) => s.objects)
@@ -29,6 +30,10 @@ export function PrintSettingsPanel() {
   const printBedSpacing = useUIStore((s) => s.printBedSpacing)
   const setPrintBedPreset = useUIStore((s) => s.setPrintBedPreset)
   const setPrintBedSpacing = useUIStore((s) => s.setPrintBedSpacing)
+  const exportScale = useUIStore((s) => s.exportScale)
+  const setExportScale = useUIStore((s) => s.setExportScale)
+  const curveQuality = useUIStore((s) => s.curveQuality)
+  const setCurveQuality = useUIStore((s) => s.setCurveQuality)
 
   const bed = PRINT_BED_PRESETS[printBedPreset] ?? PRINT_BED_PRESETS['256x256']
 
@@ -46,12 +51,12 @@ export function PrintSettingsPanel() {
 
   const handleExportAll = () => {
     if (layoutItems.length === 0) return
-    void exportAllAsZip(layoutItems)
+    void exportAllAsZip(layoutItems, exportScale)
   }
 
   const handleExportSingleSTL = () => {
     if (layoutItems.length === 0) return
-    exportAllAsSingleSTL(layoutItems)
+    exportAllAsSingleSTL(layoutItems, exportScale)
   }
 
   const handleExportOne = (objectId: string) => {
@@ -60,7 +65,7 @@ export function PrintSettingsPanel() {
     const merged = mergeObjectWithModifiers(obj, modifiers, activeProfile)
     const rotation = getPrintRotation(obj)
     const oriented = applyPrintOrientation(merged, rotation)
-    exportObjectAsSTL(oriented, obj.name)
+    exportObjectAsSTL(oriented, obj.name, exportScale)
     merged.dispose()
     oriented.dispose()
   }
@@ -105,6 +110,40 @@ export function PrintSettingsPanel() {
               onValueChange={([v]) => { setPrintBedSpacing(v) }}
               aria-label="Object spacing"
             />
+          </div>
+
+          <Separator />
+
+          {/* Export Settings */}
+          <div className="space-y-2">
+            <Label className="text-xs">Export Scale</Label>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {Math.round(exportScale * 100)}%
+              </span>
+            </div>
+            <Slider
+              min={0.1}
+              max={10}
+              step={0.1}
+              value={[exportScale]}
+              onValueChange={([v]) => { setExportScale(Math.round(v * 10) / 10) }}
+              aria-label="Export scale"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs">Polygon Quality</Label>
+            <Select value={curveQuality} onValueChange={(v) => { setCurveQuality(v as CurveQuality) }}>
+              <SelectTrigger className="h-8 text-xs" aria-label="Polygon quality">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <Separator />

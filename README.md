@@ -14,11 +14,14 @@ A browser-based parametric 3D modeling application for the [Gridfinity](https://
   - Lid -- flat or stacking lid variant
 - **Print Layout view** -- dedicated view with virtual print bed, automatic FDM-optimal orientation, and row-based object arrangement
 - **STL export** -- binary STL export of individual objects, all objects as ZIP, or merged plate STL
+- **Export settings** -- configurable export scale (0.1x-10x) and polygon quality (Low/Medium/High)
+- **Project management** -- save, load, rename, and delete projects with auto-save (2s debounce) and Ctrl+S
+- **Local storage persistence** -- projects saved as JSON to browser localStorage, auto-loaded on startup
 - **Print bed presets** -- configurable bed sizes (220x220, 256x256, 350x350mm) with spacing control
 - **Real-time 3D viewport** -- orbit camera, transform gizmo, grid snapping, measurement overlay
 - **Camera presets** -- top, front, side, and isometric views
 - **Dimension profiles** -- Official, Tight Fit, and Loose Fit presets for all Gridfinity dimensions
-- **Keyboard shortcuts** -- Delete/Backspace to remove, Escape to deselect, Ctrl+P for print layout, Ctrl+Shift+E to export
+- **Keyboard shortcuts** -- Delete/Backspace to remove, Escape to deselect, Ctrl+P for print layout, Ctrl+Shift+E to export, Ctrl+S to save
 
 ## Tech Stack
 

@@ -142,3 +142,21 @@ export interface PrintBedPreset {
   width: number // mm
   depth: number // mm
 }
+
+// --- Project persistence ---
+
+export interface ProjectMeta {
+  id: string
+  name: string
+  createdAt: string // ISO 8601
+  updatedAt: string // ISO 8601
+}
+
+export interface ProjectData {
+  objects: GridfinityObject[]
+  modifiers: Modifier[]
+}
+
+// --- Export settings ---
+
+export type CurveQuality = 'low' | 'medium' | 'high'

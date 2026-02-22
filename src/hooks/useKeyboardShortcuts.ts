@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
+import { useProjectManagerStore } from '@/store/projectManagerStore'
 import { mergeObjectWithModifiers } from '@/engine/export/mergeObjectGeometry'
 import { getPrintRotation, applyPrintOrientation } from '@/engine/export/printOrientation'
 import { exportObjectAsSTL } from '@/engine/export/stlExporter'
@@ -35,6 +36,12 @@ export function useKeyboardShortcuts() {
         selectObject(null)
       }
 
+      // Ctrl+S: Save project
+      if ((e.ctrlKey || e.metaKey) && e.key === 's' && !e.shiftKey) {
+        e.preventDefault()
+        useProjectManagerStore.getState().saveProject()
+      }
+
       // Ctrl+Shift+E: Export selected object as STL
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
         e.preventDefault()
@@ -44,10 +51,11 @@ export function useKeyboardShortcuts() {
           const profile = useProfileStore.getState().activeProfile
           const obj = objects.find((o) => o.id === selectedObjectId)
           if (obj) {
+            const scale = useUIStore.getState().exportScale
             const merged = mergeObjectWithModifiers(obj, modifiers, profile)
             const rotation = getPrintRotation(obj)
             const oriented = applyPrintOrientation(merged, rotation)
-            exportObjectAsSTL(oriented, obj.name)
+            exportObjectAsSTL(oriented, obj.name, scale)
             merged.dispose()
             oriented.dispose()
           }

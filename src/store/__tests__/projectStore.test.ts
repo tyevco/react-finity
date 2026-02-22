@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useProjectStore } from '../projectStore'
+import { useProjectStore, resetObjectCounter } from '../projectStore'
 
 describe('projectStore', () => {
   beforeEach(() => {
@@ -279,5 +279,98 @@ describe('modifier CRUD', () => {
   it('getModifierContext returns null for unknown parent', () => {
     const context = useProjectStore.getState().getModifierContext('nonexistent-id')
     expect(context).toBeNull()
+  })
+
+  it('loads project data with objects and modifiers', () => {
+    const data = {
+      objects: [
+        {
+          kind: 'bin' as const,
+          id: 'test-bin-1',
+          name: 'Bin 5',
+          position: [0, 0, 0] as [number, number, number],
+          params: {
+            gridWidth: 2,
+            gridDepth: 2,
+            heightUnits: 4,
+            stackingLip: true,
+            wallThickness: 1.2,
+            innerFillet: 0,
+          },
+        },
+      ],
+      modifiers: [
+        {
+          kind: 'dividerGrid' as const,
+          id: 'test-div-1',
+          parentId: 'test-bin-1',
+          params: { dividersX: 1, dividersY: 1, wallThickness: 1.2 },
+        },
+      ],
+    }
+
+    useProjectStore.getState().loadProjectData(data)
+    const state = useProjectStore.getState()
+    expect(state.objects).toHaveLength(1)
+    expect(state.objects[0].id).toBe('test-bin-1')
+    expect(state.modifiers).toHaveLength(1)
+    expect(state.modifiers[0].id).toBe('test-div-1')
+  })
+
+  it('resets object counter after loading project data', () => {
+    const data = {
+      objects: [
+        {
+          kind: 'bin' as const,
+          id: 'b1',
+          name: 'Bin 7',
+          position: [0, 0, 0] as [number, number, number],
+          params: {
+            gridWidth: 1,
+            gridDepth: 1,
+            heightUnits: 3,
+            stackingLip: true,
+            wallThickness: 1.2,
+            innerFillet: 0,
+          },
+        },
+        {
+          kind: 'baseplate' as const,
+          id: 'bp1',
+          name: 'Baseplate 3',
+          position: [0, 0, 0] as [number, number, number],
+          params: {
+            gridWidth: 3,
+            gridDepth: 3,
+            magnetHoles: true,
+            screwHoles: false,
+          },
+        },
+      ],
+      modifiers: [],
+    }
+
+    useProjectStore.getState().loadProjectData(data)
+
+    // Next object should get counter > 7 (the max in loaded data)
+    const id = useProjectStore.getState().addObject('bin')
+    const newObj = useProjectStore.getState().objects.find((o) => o.id === id)
+    expect(newObj).toBeDefined()
+    const nameNum = parseInt(newObj!.name.match(/\d+$/)?.[0] ?? '0', 10) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    expect(nameNum).toBe(8)
+  })
+
+  it('resetObjectCounter finds max from mixed names', () => {
+    resetObjectCounter([
+      { kind: 'bin', id: '1', name: 'Bin 10', position: [0, 0, 0], params: { gridWidth: 1, gridDepth: 1, heightUnits: 3, stackingLip: true, wallThickness: 1.2, innerFillet: 0 } },
+      { kind: 'baseplate', id: '2', name: 'Custom Name', position: [0, 0, 0], params: { gridWidth: 3, gridDepth: 3, magnetHoles: true, screwHoles: false } },
+      { kind: 'bin', id: '3', name: 'Bin 3', position: [0, 0, 0], params: { gridWidth: 1, gridDepth: 1, heightUnits: 3, stackingLip: true, wallThickness: 1.2, innerFillet: 0 } },
+    ])
+    // After reset to 10, next addObject should produce counter 11
+    const id = useProjectStore.getState().addObject('bin')
+    const obj = useProjectStore.getState().objects.find((o) => o.id === id)
+    expect(obj!.name).toMatch(/\d+$/) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const num = parseInt(obj!.name.match(/\d+$/)?.[0] ?? '0', 10) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    expect(num).toBe(11)
   })
 })

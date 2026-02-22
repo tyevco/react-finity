@@ -4,7 +4,9 @@ import type {
   LightingPreset,
   CameraPreset,
   AppView,
+  CurveQuality,
 } from '@/types/gridfinity'
+import { setCurveQuality as setPrimitivesCurveQuality } from '@/engine/geometry/primitives'
 
 interface UIStore {
   selectedObjectId: string | null
@@ -18,6 +20,8 @@ interface UIStore {
   activeView: AppView
   printBedPreset: string
   printBedSpacing: number
+  exportScale: number
+  curveQuality: CurveQuality
   selectObject: (id: string | null) => void
   toggleLeftPanel: () => void
   toggleRightPanel: () => void
@@ -31,6 +35,8 @@ interface UIStore {
   setActiveView: (view: AppView) => void
   setPrintBedPreset: (key: string) => void
   setPrintBedSpacing: (spacing: number) => void
+  setExportScale: (scale: number) => void
+  setCurveQuality: (quality: CurveQuality) => void
 }
 
 export const useUIStore = create<UIStore>()((set) => ({
@@ -45,6 +51,8 @@ export const useUIStore = create<UIStore>()((set) => ({
   activeView: 'edit',
   printBedPreset: '256x256',
   printBedSpacing: 10,
+  exportScale: 1.0,
+  curveQuality: 'medium',
 
   selectObject: (id) => {
     set({ selectedObjectId: id })
@@ -96,5 +104,14 @@ export const useUIStore = create<UIStore>()((set) => ({
 
   setPrintBedSpacing: (spacing) => {
     set({ printBedSpacing: spacing })
+  },
+
+  setExportScale: (scale) => {
+    set({ exportScale: scale })
+  },
+
+  setCurveQuality: (quality) => {
+    setPrimitivesCurveQuality(quality)
+    set({ curveQuality: quality })
   },
 }))

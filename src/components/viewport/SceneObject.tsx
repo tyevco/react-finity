@@ -51,9 +51,11 @@ interface ModifierMeshProps {
 }
 
 function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
+  const curveQuality = useUIStore((s) => s.curveQuality)
   const geometry = useMemo(() => {
     return generateModifierGeometry(modifier, context, profile)
-  }, [modifier, context, profile])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modifier, context, profile, curveQuality])
 
   // Compute child context for nested modifiers
   const childContext = useMemo((): ModifierContext | null => {
@@ -113,6 +115,7 @@ export function SceneObject({ object }: SceneObjectProps) {
   const selectedObjectId = useUIStore((s) => s.selectedObjectId)
   const selectObject = useUIStore((s) => s.selectObject)
 
+  const curveQuality = useUIStore((s) => s.curveQuality)
   const isSelected = selectedObjectId === object.id
 
   const geometry = useMemo(() => {
@@ -122,7 +125,8 @@ export function SceneObject({ object }: SceneObjectProps) {
       case 'bin':
         return generateBin(object.params, activeProfile)
     }
-  }, [object.kind, object.params, activeProfile])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [object.kind, object.params, activeProfile, curveQuality])
 
   const binContext = useMemo(() => {
     if (object.kind === 'bin') {

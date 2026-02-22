@@ -95,11 +95,11 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 
 ---
 
-## Phase 5: Export & Print Layout ✅ (partial)
+## Phase 5: Export & Print Layout ✅
 
-**Status:** Export & print layout complete; persistence deferred
+**Status:** Complete
 
-**Goal:** Export to 3D printing formats and print-ready visualization.
+**Goal:** Export to 3D printing formats, print-ready visualization, project persistence, and export settings.
 
 **Delivered:**
 - **Print Layout view** — dedicated view mode with virtual print bed visualization, switchable via toolbar toggle (Edit/Print) or Ctrl+P
@@ -111,15 +111,15 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 - **ZIP export** — export all objects as individually named STL files bundled in a ZIP
 - **Single plate STL** — export all objects merged at their layout positions as one STL file
 - **Print Settings panel** — bed size selector, spacing slider, per-object dimensions display, fit indicators, and export buttons
-- **Keyboard shortcuts** — Ctrl+Shift+E to export selected object, Ctrl+P to toggle Print Layout view
-- Unit tests for geometry merging, print orientation, layout algorithm, and STL export (27 tests)
-- E2E tests for print layout view and export functionality (22 tests)
+- **Keyboard shortcuts** — Ctrl+Shift+E to export selected object, Ctrl+P to toggle Print Layout view, Ctrl+S to save project
+- **Local storage persistence** — projects saved as JSON (parameters + modifiers, not geometry) to localStorage with auto-save (2s debounce after last change)
+- **Project management** — toolbar Project dropdown with New/Save/Save As/Manage. Manage Projects dialog for loading, renaming, and deleting saved projects. Projects auto-load on startup
+- **Export settings** — configurable export scale (0.1x-10x) and polygon quality (Low/Medium/High) in Print Settings panel
+- Unit tests for geometry merging, print orientation, layout algorithm, STL export, project manager store, and export settings (45+ tests)
+- E2E tests for print layout view, export functionality, project management, and export settings (39 tests)
 
 **Deferred to later phase:**
 - 3MF export via three-3mf-exporter
-- Local storage persistence — save/load projects as JSON
-- Project management — new, save, load, rename, delete
-- Export settings — scale, polygon quality
 
 ---
 

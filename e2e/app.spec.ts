@@ -5,8 +5,8 @@ test.describe('App Loading & Initial State', () => {
     await page.goto('/')
   })
 
-  test('renders the app title in the toolbar', async ({ page }) => {
-    await expect(page.getByText('React-Finity')).toBeVisible()
+  test('renders the project name in the toolbar', async ({ page }) => {
+    await expect(page.getByTestId('project-name')).toBeVisible()
   })
 
   test('shows the Add Object button', async ({ page }) => {

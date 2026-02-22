@@ -1,4 +1,21 @@
 import * as THREE from 'three'
+import type { CurveQuality } from '@/types/gridfinity'
+
+const QUALITY_SEGMENTS: Record<CurveQuality, number> = {
+  low: 4,
+  medium: 8,
+  high: 16,
+}
+
+let activeCurveSegments = QUALITY_SEGMENTS.medium
+
+export function setCurveQuality(quality: CurveQuality): void {
+  activeCurveSegments = QUALITY_SEGMENTS[quality]
+}
+
+export function getCurveSegments(): number {
+  return activeCurveSegments
+}
 
 /**
  * Create a 2D rounded rectangle shape.
@@ -36,6 +53,7 @@ export function extrudeShape(
     depth: height,
     bevelEnabled,
     steps: 1,
+    curveSegments: activeCurveSegments,
   })
   // ExtrudeGeometry extrudes along Z, rotate to extrude along Y
   geometry.rotateX(-Math.PI / 2)
@@ -50,7 +68,7 @@ export function extrudeShape(
 export function createCylinder(
   radius: number,
   height: number,
-  segments = 24,
+  segments = activeCurveSegments * 3,
 ): THREE.BufferGeometry {
   return new THREE.CylinderGeometry(radius, radius, height, segments)
 }

@@ -15,6 +15,8 @@ describe('uiStore', () => {
       activeView: 'edit',
       printBedPreset: '256x256',
       printBedSpacing: 10,
+      exportScale: 1.0,
+      curveQuality: 'medium',
     })
   })
 
@@ -132,5 +134,26 @@ describe('uiStore', () => {
     expect(useUIStore.getState().printBedSpacing).toBe(15)
     useUIStore.getState().setPrintBedSpacing(5)
     expect(useUIStore.getState().printBedSpacing).toBe(5)
+  })
+
+  it('has correct default export settings', () => {
+    expect(useUIStore.getState().exportScale).toBe(1.0)
+    expect(useUIStore.getState().curveQuality).toBe('medium')
+  })
+
+  it('sets export scale', () => {
+    useUIStore.getState().setExportScale(2.0)
+    expect(useUIStore.getState().exportScale).toBe(2.0)
+    useUIStore.getState().setExportScale(0.5)
+    expect(useUIStore.getState().exportScale).toBe(0.5)
+  })
+
+  it('sets curve quality', () => {
+    useUIStore.getState().setCurveQuality('low')
+    expect(useUIStore.getState().curveQuality).toBe('low')
+    useUIStore.getState().setCurveQuality('high')
+    expect(useUIStore.getState().curveQuality).toBe('high')
+    useUIStore.getState().setCurveQuality('medium')
+    expect(useUIStore.getState().curveQuality).toBe('medium')
   })
 })

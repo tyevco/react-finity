@@ -7,13 +7,27 @@ function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9_\-. ]/g, '_').trim() || 'object'
 }
 
-function geometryToSTLBinary(geometry: THREE.BufferGeometry): ArrayBuffer {
+function geometryToSTLBinary(geometry: THREE.BufferGeometry, scale = 1): ArrayBuffer {
   const exporter = new STLExporter()
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial())
+  let geo = geometry
+  let needsDispose = false
+
+  if (scale !== 1) {
+    geo = geometry.clone()
+    geo.scale(scale, scale, scale)
+    needsDispose = true
+  }
+
+  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial())
   const result = exporter.parse(mesh, { binary: true }) as DataView
   // Copy to a plain ArrayBuffer to satisfy BlobPart/JSZip type constraints
   const arrayBuffer = new ArrayBuffer(result.byteLength)
   new Uint8Array(arrayBuffer).set(new Uint8Array(result.buffer as ArrayBuffer))
+
+  if (needsDispose) {
+    geo.dispose()
+  }
+
   return arrayBuffer
 }
 
@@ -31,8 +45,8 @@ function triggerDownload(blob: Blob, filename: string): void {
 /**
  * Export a single geometry as a binary STL file download.
  */
-export function exportObjectAsSTL(geometry: THREE.BufferGeometry, name: string): void {
-  const buffer = geometryToSTLBinary(geometry)
+export function exportObjectAsSTL(geometry: THREE.BufferGeometry, name: string, scale = 1): void {
+  const buffer = geometryToSTLBinary(geometry, scale)
   const blob = new Blob([buffer], { type: 'application/octet-stream' })
   triggerDownload(blob, `${sanitizeFilename(name)}.stl`)
 }
@@ -40,11 +54,11 @@ export function exportObjectAsSTL(geometry: THREE.BufferGeometry, name: string):
 /**
  * Export all print layout items as individual STL files bundled in a ZIP.
  */
-export async function exportAllAsZip(items: PrintLayoutItem[]): Promise<void> {
+export async function exportAllAsZip(items: PrintLayoutItem[], scale = 1): Promise<void> {
   const zip = new JSZip()
 
   for (const item of items) {
-    const data = geometryToSTLBinary(item.geometry)
+    const data = geometryToSTLBinary(item.geometry, scale)
     const filename = `${sanitizeFilename(item.object.name)}.stl`
     zip.file(filename, data)
   }
@@ -57,7 +71,7 @@ export async function exportAllAsZip(items: PrintLayoutItem[]): Promise<void> {
  * Export all print layout items as a single merged STL with objects at
  * their layout positions.
  */
-export function exportAllAsSingleSTL(items: PrintLayoutItem[]): void {
+export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void {
   if (items.length === 0) return
 
   const geometries: THREE.BufferGeometry[] = []
@@ -124,7 +138,7 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[]): void {
   merged.setIndex(new THREE.BufferAttribute(indices, 1))
   merged.computeVertexNormals()
 
-  const buffer = geometryToSTLBinary(merged)
+  const buffer = geometryToSTLBinary(merged, scale)
   const blob = new Blob([buffer], { type: 'application/octet-stream' })
   triggerDownload(blob, 'react-finity-plate.stl')
 
