@@ -19,5 +19,4 @@ const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLI
 )
 Input.displayName = 'Input'
 
-// eslint-disable-next-line react-refresh/only-export-components
 export { Input }

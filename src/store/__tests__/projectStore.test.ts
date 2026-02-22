@@ -356,21 +356,53 @@ describe('modifier CRUD', () => {
     const id = useProjectStore.getState().addObject('bin')
     const newObj = useProjectStore.getState().objects.find((o) => o.id === id)
     expect(newObj).toBeDefined()
-    const nameNum = parseInt(newObj!.name.match(/\d+$/)?.[0] ?? '0', 10) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const nameNum = parseInt(/\d+$/.exec(newObj!.name)?.[0] ?? '0', 10) // eslint-disable-line @typescript-eslint/no-non-null-assertion
     expect(nameNum).toBe(8)
   })
 
   it('resetObjectCounter finds max from mixed names', () => {
     resetObjectCounter([
-      { kind: 'bin', id: '1', name: 'Bin 10', position: [0, 0, 0], params: { gridWidth: 1, gridDepth: 1, heightUnits: 3, stackingLip: true, wallThickness: 1.2, innerFillet: 0 } },
-      { kind: 'baseplate', id: '2', name: 'Custom Name', position: [0, 0, 0], params: { gridWidth: 3, gridDepth: 3, magnetHoles: true, screwHoles: false } },
-      { kind: 'bin', id: '3', name: 'Bin 3', position: [0, 0, 0], params: { gridWidth: 1, gridDepth: 1, heightUnits: 3, stackingLip: true, wallThickness: 1.2, innerFillet: 0 } },
+      {
+        kind: 'bin',
+        id: '1',
+        name: 'Bin 10',
+        position: [0, 0, 0],
+        params: {
+          gridWidth: 1,
+          gridDepth: 1,
+          heightUnits: 3,
+          stackingLip: true,
+          wallThickness: 1.2,
+          innerFillet: 0,
+        },
+      },
+      {
+        kind: 'baseplate',
+        id: '2',
+        name: 'Custom Name',
+        position: [0, 0, 0],
+        params: { gridWidth: 3, gridDepth: 3, magnetHoles: true, screwHoles: false },
+      },
+      {
+        kind: 'bin',
+        id: '3',
+        name: 'Bin 3',
+        position: [0, 0, 0],
+        params: {
+          gridWidth: 1,
+          gridDepth: 1,
+          heightUnits: 3,
+          stackingLip: true,
+          wallThickness: 1.2,
+          innerFillet: 0,
+        },
+      },
     ])
     // After reset to 10, next addObject should produce counter 11
     const id = useProjectStore.getState().addObject('bin')
     const obj = useProjectStore.getState().objects.find((o) => o.id === id)
     expect(obj!.name).toMatch(/\d+$/) // eslint-disable-line @typescript-eslint/no-non-null-assertion
-    const num = parseInt(obj!.name.match(/\d+$/)?.[0] ?? '0', 10) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const num = parseInt(/\d+$/.exec(obj!.name)?.[0] ?? '0', 10) // eslint-disable-line @typescript-eslint/no-non-null-assertion
     expect(num).toBe(11)
   })
 })

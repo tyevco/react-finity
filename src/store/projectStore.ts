@@ -80,7 +80,7 @@ function getDefaultModifierParams(kind: ModifierKind): Modifier['params'] {
 export function resetObjectCounter(objects: GridfinityObject[]): void {
   let maxCounter = 0
   for (const obj of objects) {
-    const match = obj.name.match(/\s(\d+)$/)
+    const match = /\s(\d+)$/.exec(obj.name)
     if (match) {
       const n = parseInt(match[1], 10)
       if (n > maxCounter) maxCounter = n

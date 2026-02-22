@@ -95,7 +95,6 @@ const DialogDescription = React.forwardRef<
 ))
 DialogDescription.displayName = DialogPrimitive.Description.displayName
 
-// eslint-disable-next-line react-refresh/only-export-components
 export {
   Dialog,
   DialogPortal,

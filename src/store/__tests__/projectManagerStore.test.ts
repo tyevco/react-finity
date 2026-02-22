@@ -4,14 +4,22 @@ import { useProjectStore } from '../projectStore'
 
 // Mock localStorage
 const localStorageMock = (() => {
-  let store: Record<string, string> = {}
+  let store = new Map<string, string>()
   return {
-    getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => { store[key] = value },
-    removeItem: (key: string) => { delete store[key] },
-    clear: () => { store = {} },
-    get length() { return Object.keys(store).length },
-    key: (index: number) => Object.keys(store)[index] ?? null,
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value)
+    },
+    removeItem: (key: string) => {
+      store.delete(key)
+    },
+    clear: () => {
+      store = new Map()
+    },
+    get length() {
+      return store.size
+    },
+    key: (index: number) => [...store.keys()][index] ?? null,
   }
 })()
 
@@ -57,7 +65,7 @@ describe('projectManagerStore', () => {
     // Verify localStorage has the data
     const raw = localStorageMock.getItem(`react-finity-project-${state.currentProjectId}`)
     expect(raw).not.toBeNull()
-    const data = JSON.parse(raw!)  // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const data = JSON.parse(raw!) as { objects: unknown[] } // eslint-disable-line @typescript-eslint/no-non-null-assertion
     expect(data.objects).toHaveLength(1)
   })
 
@@ -77,7 +85,7 @@ describe('projectManagerStore', () => {
     useProjectStore.getState().addObject('bin')
     useProjectManagerStore.getState().saveProjectAs('Test Project')
 
-    const savedId = useProjectManagerStore.getState().currentProjectId!  // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const savedId = useProjectManagerStore.getState().currentProjectId! // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
     // Clear project store to simulate a new project
     useProjectStore.setState({ objects: [], modifiers: [] })
@@ -116,7 +124,7 @@ describe('projectManagerStore', () => {
 
   it('renames a project', () => {
     useProjectManagerStore.getState().saveProjectAs('Original Name')
-    const id = useProjectManagerStore.getState().currentProjectId!  // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const id = useProjectManagerStore.getState().currentProjectId! // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
     useProjectManagerStore.getState().renameProject(id, 'New Name')
 
@@ -128,7 +136,7 @@ describe('projectManagerStore', () => {
   it('deletes a non-current project', () => {
     // Create two projects
     useProjectManagerStore.getState().saveProjectAs('Project 1')
-    const id1 = useProjectManagerStore.getState().currentProjectId!  // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const id1 = useProjectManagerStore.getState().currentProjectId! // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
     useProjectManagerStore.getState().saveProjectAs('Project 2')
 
@@ -146,7 +154,7 @@ describe('projectManagerStore', () => {
   it('deletes the current project and creates a new one', () => {
     useProjectStore.getState().addObject('bin')
     useProjectManagerStore.getState().saveProjectAs('To Delete')
-    const id = useProjectManagerStore.getState().currentProjectId!  // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const id = useProjectManagerStore.getState().currentProjectId! // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
     useProjectManagerStore.getState().deleteProject(id)
 
@@ -161,7 +169,7 @@ describe('projectManagerStore', () => {
     useProjectStore.getState().addObject('bin')
     useProjectManagerStore.getState().saveProject()
 
-    const projectId = useProjectManagerStore.getState().currentProjectId!  // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const projectId = useProjectManagerStore.getState().currentProjectId! // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
     // Manually mark dirty
     useProjectManagerStore.getState().markDirty()
