@@ -70,9 +70,7 @@ test.describe('Print Layout View', () => {
   test('shows empty state when no objects exist', async ({ page }) => {
     await page.getByRole('button', { name: 'Print layout view' }).click()
 
-    await expect(
-      page.getByText('No objects to export. Add objects in Edit view.'),
-    ).toBeVisible()
+    await expect(page.getByText('No objects to export. Add objects in Edit view.')).toBeVisible()
   })
 
   test('shows objects in print settings after adding in edit view', async ({ page }) => {
@@ -135,5 +133,55 @@ test.describe('Print Layout View', () => {
 
     // Verify selection changed (the trigger should show the new value)
     await expect(page.getByText('220 x 220 mm')).toBeVisible()
+  })
+
+  test('shows Export All (3MF) button in print settings', async ({ page }) => {
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Baseplate' }).click()
+
+    await page.getByRole('button', { name: 'Print layout view' }).click()
+
+    await expect(page.getByRole('button', { name: /Export All \(3MF\)/ })).toBeVisible()
+  })
+
+  test('Export All (3MF) is disabled when no objects exist', async ({ page }) => {
+    await page.getByRole('button', { name: 'Print layout view' }).click()
+
+    await expect(page.getByRole('button', { name: /Export All \(3MF\)/ })).toBeDisabled()
+  })
+
+  test('Export All (3MF) is enabled with objects on the plate', async ({ page }) => {
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Baseplate' }).click()
+
+    await page.getByRole('button', { name: 'Print layout view' }).click()
+
+    await expect(page.getByRole('button', { name: /Export All \(3MF\)/ })).toBeEnabled()
+  })
+
+  test('Export All (3MF) triggers download with .3mf extension', async ({ page }) => {
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Baseplate' }).click()
+
+    await page.getByRole('button', { name: 'Print layout view' }).click()
+
+    const downloadPromise = page.waitForEvent('download')
+    await page.getByRole('button', { name: /Export All \(3MF\)/ }).click()
+
+    const download = await downloadPromise
+    expect(download.suggestedFilename()).toBe('react-finity-plate.3mf')
+  })
+
+  test('per-object export dropdown shows STL and 3MF options', async ({ page }) => {
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Baseplate' }).click()
+
+    await page.getByRole('button', { name: 'Print layout view' }).click()
+
+    // Click the per-object export button to open format dropdown
+    await page.getByRole('button', { name: /Export Baseplate 1/ }).click()
+
+    await expect(page.getByRole('menuitem', { name: /Export as STL/ })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: /Export as 3MF/ })).toBeVisible()
   })
 })

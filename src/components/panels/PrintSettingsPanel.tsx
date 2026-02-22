@@ -12,6 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
@@ -24,6 +30,7 @@ import {
   exportAllAsZip,
   exportAllAsSingleSTL,
 } from '@/engine/export/stlExporter'
+import { exportObjectAs3MF, exportAllAs3MF } from '@/engine/export/threeMfExporter'
 import type { CurveQuality } from '@/types/gridfinity'
 
 export function PrintSettingsPanel() {
@@ -79,6 +86,22 @@ export function PrintSettingsPanel() {
     const rotation = getPrintRotation(obj)
     const oriented = applyPrintOrientation(merged, rotation)
     exportObjectAsSTL(oriented, obj.name, exportScale)
+    merged.dispose()
+    oriented.dispose()
+  }
+
+  const handleExportAll3MF = () => {
+    if (layoutItems.length === 0) return
+    void exportAllAs3MF(layoutItems, exportScale)
+  }
+
+  const handleExportOne3MF = (objectId: string) => {
+    const obj = objects.find((o) => o.id === objectId)
+    if (!obj) return
+    const merged = mergeObjectWithModifiers(obj, modifiers, activeProfile)
+    const rotation = getPrintRotation(obj)
+    const oriented = applyPrintOrientation(merged, rotation)
+    void exportObjectAs3MF(oriented, obj.name, exportScale)
     merged.dispose()
     oriented.dispose()
   }
@@ -196,17 +219,34 @@ export function PrintSettingsPanel() {
                         {item.boundingBox.height.toFixed(1)} mm
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 md:h-6 md:w-6"
-                      onClick={() => {
-                        handleExportOne(item.object.id)
-                      }}
-                      aria-label={`Export ${item.object.name}`}
-                    >
-                      <Download className="h-4 w-4 md:h-3 md:w-3" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 md:h-6 md:w-6"
+                          aria-label={`Export ${item.object.name}`}
+                        >
+                          <Download className="h-4 w-4 md:h-3 md:w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            handleExportOne(item.object.id)
+                          }}
+                        >
+                          Export as STL
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            handleExportOne3MF(item.object.id)
+                          }}
+                        >
+                          Export as 3MF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 ))}
               </div>
@@ -241,6 +281,16 @@ export function PrintSettingsPanel() {
             >
               <Download className="h-4 w-4" />
               Export Plate (Single STL)
+            </Button>
+            <Button
+              className="w-full gap-2"
+              variant="outline"
+              size="sm"
+              onClick={handleExportAll3MF}
+              disabled={layoutItems.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export All (3MF)
             </Button>
           </div>
         </div>

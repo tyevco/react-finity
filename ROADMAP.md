@@ -115,11 +115,9 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 - **Local storage persistence** — projects saved as JSON (parameters + modifiers, not geometry) to localStorage with auto-save (2s debounce after last change)
 - **Project management** — toolbar Project dropdown with New/Save/Save As/Manage. Manage Projects dialog for loading, renaming, and deleting saved projects. Projects auto-load on startup
 - **Export settings** — configurable export scale (0.1x-10x) and polygon quality (Low/Medium/High) in Print Settings panel
-- Unit tests for geometry merging, print orientation, layout algorithm, STL export, project manager store, and export settings (45+ tests)
-- E2E tests for print layout view, export functionality, project management, and export settings (39 tests)
-
-**Deferred to later phase:**
-- 3MF export via three-3mf-exporter
+- **3MF export** — single object and multi-object plate export in 3MF format using JSZip for OPC archive creation. Export Selected sub-menu (STL/3MF) in toolbar, per-object format dropdown and batch Export All (3MF) button in Print Settings panel
+- Unit tests for geometry merging, print orientation, layout algorithm, STL export, 3MF export, project manager store, and export settings (55+ tests)
+- E2E tests for print layout view, export functionality, project management, and export settings (45+ tests)
 
 ---
 

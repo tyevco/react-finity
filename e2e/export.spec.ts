@@ -12,17 +12,25 @@ test.describe('Export Functionality', () => {
   test('Export dropdown shows menu items', async ({ page }) => {
     await page.getByRole('button', { name: /Export/ }).click()
 
-    await expect(page.getByRole('menuitem', { name: /Export Selected/ })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: /Export Selected \(STL\)/ })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: /Export Selected \(3MF\)/ })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: /Open Print Layout/ })).toBeVisible()
   })
 
-  test('Export Selected is disabled when nothing is selected', async ({ page }) => {
+  test('Export Selected (STL) is disabled when nothing is selected', async ({ page }) => {
     await page.getByRole('button', { name: /Export/ }).click()
 
-    const exportSelected = page.getByRole('menuitem', { name: /Export Selected/ })
+    const exportSelected = page.getByRole('menuitem', { name: /Export Selected \(STL\)/ })
     await expect(exportSelected).toBeVisible()
-    // Disabled menu items have data-disabled attribute in radix
     await expect(exportSelected).toHaveAttribute('data-disabled')
+  })
+
+  test('Export Selected (3MF) is disabled when nothing is selected', async ({ page }) => {
+    await page.getByRole('button', { name: /Export/ }).click()
+
+    const export3mf = page.getByRole('menuitem', { name: /Export Selected \(3MF\)/ })
+    await expect(export3mf).toBeVisible()
+    await expect(export3mf).toHaveAttribute('data-disabled')
   })
 
   test('Open Print Layout switches to print view', async ({ page }) => {
@@ -33,7 +41,7 @@ test.describe('Export Functionality', () => {
     await expect(page.getByText('Print Settings')).toBeVisible()
   })
 
-  test('Export Selected is enabled after selecting an object', async ({ page }) => {
+  test('Export Selected (STL) is enabled after selecting an object', async ({ page }) => {
     // Add and select an object
     await page.getByRole('button', { name: /Add Object/i }).click()
     await page.getByRole('menuitem', { name: 'Baseplate' }).click()
@@ -41,12 +49,25 @@ test.describe('Export Functionality', () => {
     // Open export dropdown
     await page.getByRole('button', { name: /Export/ }).click()
 
-    // Export Selected should be enabled (no data-disabled attribute)
-    const exportSelected = page.getByRole('menuitem', { name: /Export Selected/ })
+    // Export Selected (STL) should be enabled (no data-disabled attribute)
+    const exportSelected = page.getByRole('menuitem', { name: /Export Selected \(STL\)/ })
     await expect(exportSelected).not.toHaveAttribute('data-disabled')
   })
 
-  test('Export triggers download for selected object', async ({ page }) => {
+  test('Export Selected (3MF) is enabled after selecting an object', async ({ page }) => {
+    // Add and select an object
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Baseplate' }).click()
+
+    // Open export dropdown
+    await page.getByRole('button', { name: /Export/ }).click()
+
+    // Export Selected (3MF) should be enabled (no data-disabled attribute)
+    const export3mf = page.getByRole('menuitem', { name: /Export Selected \(3MF\)/ })
+    await expect(export3mf).not.toHaveAttribute('data-disabled')
+  })
+
+  test('Export Selected (STL) triggers download with .stl extension', async ({ page }) => {
     // Add and select an object
     await page.getByRole('button', { name: /Add Object/i }).click()
     await page.getByRole('menuitem', { name: 'Baseplate' }).click()
@@ -54,13 +75,30 @@ test.describe('Export Functionality', () => {
     // Set up download listener
     const downloadPromise = page.waitForEvent('download')
 
-    // Export selected
+    // Export selected as STL
     await page.getByRole('button', { name: /Export/ }).click()
-    await page.getByRole('menuitem', { name: /Export Selected/ }).click()
+    await page.getByRole('menuitem', { name: /Export Selected \(STL\)/ }).click()
 
     // Should trigger a download
     const download = await downloadPromise
     expect(download.suggestedFilename()).toBe('Baseplate 1.stl')
+  })
+
+  test('Export Selected (3MF) triggers download with .3mf extension', async ({ page }) => {
+    // Add and select an object
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Baseplate' }).click()
+
+    // Set up download listener
+    const downloadPromise = page.waitForEvent('download')
+
+    // Export selected as 3MF
+    await page.getByRole('button', { name: /Export/ }).click()
+    await page.getByRole('menuitem', { name: /Export Selected \(3MF\)/ }).click()
+
+    // Should trigger a download
+    const download = await downloadPromise
+    expect(download.suggestedFilename()).toBe('Baseplate 1.3mf')
   })
 
   test('Ctrl+P toggles to print layout view', async ({ page }) => {

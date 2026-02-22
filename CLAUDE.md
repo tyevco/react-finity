@@ -40,6 +40,7 @@ src/
 │   │   ├── printOrientation.ts     # Optimal FDM print orientation per object kind
 │   │   ├── printLayout.ts          # Row-based print bed layout algorithm
 │   │   ├── stlExporter.ts          # STL binary export + ZIP download
+│   │   ├── threeMfExporter.ts      # 3MF export (single + multi-object)
 │   │   └── __tests__/     # Unit tests for export modules
 │   ├── constants.ts       # Dimension profiles, default params, print bed presets
 │   └── snapping.ts        # Grid snapping logic
@@ -64,7 +65,7 @@ docs/                      # Architecture decision records & research documents
 - **Profile system**: All dimension constants come from `GridfinityProfile` objects (Official, Tight Fit, Loose Fit). Geometry generators receive the active profile, not raw constants.
 - **Properties panels**: One component per object kind (`BaseplateProperties`, `BinProperties`), following the same pattern of sliders/switches with label + value display. BinProperties includes a `ModifierSection` that renders modifier cards recursively.
 - **View mode system**: The app has two views — Edit (design with panels + viewport) and Print Layout (print bed preview + export). `activeView` in `uiStore` controls which view is rendered. The toolbar shows a toggle and conditionally renders view-specific controls.
-- **Export pipeline**: `mergeObjectGeometry.ts` merges an object with all its modifiers into a single `BufferGeometry`. `printOrientation.ts` computes the optimal FDM print rotation. `printLayout.ts` arranges objects on a virtual print bed. `stlExporter.ts` exports to binary STL with optional ZIP bundling and configurable scale factor.
+- **Export pipeline**: `mergeObjectGeometry.ts` merges an object with all its modifiers into a single `BufferGeometry`. `printOrientation.ts` computes the optimal FDM print rotation. `printLayout.ts` arranges objects on a virtual print bed. `stlExporter.ts` exports to binary STL with optional ZIP bundling and configurable scale factor. `threeMfExporter.ts` exports to 3MF format using JSZip for OPC archive creation, sharing the same `PrintLayoutItem[]` interface as the STL exporter.
 - **Shared geometry functions**: `generateModifierGeometry()` and `computeBinContext()` are defined in `src/engine/export/mergeObjectGeometry.ts` and imported by both `SceneObject.tsx` (for viewport rendering) and the export pipeline (for merging). Avoid duplicating these.
 - **Responsive design**: The `md:` breakpoint (768px) divides mobile from desktop. The `useIsMobile()` hook in `src/hooks/useIsMobile.ts` provides JS-level detection via `matchMedia`. On mobile, panels render as Sheet overlays (`src/components/ui/sheet.tsx`) instead of inline sidebars; the toolbar collapses secondary actions (camera presets, snap-to-grid, viewport settings, project dropdown) into an overflow menu. All interactive elements use responsive Tailwind classes (e.g., `h-9 w-9 md:h-7 md:w-7`) to meet minimum touch target sizes on mobile.
 - **Path alias**: `@/` maps to `src/` (configured in vite.config.ts and tsconfig)

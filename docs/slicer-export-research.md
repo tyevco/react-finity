@@ -35,7 +35,11 @@ From `ROADMAP.md`:
 
 ---
 
-## Tier 1: 3MF Export
+## Tier 1: 3MF Export -- Implemented
+
+> Implemented in `src/engine/export/threeMfExporter.ts`. The API provides
+> `exportObjectAs3MF()` for single-object export and `exportAllAs3MF()` for
+> multi-object plate export. Both use JSZip to produce OPC-compliant archives.
 
 ### Format Overview
 
@@ -386,7 +390,7 @@ export async function openInSlicer(app: SlicerApp, filePath: string): Promise<vo
 
 ## Recommended Implementation Sequence
 
-### Tier 1 -- 3MF Export (next)
+### Tier 1 -- 3MF Export (complete)
 
 1. Create `src/engine/export/threeMfExporter.ts` with `geometryTo3MFModelXml()`, `exportObjectAs3MF()`, `exportAllAs3MF()`
 2. Add unit tests in `src/engine/export/__tests__/threeMfExporter.test.ts`

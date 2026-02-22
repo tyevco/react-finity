@@ -40,6 +40,7 @@ import { cn } from '@/lib/utils'
 import { mergeObjectWithModifiers } from '@/engine/export/mergeObjectGeometry'
 import { getPrintRotation, applyPrintOrientation } from '@/engine/export/printOrientation'
 import { exportObjectAsSTL } from '@/engine/export/stlExporter'
+import { exportObjectAs3MF } from '@/engine/export/threeMfExporter'
 import type { ViewportBackground, LightingPreset, CameraPreset } from '@/types/gridfinity'
 
 export function Toolbar() {
@@ -93,6 +94,19 @@ export function Toolbar() {
     const rotation = getPrintRotation(obj)
     const oriented = applyPrintOrientation(merged, rotation)
     exportObjectAsSTL(oriented, obj.name, exportScale)
+    merged.dispose()
+    oriented.dispose()
+  }
+
+  const handleExportSelected3MF = () => {
+    if (!selectedObjectId) return
+    const obj = objects.find((o) => o.id === selectedObjectId)
+    if (!obj) return
+
+    const merged = mergeObjectWithModifiers(obj, modifiers, activeProfile)
+    const rotation = getPrintRotation(obj)
+    const oriented = applyPrintOrientation(merged, rotation)
+    void exportObjectAs3MF(oriented, obj.name, exportScale)
     merged.dispose()
     oriented.dispose()
   }
@@ -307,6 +321,12 @@ export function Toolbar() {
               disabled={!selectedObjectId || !isEditView}
             >
               Export Selected (STL)
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleExportSelected3MF}
+              disabled={!selectedObjectId || !isEditView}
+            >
+              Export Selected (3MF)
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
