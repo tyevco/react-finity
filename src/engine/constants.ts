@@ -5,6 +5,7 @@ import type {
   ScoopModifierParams,
   InsertModifierParams,
   LidModifierParams,
+  PrintBedPreset,
 } from '@/types/gridfinity'
 
 export const PROFILE_OFFICIAL: GridfinityProfile = {
@@ -89,4 +90,10 @@ export const DEFAULT_INSERT_PARAMS: InsertModifierParams = {
 
 export const DEFAULT_LID_PARAMS: LidModifierParams = {
   stacking: false,
+}
+
+export const PRINT_BED_PRESETS: Record<string, PrintBedPreset> = {
+  '220x220': { name: '220 x 220 mm (Ender 3 / Prusa MK3)', width: 220, depth: 220 },
+  '256x256': { name: '256 x 256 mm (Bambu Lab A1/P1)', width: 256, depth: 256 },
+  '350x350': { name: '350 x 350 mm (Voron 350 / Large)', width: 350, depth: 350 },
 }

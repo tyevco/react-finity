@@ -1,20 +1,13 @@
 import { useMemo, useState } from 'react'
-import type { Mesh, BufferGeometry } from 'three'
+import type { Mesh } from 'three'
 import { Edges } from '@react-three/drei'
-import type {
-  GridfinityObject,
-  GridfinityProfile,
-  Modifier,
-  ModifierContext,
-  BinParams,
-} from '@/types/gridfinity'
+import type { GridfinityObject, GridfinityProfile, Modifier, ModifierContext } from '@/types/gridfinity'
 import { generateBaseplate } from '@/engine/geometry/baseplate'
 import { generateBin } from '@/engine/geometry/bin'
-import { generateDividerGrid } from '@/engine/geometry/modifiers/dividerGrid'
-import { generateLabelTab } from '@/engine/geometry/modifiers/labelTab'
-import { generateScoop } from '@/engine/geometry/modifiers/scoop'
-import { generateInsert } from '@/engine/geometry/modifiers/insert'
-import { generateLid } from '@/engine/geometry/modifiers/lid'
+import {
+  generateModifierGeometry,
+  computeBinContext,
+} from '@/engine/export/mergeObjectGeometry'
 import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
@@ -22,45 +15,6 @@ import { TransformGizmo } from './TransformGizmo'
 
 interface SceneObjectProps {
   object: GridfinityObject
-}
-
-function generateModifierGeometry(
-  modifier: Modifier,
-  context: ModifierContext,
-  profile: GridfinityProfile,
-): BufferGeometry | null {
-  switch (modifier.kind) {
-    case 'dividerGrid':
-      return generateDividerGrid(modifier.params, context, profile)
-    case 'labelTab':
-      return generateLabelTab(modifier.params, context, profile)
-    case 'scoop':
-      return generateScoop(modifier.params, context, profile)
-    case 'insert':
-      return generateInsert(modifier.params, context, profile)
-    case 'lid':
-      return generateLid(modifier.params, context, profile)
-  }
-}
-
-function computeBinContext(params: BinParams, profile: GridfinityProfile): ModifierContext {
-  const { gridWidth, gridDepth, heightUnits, wallThickness } = params
-  const { gridSize, heightUnit, tolerance, socketWallHeight } = profile
-
-  const outerWidth = gridWidth * gridSize - tolerance * 2
-  const outerDepth = gridDepth * gridSize - tolerance * 2
-  const innerWidth = outerWidth - wallThickness * 2
-  const innerDepth = outerDepth - wallThickness * 2
-  const wallHeight = heightUnits * heightUnit
-
-  return {
-    innerWidth,
-    innerDepth,
-    wallHeight,
-    floorY: socketWallHeight + wallThickness,
-    centerX: 0,
-    centerZ: 0,
-  }
 }
 
 interface ModifierMeshesProps {

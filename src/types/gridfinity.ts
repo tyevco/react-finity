@@ -132,3 +132,13 @@ export type Modifier =
 export type ViewportBackground = 'dark' | 'light' | 'neutral'
 export type LightingPreset = 'studio' | 'outdoor' | 'soft'
 export type CameraPreset = 'top' | 'front' | 'side' | 'isometric'
+
+// --- View mode ---
+
+export type AppView = 'edit' | 'printLayout'
+
+export interface PrintBedPreset {
+  name: string
+  width: number // mm
+  depth: number // mm
+}

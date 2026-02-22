@@ -1,0 +1,135 @@
+import * as THREE from 'three'
+import { STLExporter } from 'three/addons/exporters/STLExporter.js'
+import JSZip from 'jszip'
+import type { PrintLayoutItem } from './printLayout'
+
+function sanitizeFilename(name: string): string {
+  return name.replace(/[^a-zA-Z0-9_\-. ]/g, '_').trim() || 'object'
+}
+
+function geometryToSTLBinary(geometry: THREE.BufferGeometry): ArrayBuffer {
+  const exporter = new STLExporter()
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial())
+  const result = exporter.parse(mesh, { binary: true }) as DataView
+  // Copy to a plain ArrayBuffer to satisfy BlobPart/JSZip type constraints
+  const arrayBuffer = new ArrayBuffer(result.byteLength)
+  new Uint8Array(arrayBuffer).set(new Uint8Array(result.buffer as ArrayBuffer))
+  return arrayBuffer
+}
+
+function triggerDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+/**
+ * Export a single geometry as a binary STL file download.
+ */
+export function exportObjectAsSTL(geometry: THREE.BufferGeometry, name: string): void {
+  const buffer = geometryToSTLBinary(geometry)
+  const blob = new Blob([buffer], { type: 'application/octet-stream' })
+  triggerDownload(blob, `${sanitizeFilename(name)}.stl`)
+}
+
+/**
+ * Export all print layout items as individual STL files bundled in a ZIP.
+ */
+export async function exportAllAsZip(items: PrintLayoutItem[]): Promise<void> {
+  const zip = new JSZip()
+
+  for (const item of items) {
+    const data = geometryToSTLBinary(item.geometry)
+    const filename = `${sanitizeFilename(item.object.name)}.stl`
+    zip.file(filename, data)
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' })
+  triggerDownload(blob, 'react-finity-export.zip')
+}
+
+/**
+ * Export all print layout items as a single merged STL with objects at
+ * their layout positions.
+ */
+export function exportAllAsSingleSTL(items: PrintLayoutItem[]): void {
+  if (items.length === 0) return
+
+  const geometries: THREE.BufferGeometry[] = []
+
+  for (const item of items) {
+    const clone = item.geometry.clone()
+    const [x, y, z] = item.position
+    clone.translate(x, y, z)
+    geometries.push(clone)
+  }
+
+  // Merge all positioned geometries
+  const merged = new THREE.BufferGeometry()
+  let totalVertices = 0
+  let totalIndices = 0
+
+  for (const geo of geometries) {
+    totalVertices += geo.attributes.position.count
+    if (geo.index) {
+      totalIndices += geo.index.count
+    } else {
+      totalIndices += geo.attributes.position.count
+    }
+  }
+
+  const positions = new Float32Array(totalVertices * 3)
+  const normals = new Float32Array(totalVertices * 3)
+  const indices = new Uint32Array(totalIndices)
+
+  let vertexOffset = 0
+  let indexOffset = 0
+
+  for (const geo of geometries) {
+    const posAttr = geo.attributes.position as THREE.BufferAttribute
+    const normAttr = geo.attributes.normal as THREE.BufferAttribute | undefined
+
+    for (let i = 0; i < posAttr.count * 3; i++) {
+      positions[vertexOffset * 3 + i] = posAttr.array[i]
+    }
+
+    if (normAttr) {
+      for (let i = 0; i < normAttr.count * 3; i++) {
+        normals[vertexOffset * 3 + i] = normAttr.array[i]
+      }
+    }
+
+    if (geo.index) {
+      for (let i = 0; i < geo.index.count; i++) {
+        indices[indexOffset + i] = geo.index.array[i] + vertexOffset
+      }
+      indexOffset += geo.index.count
+    } else {
+      for (let i = 0; i < posAttr.count; i++) {
+        indices[indexOffset + i] = vertexOffset + i
+      }
+      indexOffset += posAttr.count
+    }
+
+    vertexOffset += posAttr.count
+  }
+
+  merged.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3))
+  merged.setIndex(new THREE.BufferAttribute(indices, 1))
+  merged.computeVertexNormals()
+
+  const buffer = geometryToSTLBinary(merged)
+  const blob = new Blob([buffer], { type: 'application/octet-stream' })
+  triggerDownload(blob, 'react-finity-plate.stl')
+
+  merged.dispose()
+  for (const geo of geometries) {
+    geo.dispose()
+  }
+}

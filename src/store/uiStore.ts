@@ -1,5 +1,10 @@
 import { create } from 'zustand'
-import type { ViewportBackground, LightingPreset, CameraPreset } from '@/types/gridfinity'
+import type {
+  ViewportBackground,
+  LightingPreset,
+  CameraPreset,
+  AppView,
+} from '@/types/gridfinity'
 
 interface UIStore {
   selectedObjectId: string | null
@@ -10,6 +15,9 @@ interface UIStore {
   cameraPreset: CameraPreset | null
   snapToGrid: boolean
   showMeasurements: boolean
+  activeView: AppView
+  printBedPreset: string
+  printBedSpacing: number
   selectObject: (id: string | null) => void
   toggleLeftPanel: () => void
   toggleRightPanel: () => void
@@ -20,6 +28,9 @@ interface UIStore {
   setCameraPreset: (preset: CameraPreset | null) => void
   toggleSnapToGrid: () => void
   toggleShowMeasurements: () => void
+  setActiveView: (view: AppView) => void
+  setPrintBedPreset: (key: string) => void
+  setPrintBedSpacing: (spacing: number) => void
 }
 
 export const useUIStore = create<UIStore>()((set) => ({
@@ -31,6 +42,9 @@ export const useUIStore = create<UIStore>()((set) => ({
   cameraPreset: null,
   snapToGrid: true,
   showMeasurements: true,
+  activeView: 'edit',
+  printBedPreset: '256x256',
+  printBedSpacing: 10,
 
   selectObject: (id) => {
     set({ selectedObjectId: id })
@@ -70,5 +84,17 @@ export const useUIStore = create<UIStore>()((set) => ({
 
   toggleShowMeasurements: () => {
     set((state) => ({ showMeasurements: !state.showMeasurements }))
+  },
+
+  setActiveView: (view) => {
+    set({ activeView: view })
+  },
+
+  setPrintBedPreset: (key) => {
+    set({ printBedPreset: key })
+  },
+
+  setPrintBedSpacing: (spacing) => {
+    set({ printBedSpacing: spacing })
   },
 }))

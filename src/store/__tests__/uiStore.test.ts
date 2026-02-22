@@ -12,6 +12,9 @@ describe('uiStore', () => {
       cameraPreset: null,
       snapToGrid: true,
       showMeasurements: true,
+      activeView: 'edit',
+      printBedPreset: '256x256',
+      printBedSpacing: 10,
     })
   })
 
@@ -105,5 +108,29 @@ describe('uiStore', () => {
     expect(useUIStore.getState().showMeasurements).toBe(false)
     useUIStore.getState().toggleShowMeasurements()
     expect(useUIStore.getState().showMeasurements).toBe(true)
+  })
+
+  it('sets active view', () => {
+    expect(useUIStore.getState().activeView).toBe('edit')
+    useUIStore.getState().setActiveView('printLayout')
+    expect(useUIStore.getState().activeView).toBe('printLayout')
+    useUIStore.getState().setActiveView('edit')
+    expect(useUIStore.getState().activeView).toBe('edit')
+  })
+
+  it('sets print bed preset', () => {
+    expect(useUIStore.getState().printBedPreset).toBe('256x256')
+    useUIStore.getState().setPrintBedPreset('220x220')
+    expect(useUIStore.getState().printBedPreset).toBe('220x220')
+    useUIStore.getState().setPrintBedPreset('350x350')
+    expect(useUIStore.getState().printBedPreset).toBe('350x350')
+  })
+
+  it('sets print bed spacing', () => {
+    expect(useUIStore.getState().printBedSpacing).toBe(10)
+    useUIStore.getState().setPrintBedSpacing(15)
+    expect(useUIStore.getState().printBedSpacing).toBe(15)
+    useUIStore.getState().setPrintBedSpacing(5)
+    expect(useUIStore.getState().printBedSpacing).toBe(5)
   })
 })

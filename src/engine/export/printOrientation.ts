@@ -1,0 +1,69 @@
+import * as THREE from 'three'
+import type { GridfinityObject } from '@/types/gridfinity'
+
+/**
+ * Get the optimal print rotation for an object kind.
+ *
+ * - Baseplates: no rotation (flat bottom already faces down)
+ * - Bins: 180 degrees around X axis (flip upside-down so the open top
+ *   faces the print bed and the flat bottom faces up, avoiding internal
+ *   cavity overhangs for FDM printing)
+ */
+export function getPrintRotation(object: GridfinityObject): THREE.Euler {
+  switch (object.kind) {
+    case 'baseplate':
+      return new THREE.Euler(0, 0, 0)
+    case 'bin':
+      return new THREE.Euler(Math.PI, 0, 0)
+  }
+}
+
+/**
+ * Compute the bounding box of a geometry after applying a rotation,
+ * then translate so the minimum Y sits at 0 (on the print bed).
+ *
+ * Returns { box, yOffset } where yOffset is the translation needed.
+ */
+export function getOrientedBounds(
+  geometry: THREE.BufferGeometry,
+  rotation: THREE.Euler,
+): { width: number; depth: number; height: number; yOffset: number } {
+  const clone = geometry.clone()
+  const matrix = new THREE.Matrix4().makeRotationFromEuler(rotation)
+  clone.applyMatrix4(matrix)
+  clone.computeBoundingBox()
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const box = clone.boundingBox!
+
+  const width = box.max.x - box.min.x
+  const depth = box.max.z - box.min.z
+  const height = box.max.y - box.min.y
+  const yOffset = -box.min.y
+
+  clone.dispose()
+
+  return { width, depth, height, yOffset }
+}
+
+/**
+ * Apply print orientation to a geometry: rotate and translate so it
+ * sits flat on the print bed (min Y = 0).
+ *
+ * Returns a new geometry; the original is not modified.
+ */
+export function applyPrintOrientation(
+  geometry: THREE.BufferGeometry,
+  rotation: THREE.Euler,
+): THREE.BufferGeometry {
+  const oriented = geometry.clone()
+  const rotMatrix = new THREE.Matrix4().makeRotationFromEuler(rotation)
+  oriented.applyMatrix4(rotMatrix)
+  oriented.computeBoundingBox()
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const minY = oriented.boundingBox!.min.y
+  if (Math.abs(minY) > 0.001) {
+    const translateMatrix = new THREE.Matrix4().makeTranslation(0, -minY, 0)
+    oriented.applyMatrix4(translateMatrix)
+  }
+  return oriented
+}

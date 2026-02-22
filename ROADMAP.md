@@ -95,20 +95,31 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 
 ---
 
-## Phase 5: Export & Persistence 🔲
+## Phase 5: Export & Print Layout ✅ (partial)
 
-**Status:** Planned
+**Status:** Export & print layout complete; persistence deferred
 
-**Goal:** Export to 3D printing formats and save/load projects.
+**Goal:** Export to 3D printing formats and print-ready visualization.
 
-**Deliverables:**
-- STL export (binary) via Three.js STLExporter — single object or entire scene
+**Delivered:**
+- **Print Layout view** — dedicated view mode with virtual print bed visualization, switchable via toolbar toggle (Edit/Print) or Ctrl+P
+- **Print bed presets** — configurable bed size (220x220mm, 256x256mm, 350x350mm) with grid overlay
+- **Automatic print orientation** — objects oriented optimally for FDM printing (bins flipped upside-down, baseplates flat)
+- **Row-based object arrangement** — objects laid out on the print bed with configurable spacing (5-30mm), sorted by depth for efficient packing
+- **Geometry merging** — each object's modifiers are recursively merged into a single geometry for export
+- **STL export (binary)** — export individual objects or all objects via the Export dropdown or Print Settings panel
+- **ZIP export** — export all objects as individually named STL files bundled in a ZIP
+- **Single plate STL** — export all objects merged at their layout positions as one STL file
+- **Print Settings panel** — bed size selector, spacing slider, per-object dimensions display, fit indicators, and export buttons
+- **Keyboard shortcuts** — Ctrl+Shift+E to export selected object, Ctrl+P to toggle Print Layout view
+- Unit tests for geometry merging, print orientation, layout algorithm, and STL export (27 tests)
+- E2E tests for print layout view and export functionality (22 tests)
+
+**Deferred to later phase:**
 - 3MF export via three-3mf-exporter
-- Local storage persistence — save/load projects as JSON (parameters + modifiers, not geometry)
+- Local storage persistence — save/load projects as JSON
 - Project management — new, save, load, rename, delete
-- Export settings — scale, orientation, polygon quality
-- ZIP download for multi-object exports
-- Ensure modifier geometries are merged/included in exports
+- Export settings — scale, polygon quality
 
 ---
 
@@ -159,7 +170,6 @@ Items that may be explored beyond the core roadmap:
 - **Parametric templates** — saveable parameter presets (e.g., "battery organizer", "screwdriver holder")
 - **Multi-material 3MF** — assign different colors/materials to bin sections
 - **Import reference geometry** — load STL/STEP files to design holders around existing tools
-- **Print plate layout** — arrange multiple objects on a virtual print bed
 - **Slicer integration** — direct export to PrusaSlicer/OrcaSlicer via CLI
 - **Collaborative editing** — real-time multi-user design sessions
 - **Mobile companion** — measure tools with phone camera, send dimensions to desktop

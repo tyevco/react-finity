@@ -12,10 +12,13 @@ A browser-based parametric 3D modeling application for the [Gridfinity](https://
   - Scoop -- curved cutout for easy part access
   - Insert -- open-top compartment grid with rim and internal walls
   - Lid -- flat or stacking lid variant
+- **Print Layout view** -- dedicated view with virtual print bed, automatic FDM-optimal orientation, and row-based object arrangement
+- **STL export** -- binary STL export of individual objects, all objects as ZIP, or merged plate STL
+- **Print bed presets** -- configurable bed sizes (220x220, 256x256, 350x350mm) with spacing control
 - **Real-time 3D viewport** -- orbit camera, transform gizmo, grid snapping, measurement overlay
 - **Camera presets** -- top, front, side, and isometric views
 - **Dimension profiles** -- Official, Tight Fit, and Loose Fit presets for all Gridfinity dimensions
-- **Keyboard shortcuts** -- Delete/Backspace to remove objects, Escape to deselect
+- **Keyboard shortcuts** -- Delete/Backspace to remove, Escape to deselect, Ctrl+P for print layout, Ctrl+Shift+E to export
 
 ## Tech Stack
 
@@ -91,6 +94,7 @@ src/
   engine/
     geometry/             Parametric geometry generators
       modifiers/          Modifier geometry generators
+    export/               Export & print layout utilities
     constants.ts          Dimension profiles & default params
     snapping.ts           Grid snapping logic
   hooks/                  Custom React hooks
@@ -108,7 +112,7 @@ See [ROADMAP.md](ROADMAP.md) for the full development plan. Current status:
 - Phase 2: Bin Generation & Core Features -- Complete
 - Phase 3: Interactivity & Manipulation -- Complete
 - Phase 4: Modifier System & Advanced Geometry -- Complete
-- Phase 5: Export & Persistence -- Planned
+- Phase 5: Export & Print Layout -- Complete
 - Phase 6: Polish & Advanced UX -- Planned
 - Phase 7: Desktop App (Tauri) -- Planned
 

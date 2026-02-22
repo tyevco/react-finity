@@ -25,9 +25,9 @@ React-Finity is a browser-based parametric 3D modeling app for the Gridfinity mo
 src/
 ├── app/                    # App entry point & layout
 ├── components/
-│   ├── panels/            # Left (object list) & right (properties) panels
+│   ├── panels/            # Left (object list) & right (properties/print settings) panels
 │   │   └── modifiers/     # Per-modifier control components
-│   ├── viewport/          # 3D viewport (React Three Fiber canvas)
+│   ├── viewport/          # 3D viewport (React Three Fiber canvas) + print layout viewport
 │   ├── toolbar/           # Top toolbar
 │   └── ui/                # shadcn/ui primitives
 ├── engine/
@@ -35,7 +35,13 @@ src/
 │   │   ├── modifiers/     # Modifier geometry generators (divider, label, scoop, insert, lid)
 │   │   └── __tests__/     # Unit tests for geometry
 │   │       └── modifiers/ # Unit tests for modifier geometry
-│   ├── constants.ts       # Dimension profiles & default params
+│   ├── export/            # Export & print layout utilities
+│   │   ├── mergeObjectGeometry.ts  # Merge object + modifiers into single geometry
+│   │   ├── printOrientation.ts     # Optimal FDM print orientation per object kind
+│   │   ├── printLayout.ts          # Row-based print bed layout algorithm
+│   │   ├── stlExporter.ts          # STL binary export + ZIP download
+│   │   └── __tests__/     # Unit tests for export modules
+│   ├── constants.ts       # Dimension profiles, default params, print bed presets
 │   └── snapping.ts        # Grid snapping logic
 ├── hooks/                 # Custom React hooks (keyboard shortcuts)
 ├── store/                 # Zustand stores (project, UI, profile)
@@ -54,6 +60,9 @@ e2e/                       # Playwright e2e tests
 - **Zustand stores** are the single source of truth. Components read from stores via selectors. No prop drilling for shared state.
 - **Profile system**: All dimension constants come from `GridfinityProfile` objects (Official, Tight Fit, Loose Fit). Geometry generators receive the active profile, not raw constants.
 - **Properties panels**: One component per object kind (`BaseplateProperties`, `BinProperties`), following the same pattern of sliders/switches with label + value display. BinProperties includes a `ModifierSection` that renders modifier cards recursively.
+- **View mode system**: The app has two views — Edit (design with panels + viewport) and Print Layout (print bed preview + export). `activeView` in `uiStore` controls which view is rendered. The toolbar shows a toggle and conditionally renders view-specific controls.
+- **Export pipeline**: `mergeObjectGeometry.ts` merges an object with all its modifiers into a single `BufferGeometry`. `printOrientation.ts` computes the optimal FDM print rotation. `printLayout.ts` arranges objects on a virtual print bed. `stlExporter.ts` exports to binary STL with optional ZIP bundling.
+- **Shared geometry functions**: `generateModifierGeometry()` and `computeBinContext()` are defined in `src/engine/export/mergeObjectGeometry.ts` and imported by both `SceneObject.tsx` (for viewport rendering) and the export pipeline (for merging). Avoid duplicating these.
 - **Path alias**: `@/` maps to `src/` (configured in vite.config.ts and tsconfig)
 
 ### Adding a New Object Kind
@@ -154,4 +163,5 @@ See `ROADMAP.md` for the full project phases. Current status:
 - Phase 2: Bin Generation & Core Features — Complete
 - Phase 3: Interactivity & Manipulation — Complete
 - Phase 4: Modifier System & Advanced Geometry — Complete
-- Phase 5+: See ROADMAP.md
+- Phase 5: Export & Print Layout — Complete (persistence deferred)
+- Phase 6+: See ROADMAP.md
