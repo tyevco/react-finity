@@ -176,6 +176,7 @@ Research documents and architecture decision records live in the `docs/` directo
 - `docs/slicer-export-research.md` — Slicer export integration (3MF format, slicer deep links, CLI integration)
 - `docs/extensible-framework-design.md` — Extensible object/modifier framework (registry pattern, plugin architecture, schema-driven UI)
 - `docs/image-to-3d-cutouts-architecture.md` — Image-to-3D tool conversion (silhouette extrusion, AI depth estimation) and finger access modifier
+- `docs/ios-lidar-workspace-scanner.md` — iOS companion app with LiDAR workspace scanning and Gridfinity configuration recommendation
 
 ## Roadmap
 

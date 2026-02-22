@@ -170,5 +170,5 @@ Items that may be explored beyond the core roadmap:
 - **Import reference geometry** — load STL/STEP files to design holders around existing tools
 - **Slicer integration** — direct export to PrusaSlicer/OrcaSlicer via CLI
 - **Collaborative editing** — real-time multi-user design sessions
-- **Mobile companion** — measure tools with phone camera, send dimensions to desktop
+- **Mobile companion** — iOS LiDAR workspace scanner to measure physical spaces and recommend Gridfinity configurations (see `docs/ios-lidar-workspace-scanner.md`)
 - **Accessibility** — full keyboard navigation, screen reader support for the parameter panels
