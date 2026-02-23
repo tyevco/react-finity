@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-import * as THREE from 'three'
+import { Euler } from 'three'
 import { getPrintRotation, getOrientedBounds, applyPrintOrientation } from '../printOrientation'
 import { generateBaseplate } from '../../geometry/baseplate'
 import { generateBin } from '../../geometry/bin'
@@ -124,7 +124,7 @@ describe('applyPrintOrientation', () => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const originalMinY = geo.boundingBox!.min.y
 
-    const rotation = new THREE.Euler(Math.PI, 0, 0)
+    const rotation = new Euler(Math.PI, 0, 0)
     const oriented = applyPrintOrientation(geo, rotation)
 
     geo.computeBoundingBox()

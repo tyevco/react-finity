@@ -1,4 +1,5 @@
-import * as THREE from 'three'
+import type { BufferGeometry } from 'three'
+import { Shape } from 'three'
 
 import type { BinParams, GridfinityProfile } from '@/types/gridfinity'
 
@@ -18,7 +19,7 @@ import {
  * 3. Interior floor — solid slab at the base of the hollow interior
  * 4. Stacking lip (optional) — raised rim at top edge for bin stacking
  */
-export function generateBin(params: BinParams, profile: GridfinityProfile): THREE.BufferGeometry {
+export function generateBin(params: BinParams, profile: GridfinityProfile): BufferGeometry {
   const { gridWidth, gridDepth, heightUnits, stackingLip, wallThickness, innerFillet } = params
   const { gridSize, heightUnit, binCornerRadius, tolerance, socketWallHeight, stackingLipHeight } =
     profile
@@ -37,7 +38,7 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): THRE
   const innerDepth = outerDepth - wt * 2
   const innerRadius = Math.max(0.1, cornerRadius - wt)
 
-  const geometries: THREE.BufferGeometry[] = []
+  const geometries: BufferGeometry[] = []
 
   // === 1. Base plugs (one per grid cell) ===
   // Two-tiered stepped profile matching the baseplate socket:
@@ -118,7 +119,7 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): THRE
     const floorY = socketWallHeight + wt
 
     // Chamfer strip cross-section: right triangle with legs = filletR
-    const chamferShape = new THREE.Shape()
+    const chamferShape = new Shape()
     chamferShape.moveTo(0, 0)
     chamferShape.lineTo(filletR, 0)
     chamferShape.lineTo(0, filletR)

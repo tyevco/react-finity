@@ -1,4 +1,4 @@
-import type * as THREE from 'three'
+import type { BufferGeometry } from 'three'
 import JSZip from 'jszip'
 import type { PrintLayoutItem } from './printLayout'
 import { sanitizeFilename, triggerDownload } from './exportUtils'
@@ -12,7 +12,7 @@ function escapeXml(str: string): string {
     .replace(/'/g, '&apos;')
 }
 
-function geometryToMeshXml(geometry: THREE.BufferGeometry, scale: number): string {
+function geometryToMeshXml(geometry: BufferGeometry, scale: number): string {
   const positions = geometry.attributes.position
   const parts: string[] = []
 
@@ -117,7 +117,7 @@ async function build3MFBlob(modelXml: string): Promise<Blob> {
  * Scale defaults to 1 since 3MF declares unit="millimeter" explicitly.
  */
 export async function exportObjectAs3MF(
-  geometry: THREE.BufferGeometry,
+  geometry: BufferGeometry,
   name: string,
   scale = 1,
 ): Promise<void> {
@@ -140,7 +140,7 @@ export async function exportObjectAs3MF(
 export async function exportAllAs3MF(items: PrintLayoutItem[], scale = 1): Promise<void> {
   if (items.length === 0) return
 
-  const clones: THREE.BufferGeometry[] = []
+  const clones: BufferGeometry[] = []
 
   try {
     const objects: ModelObject[] = []

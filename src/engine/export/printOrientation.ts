@@ -1,4 +1,5 @@
-import * as THREE from 'three'
+import { Matrix4 } from 'three'
+import type { BufferGeometry, Euler } from 'three'
 import type { GridfinityObject } from '@/types/gridfinity'
 import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
 
@@ -6,7 +7,7 @@ import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
  * Get the optimal print rotation for an object kind.
  * Delegates to the registered object kind's getPrintRotation function.
  */
-export function getPrintRotation(object: GridfinityObject): THREE.Euler {
+export function getPrintRotation(object: GridfinityObject): Euler {
   const reg = objectKindRegistry.getOrThrow(object.kind)
   return reg.getPrintRotation(object.params as unknown as Record<string, unknown>)
 }
@@ -18,11 +19,11 @@ export function getPrintRotation(object: GridfinityObject): THREE.Euler {
  * Returns { box, yOffset } where yOffset is the translation needed.
  */
 export function getOrientedBounds(
-  geometry: THREE.BufferGeometry,
-  rotation: THREE.Euler,
+  geometry: BufferGeometry,
+  rotation: Euler,
 ): { width: number; depth: number; height: number; yOffset: number } {
   const clone = geometry.clone()
-  const matrix = new THREE.Matrix4().makeRotationFromEuler(rotation)
+  const matrix = new Matrix4().makeRotationFromEuler(rotation)
   clone.applyMatrix4(matrix)
   clone.computeBoundingBox()
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -44,18 +45,15 @@ export function getOrientedBounds(
  *
  * Returns a new geometry; the original is not modified.
  */
-export function applyPrintOrientation(
-  geometry: THREE.BufferGeometry,
-  rotation: THREE.Euler,
-): THREE.BufferGeometry {
+export function applyPrintOrientation(geometry: BufferGeometry, rotation: Euler): BufferGeometry {
   const oriented = geometry.clone()
-  const rotMatrix = new THREE.Matrix4().makeRotationFromEuler(rotation)
+  const rotMatrix = new Matrix4().makeRotationFromEuler(rotation)
   oriented.applyMatrix4(rotMatrix)
   oriented.computeBoundingBox()
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const minY = oriented.boundingBox!.min.y
   if (Math.abs(minY) > 0.001) {
-    const translateMatrix = new THREE.Matrix4().makeTranslation(0, -minY, 0)
+    const translateMatrix = new Matrix4().makeTranslation(0, -minY, 0)
     oriented.applyMatrix4(translateMatrix)
   }
   return oriented

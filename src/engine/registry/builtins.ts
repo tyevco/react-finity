@@ -1,4 +1,4 @@
-import * as THREE from 'three'
+import { Euler } from 'three'
 import { Grid3x3, Box } from 'lucide-react'
 import { objectKindRegistry } from './objectKindRegistry'
 import { modifierKindRegistry } from './modifierKindRegistry'
@@ -84,7 +84,7 @@ export function registerBuiltinKinds(): void {
     defaultParams: { ...DEFAULT_BASEPLATE_PARAMS },
     generateGeometry: generateBaseplate,
     getDimensions: getBaseplateDimensions,
-    getPrintRotation: () => new THREE.Euler(0, 0, 0),
+    getPrintRotation: () => new Euler(0, 0, 0),
     supportsModifiers: false,
     PropertiesComponent: asPropertiesComponent(BaseplateProperties),
   })
@@ -96,7 +96,7 @@ export function registerBuiltinKinds(): void {
     defaultParams: { ...DEFAULT_BIN_PARAMS },
     generateGeometry: generateBin,
     getDimensions: getBinDimensions,
-    getPrintRotation: () => new THREE.Euler(0, 0, 0),
+    getPrintRotation: () => new Euler(0, 0, 0),
     supportsModifiers: true,
     getDefaultPosition: (profile) => [0, profile.baseplateHeight - profile.socketWallHeight, 0],
     computeModifierContext: computeBinModifierContext,

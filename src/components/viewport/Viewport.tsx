@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import * as THREE from 'three'
+import { Plane, Vector3 } from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, GizmoHelper, GizmoViewport } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -80,7 +80,7 @@ function SectionPlane() {
   const sectionPlaneY = useUIStore((s) => s.sectionPlaneY)
 
   const clippingPlane = useMemo(
-    () => new THREE.Plane(new THREE.Vector3(0, -1, 0), sectionPlaneY),
+    () => new Plane(new Vector3(0, -1, 0), sectionPlaneY),
     [sectionPlaneY],
   )
 

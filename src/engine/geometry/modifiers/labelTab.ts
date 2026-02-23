@@ -1,4 +1,5 @@
-import * as THREE from 'three'
+import type { BufferGeometry } from 'three'
+import { Shape } from 'three'
 
 import type { LabelTabModifierParams, ModifierContext, GridfinityProfile } from '@/types/gridfinity'
 
@@ -8,7 +9,7 @@ export function generateLabelTab(
   params: LabelTabModifierParams,
   context: ModifierContext,
   _profile: GridfinityProfile,
-): THREE.BufferGeometry {
+): BufferGeometry {
   const { wall, angle, height } = params
   const { innerWidth, innerDepth, wallHeight, floorY, centerX, centerZ } = context
 
@@ -18,7 +19,7 @@ export function generateLabelTab(
   const tabDepthVal = height / Math.tan(angleRad)
 
   // Triangular cross-section (right triangle in Y-Z plane)
-  const wedgeShape = new THREE.Shape()
+  const wedgeShape = new Shape()
   wedgeShape.moveTo(0, 0)
   wedgeShape.lineTo(0, height)
   wedgeShape.lineTo(tabDepthVal, 0)

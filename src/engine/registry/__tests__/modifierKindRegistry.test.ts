@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import * as THREE from 'three'
+import { BufferGeometry } from 'three'
 import { modifierKindRegistry } from '../modifierKindRegistry'
 import type { ModifierKindRegistration } from '../types'
 import type { ModifierContext } from '@/types/gridfinity'
@@ -13,7 +13,7 @@ function makeRegistration(
     label: kind,
     color: '#aabbcc',
     defaultParams: {},
-    generateGeometry: () => new THREE.BufferGeometry(),
+    generateGeometry: () => new BufferGeometry(),
     subdividesSpace: false,
     ...overrides,
   }

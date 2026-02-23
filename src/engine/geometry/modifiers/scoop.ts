@@ -1,4 +1,5 @@
-import * as THREE from 'three'
+import type { BufferGeometry } from 'three'
+import { CylinderGeometry } from 'three'
 
 import type { ScoopModifierParams, ModifierContext, GridfinityProfile } from '@/types/gridfinity'
 
@@ -8,7 +9,7 @@ export function generateScoop(
   params: ScoopModifierParams,
   context: ModifierContext,
   _profile: GridfinityProfile,
-): THREE.BufferGeometry {
+): BufferGeometry {
   const { wall, radius: explicitRadius } = params
   const { innerWidth, innerDepth, wallHeight, floorY, centerX, centerZ } = context
 
@@ -22,7 +23,7 @@ export function generateScoop(
   const segments = getCurveSegments() * 2
 
   // Build a half-cylinder as a custom geometry
-  const geo = new THREE.CylinderGeometry(
+  const geo = new CylinderGeometry(
     clampedRadius,
     clampedRadius,
     span,

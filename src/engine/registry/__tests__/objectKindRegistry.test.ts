@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import * as THREE from 'three'
+import { BufferGeometry, Euler } from 'three'
 import { Grid3x3 } from 'lucide-react'
 import { objectKindRegistry } from '../objectKindRegistry'
 import type { ObjectKindRegistration } from '../types'
@@ -10,9 +10,9 @@ function makeRegistration(kind: string): ObjectKindRegistration {
     label: kind.charAt(0).toUpperCase() + kind.slice(1),
     icon: Grid3x3,
     defaultParams: { width: 1, depth: 1 },
-    generateGeometry: () => new THREE.BufferGeometry(),
+    generateGeometry: () => new BufferGeometry(),
     getDimensions: () => ({ width: 42, depth: 42, height: 7 }),
-    getPrintRotation: () => new THREE.Euler(0, 0, 0),
+    getPrintRotation: () => new Euler(0, 0, 0),
     supportsModifiers: false,
   }
 }

@@ -1,4 +1,4 @@
-import * as THREE from 'three'
+import { BufferGeometry, Path } from 'three'
 
 import type { InsertModifierParams, ModifierContext, GridfinityProfile } from '@/types/gridfinity'
 
@@ -13,9 +13,9 @@ function createHollowExtrusion(
   innerWidth: number,
   innerDepth: number,
   height: number,
-): THREE.BufferGeometry {
+): BufferGeometry {
   const shape = roundedRectShape(outerWidth, outerDepth, 0)
-  const holePath = new THREE.Path()
+  const holePath = new Path()
   const hw = innerWidth / 2
   const hd = innerDepth / 2
   // Clockwise winding for hole
@@ -32,11 +32,11 @@ export function generateInsert(
   params: InsertModifierParams,
   context: ModifierContext,
   _profile: GridfinityProfile,
-): THREE.BufferGeometry {
+): BufferGeometry {
   const { compartmentsX, compartmentsY, wallThickness } = params
   const { innerWidth, innerDepth, wallHeight, floorY, centerX, centerZ } = context
 
-  const geometries: THREE.BufferGeometry[] = []
+  const geometries: BufferGeometry[] = []
 
   // Outer rim
   const rimInnerWidth = innerWidth - wallThickness * 2
@@ -73,7 +73,7 @@ export function generateInsert(
   }
 
   if (geometries.length === 0) {
-    return new THREE.BufferGeometry()
+    return new BufferGeometry()
   }
 
   const result = mergeGeometries(geometries)

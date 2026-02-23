@@ -1,4 +1,4 @@
-import * as THREE from 'three'
+import { BufferGeometry } from 'three'
 
 import type {
   DividerGridModifierParams,
@@ -12,15 +12,15 @@ export function generateDividerGrid(
   params: DividerGridModifierParams,
   context: ModifierContext,
   _profile: GridfinityProfile,
-): THREE.BufferGeometry {
+): BufferGeometry {
   const { dividersX, dividersY, wallThickness } = params
   const { innerWidth, innerDepth, wallHeight, floorY, centerX, centerZ } = context
 
   if (dividersX === 0 && dividersY === 0) {
-    return new THREE.BufferGeometry()
+    return new BufferGeometry()
   }
 
-  const geometries: THREE.BufferGeometry[] = []
+  const geometries: BufferGeometry[] = []
 
   // Dividers along X axis (walls spanning depth)
   for (let i = 0; i < dividersX; i++) {

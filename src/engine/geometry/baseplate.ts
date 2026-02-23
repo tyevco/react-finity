@@ -1,4 +1,5 @@
-import * as THREE from 'three'
+import type { BufferGeometry } from 'three'
+import { CylinderGeometry } from 'three'
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg'
 
 import type { BaseplateParams, GridfinityProfile } from '@/types/gridfinity'
@@ -24,7 +25,7 @@ import {
 export function generateBaseplate(
   params: BaseplateParams,
   profile: GridfinityProfile,
-): THREE.BufferGeometry {
+): BufferGeometry {
   const { gridWidth, gridDepth, magnetHoles, screwHoles } = params
   const {
     gridSize,
@@ -42,7 +43,7 @@ export function generateBaseplate(
   const cellCornerRadius = Math.max(0.1, baseplateCornerRadius - tolerance)
   const slabHeight = baseplateHeight - socketWallHeight
 
-  const geometries: THREE.BufferGeometry[] = []
+  const geometries: BufferGeometry[] = []
 
   // === Layer 1: Solid base slab ===
   const slabShape = roundedRectShape(totalWidth, totalDepth, baseplateCornerRadius)
@@ -99,7 +100,7 @@ export function generateBaseplate(
 
   // === Layer 4: CSG subtraction for magnet/screw holes ===
   if (magnetHoles || screwHoles) {
-    const holeGeometries: THREE.BufferGeometry[] = []
+    const holeGeometries: BufferGeometry[] = []
     const segments = getCurveSegments() * 3
 
     for (let gx = 0; gx < gridWidth; gx++) {
@@ -120,7 +121,7 @@ export function generateBaseplate(
             const magnetRadius = profile.magnetDiameter / 2
             const magnetDepth = profile.magnetDepth
             const overshoot = 0.1 // extend below Y=0 to avoid coplanar CSG artifacts
-            const magnetGeo = new THREE.CylinderGeometry(
+            const magnetGeo = new CylinderGeometry(
               magnetRadius,
               magnetRadius,
               magnetDepth + overshoot,
@@ -134,12 +135,7 @@ export function generateBaseplate(
           if (screwHoles) {
             const screwRadius = profile.screwDiameter / 2
             const screwDepth = slabHeight + 0.1 // slight overshoot for clean cut
-            const screwGeo = new THREE.CylinderGeometry(
-              screwRadius,
-              screwRadius,
-              screwDepth,
-              segments,
-            )
+            const screwGeo = new CylinderGeometry(screwRadius, screwRadius, screwDepth, segments)
             // Through-holes in slab
             screwGeo.translate(hx, screwDepth / 2, hz)
             holeGeometries.push(screwGeo)

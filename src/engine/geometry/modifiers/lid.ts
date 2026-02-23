@@ -1,4 +1,5 @@
-import * as THREE from 'three'
+import type { BufferGeometry } from 'three'
+import { Path } from 'three'
 
 import type { LidModifierParams, ModifierContext, GridfinityProfile } from '@/types/gridfinity'
 
@@ -17,12 +18,12 @@ function createHollowExtrusion(
   innerDepth: number,
   innerRadius: number,
   height: number,
-): THREE.BufferGeometry {
+): BufferGeometry {
   const shape = roundedRectShape(outerWidth, outerDepth, outerRadius)
   const r = Math.min(innerRadius, innerWidth / 2, innerDepth / 2)
   const hw = innerWidth / 2
   const hd = innerDepth / 2
-  const holePath = new THREE.Path()
+  const holePath = new Path()
 
   holePath.moveTo(-hw + r, -hd)
   holePath.quadraticCurveTo(-hw, -hd, -hw, -hd + r)
@@ -42,7 +43,7 @@ export function generateLid(
   params: LidModifierParams,
   context: ModifierContext,
   profile: GridfinityProfile,
-): THREE.BufferGeometry {
+): BufferGeometry {
   const { stacking } = params
   const { innerWidth, innerDepth, wallHeight, floorY, centerX, centerZ } = context
   const { binCornerRadius, stackingLipHeight } = profile
@@ -54,7 +55,7 @@ export function generateLid(
   const lidDepth = innerDepth + 2
   const lidTopY = floorY + wallHeight
 
-  const geometries: THREE.BufferGeometry[] = []
+  const geometries: BufferGeometry[] = []
 
   // Main slab
   const slabShape = roundedRectShape(lidWidth, lidDepth, binCornerRadius)

@@ -1,4 +1,4 @@
-import * as THREE from 'three'
+import { Euler } from 'three'
 import type { BufferGeometry } from 'three'
 import type { GridfinityObject, GridfinityProfile, Modifier } from '@/types/gridfinity'
 import { mergeObjectWithModifiers, collectSeparatePartModifiers } from './mergeObjectGeometry'
@@ -56,7 +56,7 @@ export function computePrintLayout(
       const kindReg = modifierKindRegistry.get(modifier.kind)
       const kindLabel = kindReg?.label ?? modifier.kind
       // Lids print upside-down (flat top on bed)
-      const partRotation = new THREE.Euler(Math.PI, 0, 0)
+      const partRotation = new Euler(Math.PI, 0, 0)
       const partOriented = applyPrintOrientation(geometry, partRotation)
       const partBounds = getOrientedBounds(geometry, partRotation)
       geometry.dispose()

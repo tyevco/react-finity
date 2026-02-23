@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import * as THREE from 'three'
+import { GridHelper, DoubleSide, PlaneGeometry } from 'three'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, GizmoHelper, GizmoViewport } from '@react-three/drei'
 import { useProjectStore } from '@/store/projectStore'
@@ -17,7 +17,7 @@ function PrintBed({ width, depth }: { width: number; depth: number }) {
     const divisionsZ = Math.floor(depth / gridSize)
     const divisions = Math.max(divisionsX, divisionsZ)
     const size = Math.max(width, depth)
-    const grid = new THREE.GridHelper(size, divisions, '#444444', '#333333')
+    const grid = new GridHelper(size, divisions, '#444444', '#333333')
     grid.position.set(width / 2, 0, depth / 2)
     return grid
   }, [width, depth])
@@ -27,12 +27,12 @@ function PrintBed({ width, depth }: { width: number; depth: number }) {
       {/* Bed surface */}
       <mesh position={[width / 2, -0.1, depth / 2]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[width, depth]} />
-        <meshStandardMaterial color="#2a2a3e" transparent opacity={0.8} side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#2a2a3e" transparent opacity={0.8} side={DoubleSide} />
       </mesh>
 
       {/* Bed outline */}
       <lineSegments position={[width / 2, 0.05, depth / 2]}>
-        <edgesGeometry args={[new THREE.PlaneGeometry(width, depth)]} />
+        <edgesGeometry args={[new PlaneGeometry(width, depth)]} />
         <lineBasicMaterial color="#6b9bd2" linewidth={2} />
       </lineSegments>
 

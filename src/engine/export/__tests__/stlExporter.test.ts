@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import * as THREE from 'three'
+import { BufferGeometry, BufferAttribute } from 'three'
 import { exportObjectAsSTL, exportAllAsSingleSTL } from '../stlExporter'
 import { generateBaseplate } from '../../geometry/baseplate'
 import { PROFILE_OFFICIAL } from '../../constants'
@@ -32,12 +32,12 @@ beforeEach(() => {
   vi.spyOn(document.body, 'removeChild').mockImplementation(() => mockLink as unknown as Node)
 })
 
-function makeTestGeometry(): THREE.BufferGeometry {
-  const geometry = new THREE.BufferGeometry()
+function makeTestGeometry(): BufferGeometry {
+  const geometry = new BufferGeometry()
   const vertices = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
   const normals = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1])
-  geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3))
-  geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3))
+  geometry.setAttribute('position', new BufferAttribute(vertices, 3))
+  geometry.setAttribute('normal', new BufferAttribute(normals, 3))
   geometry.setIndex([0, 1, 2])
   return geometry
 }

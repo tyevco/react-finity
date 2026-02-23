@@ -1,10 +1,10 @@
-import * as THREE from 'three'
+import { BufferGeometry, Mesh, MeshBasicMaterial, BufferAttribute } from 'three'
 import { STLExporter } from 'three/addons/exporters/STLExporter.js'
 import JSZip from 'jszip'
 import type { PrintLayoutItem } from './printLayout'
 import { sanitizeFilename, triggerDownload } from './exportUtils'
 
-function geometryToSTLBinary(geometry: THREE.BufferGeometry, scale = 1): ArrayBuffer {
+function geometryToSTLBinary(geometry: BufferGeometry, scale = 1): ArrayBuffer {
   const exporter = new STLExporter()
   let geo = geometry
   let needsDispose = false
@@ -15,7 +15,7 @@ function geometryToSTLBinary(geometry: THREE.BufferGeometry, scale = 1): ArrayBu
     needsDispose = true
   }
 
-  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial())
+  const mesh = new Mesh(geo, new MeshBasicMaterial())
   const result = exporter.parse(mesh, { binary: true }) as DataView
   // Copy to a plain ArrayBuffer to satisfy BlobPart/JSZip type constraints
   const arrayBuffer = new ArrayBuffer(result.byteLength)
@@ -31,7 +31,7 @@ function geometryToSTLBinary(geometry: THREE.BufferGeometry, scale = 1): ArrayBu
 /**
  * Export a single geometry as a binary STL file download.
  */
-export function exportObjectAsSTL(geometry: THREE.BufferGeometry, name: string, scale = 1): void {
+export function exportObjectAsSTL(geometry: BufferGeometry, name: string, scale = 1): void {
   const buffer = geometryToSTLBinary(geometry, scale)
   const blob = new Blob([buffer], { type: 'application/octet-stream' })
   triggerDownload(blob, `${sanitizeFilename(name)}.stl`)
@@ -65,8 +65,8 @@ export async function exportAllAsZip(items: PrintLayoutItem[], scale = 1): Promi
 export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void {
   if (items.length === 0) return
 
-  const geometries: THREE.BufferGeometry[] = []
-  let merged: THREE.BufferGeometry | null = null
+  const geometries: BufferGeometry[] = []
+  let merged: BufferGeometry | null = null
 
   try {
     for (const item of items) {
@@ -77,7 +77,7 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
     }
 
     // Merge all positioned geometries
-    merged = new THREE.BufferGeometry()
+    merged = new BufferGeometry()
     let totalVertices = 0
     let totalIndices = 0
 
@@ -98,8 +98,8 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
     let indexOffset = 0
 
     for (const geo of geometries) {
-      const posAttr = geo.attributes.position as THREE.BufferAttribute
-      const normAttr = geo.attributes.normal as THREE.BufferAttribute | undefined
+      const posAttr = geo.attributes.position as BufferAttribute
+      const normAttr = geo.attributes.normal as BufferAttribute | undefined
 
       for (let i = 0; i < posAttr.count * 3; i++) {
         positions[vertexOffset * 3 + i] = posAttr.array[i]
@@ -126,9 +126,9 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
       vertexOffset += posAttr.count
     }
 
-    merged.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3))
-    merged.setIndex(new THREE.BufferAttribute(indices, 1))
+    merged.setAttribute('position', new BufferAttribute(positions, 3))
+    merged.setAttribute('normal', new BufferAttribute(normals, 3))
+    merged.setIndex(new BufferAttribute(indices, 1))
     merged.computeVertexNormals()
 
     const buffer = geometryToSTLBinary(merged, scale)

@@ -1,4 +1,11 @@
-import * as THREE from 'three'
+import {
+  Shape,
+  Path,
+  ExtrudeGeometry,
+  CylinderGeometry,
+  BufferGeometry,
+  BufferAttribute,
+} from 'three'
 import type { CurveQuality } from '@/types/gridfinity'
 
 const QUALITY_SEGMENTS: Record<CurveQuality, number> = {
@@ -21,11 +28,11 @@ export function getCurveSegments(): number {
  * Create a 2D rounded rectangle shape.
  * Origin is at the center of the rectangle.
  */
-export function roundedRectShape(width: number, depth: number, radius: number): THREE.Shape {
+export function roundedRectShape(width: number, depth: number, radius: number): Shape {
   const r = Math.min(radius, width / 2, depth / 2)
   const hw = width / 2
   const hd = depth / 2
-  const shape = new THREE.Shape()
+  const shape = new Shape()
 
   shape.moveTo(-hw + r, -hd)
   shape.lineTo(hw - r, -hd)
@@ -44,12 +51,8 @@ export function roundedRectShape(width: number, depth: number, radius: number): 
  * Extrude a shape to a given height.
  * Returns geometry centered at the XZ plane with bottom at y=0.
  */
-export function extrudeShape(
-  shape: THREE.Shape,
-  height: number,
-  bevelEnabled = false,
-): THREE.BufferGeometry {
-  const geometry = new THREE.ExtrudeGeometry(shape, {
+export function extrudeShape(shape: Shape, height: number, bevelEnabled = false): BufferGeometry {
+  const geometry = new ExtrudeGeometry(shape, {
     depth: height,
     bevelEnabled,
     steps: 1,
@@ -69,19 +72,19 @@ export function createCylinder(
   radius: number,
   height: number,
   segments = activeCurveSegments * 3,
-): THREE.BufferGeometry {
-  return new THREE.CylinderGeometry(radius, radius, height, segments)
+): BufferGeometry {
+  return new CylinderGeometry(radius, radius, height, segments)
 }
 
 /**
  * Create a rounded rectangle Path (clockwise winding) for use as a hole
- * in a THREE.Shape. Opposite winding to roundedRectShape (CCW).
+ * in a Shape. Opposite winding to roundedRectShape (CCW).
  */
-export function roundedRectHolePath(width: number, depth: number, radius: number): THREE.Path {
+export function roundedRectHolePath(width: number, depth: number, radius: number): Path {
   const r = Math.min(radius, width / 2, depth / 2)
   const hw = width / 2
   const hd = depth / 2
-  const path = new THREE.Path()
+  const path = new Path()
 
   // Clockwise: BL→left edge up→TL→top edge right→TR→right edge down→BR→bottom edge left
   path.moveTo(-hw + r, -hd)
@@ -107,11 +110,11 @@ export function roundedRectHolePathAt(
   radius: number,
   cx: number,
   cz: number,
-): THREE.Path {
+): Path {
   const r = Math.min(radius, width / 2, depth / 2)
   const hw = width / 2
   const hd = depth / 2
-  const path = new THREE.Path()
+  const path = new Path()
 
   path.moveTo(cx - hw + r, cz - hd)
   path.quadraticCurveTo(cx - hw, cz - hd, cx - hw, cz - hd + r)
@@ -138,7 +141,7 @@ export function createHollowExtrusion(
   innerDepth: number,
   innerRadius: number,
   height: number,
-): THREE.BufferGeometry {
+): BufferGeometry {
   const shape = roundedRectShape(outerWidth, outerDepth, outerRadius)
   shape.holes.push(roundedRectHolePath(innerWidth, innerDepth, innerRadius))
   return extrudeShape(shape, height)
@@ -147,8 +150,8 @@ export function createHollowExtrusion(
 /**
  * Merge multiple geometries into one.
  */
-export function mergeGeometries(geometries: THREE.BufferGeometry[]): THREE.BufferGeometry {
-  const merged = new THREE.BufferGeometry()
+export function mergeGeometries(geometries: BufferGeometry[]): BufferGeometry {
+  const merged = new BufferGeometry()
   if (geometries.length === 0) return merged
 
   let totalVertices = 0
@@ -171,8 +174,8 @@ export function mergeGeometries(geometries: THREE.BufferGeometry[]): THREE.Buffe
   let indexOffset = 0
 
   for (const geo of geometries) {
-    const posAttr = geo.attributes.position as THREE.BufferAttribute
-    const normAttr = geo.attributes.normal as THREE.BufferAttribute | undefined
+    const posAttr = geo.attributes.position as BufferAttribute
+    const normAttr = geo.attributes.normal as BufferAttribute | undefined
 
     // Copy positions
     for (let i = 0; i < posAttr.count * 3; i++) {
@@ -202,9 +205,9 @@ export function mergeGeometries(geometries: THREE.BufferGeometry[]): THREE.Buffe
     vertexOffset += posAttr.count
   }
 
-  merged.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3))
-  merged.setIndex(new THREE.BufferAttribute(indices, 1))
+  merged.setAttribute('position', new BufferAttribute(positions, 3))
+  merged.setAttribute('normal', new BufferAttribute(normals, 3))
+  merged.setIndex(new BufferAttribute(indices, 1))
   merged.computeVertexNormals()
 
   return merged
