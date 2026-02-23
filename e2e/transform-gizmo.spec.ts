@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { addBaseplate, addBin } from './fixtures'
+import { addBaseplate, addBin, clickObjectInList } from './fixtures'
 
 test.describe('Transform Gizmo', () => {
   test.beforeEach(async ({ page }) => {
@@ -41,11 +41,11 @@ test.describe('Transform Gizmo', () => {
     await addBin(page)
 
     // Select baseplate
-    await page.locator('.group').getByText('Baseplate 1').click()
+    await clickObjectInList(page, 'Baseplate 1')
     await expect(page.getByText('(baseplate)')).toBeVisible()
 
     // Select bin
-    await page.locator('.group').getByText('Bin 2').click()
+    await clickObjectInList(page, 'Bin 2')
     await expect(page.getByText('(bin)')).toBeVisible()
 
     // Canvas should still be rendered

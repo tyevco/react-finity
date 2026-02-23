@@ -1,10 +1,5 @@
 import { test, expect } from '@playwright/test'
-import type { Page } from '@playwright/test'
-
-async function addBin(page: Page) {
-  await page.getByRole('button', { name: /Add Object/i }).click()
-  await page.getByRole('menuitem', { name: 'Bin' }).click()
-}
+import { addBin } from './fixtures'
 
 test.describe('Undo/Redo', () => {
   test.beforeEach(async ({ page }) => {

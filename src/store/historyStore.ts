@@ -145,9 +145,14 @@ useProjectStore.subscribe((state, prevState) => {
   }, DEBOUNCE_MS)
 })
 
-// Clear history when project changes (new project or load project)
+// Clear history when switching projects (new project or load project).
+// Skip when currentProjectId changes from null (initial auto-save assigns an ID
+// but that should not wipe the user's undo history).
 useProjectManagerStore.subscribe((state, prevState) => {
-  if (state.currentProjectId !== prevState.currentProjectId) {
+  if (
+    state.currentProjectId !== prevState.currentProjectId &&
+    prevState.currentProjectId !== null
+  ) {
     if (debounceTimer) {
       clearTimeout(debounceTimer)
       debounceTimer = null

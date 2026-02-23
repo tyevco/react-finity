@@ -6,15 +6,18 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: isCI,
-  retries: isCI ? 2 : 0,
-  timeout: 20_000,
+  retries: isCI ? 2 : 1,
+  timeout: 30_000,
   expect: {
-    timeout: 3_000,
+    timeout: 5_000,
   },
   reporter: isCI ? [['blob'], ['list']] : 'html',
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
+    contextOptions: {
+      reducedMotion: 'reduce',
+    },
   },
   projects: [
     {

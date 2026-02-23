@@ -102,8 +102,10 @@ test.describe('Properties Panel', () => {
     const selectTrigger = page.getByRole('combobox')
     await selectTrigger.click()
 
-    // Select "Tight Fit"
-    await page.getByRole('option', { name: 'Tight Fit' }).click()
+    // Wait for option to appear then click
+    const tightFit = page.getByRole('option', { name: 'Tight Fit' })
+    await expect(tightFit).toBeVisible()
+    await tightFit.click()
 
     // Tight Fit has tolerance=0.1 vs Official tolerance=0.25
     // But the grid dimensions are the same (gridSize=42) so the mm dimensions
@@ -112,12 +114,16 @@ test.describe('Properties Panel', () => {
 
     // Switch to "Loose Fit"
     await selectTrigger.click()
-    await page.getByRole('option', { name: 'Loose Fit' }).click()
+    const looseFit = page.getByRole('option', { name: 'Loose Fit' })
+    await expect(looseFit).toBeVisible()
+    await looseFit.click()
     await expect(page.getByTestId('dimensions-readout')).toHaveText('126 x 126 x 7 mm')
 
     // Switch back to "Official"
     await selectTrigger.click()
-    await page.getByRole('option', { name: 'Official' }).click()
+    const official = page.getByRole('option', { name: 'Official' })
+    await expect(official).toBeVisible()
+    await official.click()
     await expect(page.getByTestId('dimensions-readout')).toHaveText('126 x 126 x 7 mm')
   })
 

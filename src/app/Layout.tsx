@@ -50,7 +50,7 @@ export function Layout() {
         {!isMobile && isEditView && (
           <div
             className={cn(
-              'border-r border-border bg-background transition-all duration-200',
+              'border-r border-border bg-background transition-all duration-200 motion-reduce:transition-none',
               leftPanelOpen ? 'w-60' : 'w-0',
             )}
           >
@@ -65,7 +65,7 @@ export function Layout() {
         {!isMobile && (
           <div
             className={cn(
-              'border-l border-border bg-background transition-all duration-200',
+              'border-l border-border bg-background transition-all duration-200 motion-reduce:transition-none',
               rightPanelOpen ? 'w-72' : 'w-0',
             )}
           >

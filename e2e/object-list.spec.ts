@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { addBaseplate, addBin } from './fixtures'
+import { addBaseplate, addBin, clickObjectInList } from './fixtures'
 
 test.describe('Object List', () => {
   test.beforeEach(async ({ page }) => {
@@ -102,12 +102,12 @@ test.describe('Object List', () => {
     await expect(page.getByText('Stacking Lip')).toBeVisible()
 
     // Click on the baseplate in the object list
-    await page.locator('.group').getByText('Baseplate 1').click()
+    await clickObjectInList(page, 'Baseplate 1')
     await expect(page.getByText('(baseplate)')).toBeVisible()
     await expect(page.getByText('Magnet Holes')).toBeVisible()
 
     // Click back on the bin
-    await page.locator('.group').getByText('Bin 2').click()
+    await clickObjectInList(page, 'Bin 2')
     await expect(page.getByText('(bin)')).toBeVisible()
     await expect(page.getByText('Stacking Lip')).toBeVisible()
   })

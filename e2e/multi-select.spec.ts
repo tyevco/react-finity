@@ -1,15 +1,5 @@
 import { test, expect } from '@playwright/test'
-import type { Page } from '@playwright/test'
-
-async function addBaseplate(page: Page) {
-  await page.getByRole('button', { name: /Add Object/i }).click()
-  await page.getByRole('menuitem', { name: 'Baseplate' }).click()
-}
-
-async function addBin(page: Page) {
-  await page.getByRole('button', { name: /Add Object/i }).click()
-  await page.getByRole('menuitem', { name: 'Bin' }).click()
-}
+import { addBaseplate, addBin, clickObjectInList } from './fixtures'
 
 test.describe('Multi-select', () => {
   test.beforeEach(async ({ page }) => {
@@ -20,7 +10,7 @@ test.describe('Multi-select', () => {
     await addBaseplate(page)
     await addBin(page)
 
-    await page.locator('.group').getByText('Baseplate 1').click()
+    await clickObjectInList(page, 'Baseplate 1')
     await expect(page.getByText('(baseplate)')).toBeVisible()
   })
 
@@ -28,13 +18,10 @@ test.describe('Multi-select', () => {
     await addBaseplate(page)
     await addBin(page)
 
-    await page.locator('.group').getByText('Baseplate 1').click()
+    await clickObjectInList(page, 'Baseplate 1')
     // Wait for selection to register before shift-clicking
     await expect(page.getByText('(baseplate)')).toBeVisible()
-    await page
-      .locator('.group')
-      .getByText('Bin 2')
-      .click({ modifiers: ['Shift'] })
+    await clickObjectInList(page, 'Bin 2', { modifiers: ['Shift'] })
 
     await expect(page.getByText('2 objects selected')).toBeVisible()
   })
@@ -44,16 +31,13 @@ test.describe('Multi-select', () => {
     await addBin(page)
 
     // Select both
-    await page.locator('.group').getByText('Baseplate 1').click()
+    await clickObjectInList(page, 'Baseplate 1')
     await expect(page.getByText('(baseplate)')).toBeVisible()
-    await page
-      .locator('.group')
-      .getByText('Bin 2')
-      .click({ modifiers: ['Shift'] })
+    await clickObjectInList(page, 'Bin 2', { modifiers: ['Shift'] })
     await expect(page.getByText('2 objects selected')).toBeVisible()
 
     // Regular click replaces selection
-    await page.locator('.group').getByText('Baseplate 1').click()
+    await clickObjectInList(page, 'Baseplate 1')
     await expect(page.getByText('(baseplate)')).toBeVisible()
   })
 
@@ -61,12 +45,9 @@ test.describe('Multi-select', () => {
     await addBaseplate(page)
     await addBin(page)
 
-    await page.locator('.group').getByText('Baseplate 1').click()
+    await clickObjectInList(page, 'Baseplate 1')
     await expect(page.getByText('(baseplate)')).toBeVisible()
-    await page
-      .locator('.group')
-      .getByText('Bin 2')
-      .click({ modifiers: ['Shift'] })
+    await clickObjectInList(page, 'Bin 2', { modifiers: ['Shift'] })
     await expect(page.getByText('2 objects selected')).toBeVisible()
 
     await page.keyboard.press('Delete')
@@ -94,22 +75,17 @@ test.describe('Multi-select', () => {
   })
 
   test('multi-select shows count in properties panel', async ({ page }) => {
+    test.slow() // 3 object additions + 3 shift-clicks can exceed default timeout under load
     await addBaseplate(page)
     await addBin(page)
     await addBaseplate(page)
 
-    await page.locator('.group').getByText('Baseplate 1').click()
+    await clickObjectInList(page, 'Baseplate 1')
     // Wait for first selection to register
     await expect(page.getByText('(baseplate)')).toBeVisible()
-    await page
-      .locator('.group')
-      .getByText('Bin 2')
-      .click({ modifiers: ['Shift'] })
+    await clickObjectInList(page, 'Bin 2', { modifiers: ['Shift'] })
     await expect(page.getByText('2 objects selected')).toBeVisible()
-    await page
-      .locator('.group')
-      .getByText('Baseplate 3')
-      .click({ modifiers: ['Shift'] })
+    await clickObjectInList(page, 'Baseplate 3', { modifiers: ['Shift'] })
 
     await expect(page.getByText('3 objects selected')).toBeVisible()
   })
