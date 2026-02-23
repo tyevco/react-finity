@@ -1,10 +1,15 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll } from 'vitest'
 import * as THREE from 'three'
 import { getPrintRotation, getOrientedBounds, applyPrintOrientation } from '../printOrientation'
 import { generateBaseplate } from '../../geometry/baseplate'
 import { generateBin } from '../../geometry/bin'
 import { PROFILE_OFFICIAL } from '../../constants'
 import type { BaseplateObject, BinObject } from '@/types/gridfinity'
+import { registerBuiltinKinds } from '@/engine/registry/builtins'
+
+beforeAll(() => {
+  registerBuiltinKinds()
+})
 
 function makeBaseplate(): BaseplateObject {
   return {

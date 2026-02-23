@@ -1,7 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll } from 'vitest'
 import { computePrintLayout, disposePrintLayout } from '../printLayout'
 import { PROFILE_OFFICIAL } from '../../constants'
 import type { BaseplateObject, BinObject, GridfinityObject } from '@/types/gridfinity'
+import { registerBuiltinKinds } from '@/engine/registry/builtins'
+
+beforeAll(() => {
+  registerBuiltinKinds()
+})
 
 function makeBaseplate(id = 'bp-1'): BaseplateObject {
   return {

@@ -1,6 +1,15 @@
-import { describe, it, expect } from 'vitest'
-import { mergeObjectWithModifiers, computeBinContext, generateModifierGeometry } from '../mergeObjectGeometry'
+import { describe, it, expect, beforeAll } from 'vitest'
+import {
+  mergeObjectWithModifiers,
+  computeBinContext,
+  generateModifierGeometry,
+} from '../mergeObjectGeometry'
 import { PROFILE_OFFICIAL } from '../../constants'
+import { registerBuiltinKinds } from '@/engine/registry/builtins'
+
+beforeAll(() => {
+  registerBuiltinKinds()
+})
 import type {
   BaseplateObject,
   BinObject,

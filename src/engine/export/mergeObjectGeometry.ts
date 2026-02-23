@@ -6,32 +6,23 @@ import type {
   ModifierContext,
   BinParams,
 } from '@/types/gridfinity'
-import { generateBaseplate } from '@/engine/geometry/baseplate'
-import { generateBin } from '@/engine/geometry/bin'
-import { generateDividerGrid } from '@/engine/geometry/modifiers/dividerGrid'
-import { generateLabelTab } from '@/engine/geometry/modifiers/labelTab'
-import { generateScoop } from '@/engine/geometry/modifiers/scoop'
-import { generateInsert } from '@/engine/geometry/modifiers/insert'
-import { generateLid } from '@/engine/geometry/modifiers/lid'
+import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
+import { modifierKindRegistry } from '@/engine/registry/modifierKindRegistry'
 import { mergeGeometries } from '@/engine/geometry/primitives'
+
+// Bridge typed params interfaces to the registry's Record<string, unknown>.
+// Safe because the registry ensures params match the registered kind.
+function asParams(p: object): Record<string, unknown> {
+  return p as Record<string, unknown>
+}
 
 export function generateModifierGeometry(
   modifier: Modifier,
   context: ModifierContext,
   profile: GridfinityProfile,
 ): BufferGeometry | null {
-  switch (modifier.kind) {
-    case 'dividerGrid':
-      return generateDividerGrid(modifier.params, context, profile)
-    case 'labelTab':
-      return generateLabelTab(modifier.params, context, profile)
-    case 'scoop':
-      return generateScoop(modifier.params, context, profile)
-    case 'insert':
-      return generateInsert(modifier.params, context, profile)
-    case 'lid':
-      return generateLid(modifier.params, context, profile)
-  }
+  const reg = modifierKindRegistry.getOrThrow(modifier.kind)
+  return reg.generateGeometry(asParams(modifier.params), context, profile)
 }
 
 export function computeBinContext(params: BinParams, profile: GridfinityProfile): ModifierContext {
@@ -55,38 +46,9 @@ export function computeBinContext(params: BinParams, profile: GridfinityProfile)
 }
 
 function computeChildContext(modifier: Modifier, parentContext: ModifierContext): ModifierContext {
-  if (modifier.kind === 'dividerGrid') {
-    const { dividersX, dividersY, wallThickness } = modifier.params
-    if (dividersX === 0 && dividersY === 0) return parentContext
-    const compartmentWidth =
-      (parentContext.innerWidth - wallThickness * dividersX) / (dividersX + 1)
-    const compartmentDepth =
-      (parentContext.innerDepth - wallThickness * dividersY) / (dividersY + 1)
-    return {
-      innerWidth: compartmentWidth,
-      innerDepth: compartmentDepth,
-      wallHeight: parentContext.wallHeight,
-      floorY: parentContext.floorY,
-      centerX: parentContext.centerX,
-      centerZ: parentContext.centerZ,
-    }
-  }
-  if (modifier.kind === 'insert') {
-    const { compartmentsX, compartmentsY, wallThickness } = modifier.params
-    const rimInnerWidth = parentContext.innerWidth - wallThickness * 2
-    const rimInnerDepth = parentContext.innerDepth - wallThickness * 2
-    const compartmentWidth =
-      (rimInnerWidth - wallThickness * (compartmentsX - 1)) / compartmentsX
-    const compartmentDepth =
-      (rimInnerDepth - wallThickness * (compartmentsY - 1)) / compartmentsY
-    return {
-      innerWidth: compartmentWidth,
-      innerDepth: compartmentDepth,
-      wallHeight: parentContext.wallHeight,
-      floorY: parentContext.floorY,
-      centerX: parentContext.centerX,
-      centerZ: parentContext.centerZ,
-    }
+  const reg = modifierKindRegistry.get(modifier.kind)
+  if (reg?.subdividesSpace && reg.computeChildContext) {
+    return reg.computeChildContext(asParams(modifier.params), parentContext)
   }
   return parentContext
 }
@@ -118,12 +80,8 @@ function generateObjectGeometry(
   object: GridfinityObject,
   profile: GridfinityProfile,
 ): BufferGeometry {
-  switch (object.kind) {
-    case 'baseplate':
-      return generateBaseplate(object.params, profile)
-    case 'bin':
-      return generateBin(object.params, profile)
-  }
+  const reg = objectKindRegistry.getOrThrow(object.kind)
+  return reg.generateGeometry(asParams(object.params), profile)
 }
 
 /**
@@ -138,11 +96,12 @@ export function mergeObjectWithModifiers(
 ): BufferGeometry {
   const baseGeometry = generateObjectGeometry(object, profile)
 
-  if (object.kind !== 'bin') {
+  const reg = objectKindRegistry.getOrThrow(object.kind)
+  if (!reg.supportsModifiers || !reg.computeModifierContext) {
     return baseGeometry
   }
 
-  const context = computeBinContext(object.params, profile)
+  const context = reg.computeModifierContext(asParams(object.params), profile)
   const modifierGeometries = collectModifierGeometries(object.id, context, modifiers, profile)
 
   if (modifierGeometries.length === 0) {

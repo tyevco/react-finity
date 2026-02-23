@@ -1,21 +1,14 @@
 import * as THREE from 'three'
 import type { GridfinityObject } from '@/types/gridfinity'
+import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
 
 /**
  * Get the optimal print rotation for an object kind.
- *
- * - Baseplates: no rotation (flat bottom already faces down)
- * - Bins: 180 degrees around X axis (flip upside-down so the open top
- *   faces the print bed and the flat bottom faces up, avoiding internal
- *   cavity overhangs for FDM printing)
+ * Delegates to the registered object kind's getPrintRotation function.
  */
 export function getPrintRotation(object: GridfinityObject): THREE.Euler {
-  switch (object.kind) {
-    case 'baseplate':
-      return new THREE.Euler(0, 0, 0)
-    case 'bin':
-      return new THREE.Euler(Math.PI, 0, 0)
-  }
+  const reg = objectKindRegistry.getOrThrow(object.kind)
+  return reg.getPrintRotation(object.params as unknown as Record<string, unknown>)
 }
 
 /**
