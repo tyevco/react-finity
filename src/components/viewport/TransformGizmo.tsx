@@ -6,6 +6,7 @@ import { useProjectStore } from '@/store/projectStore'
 import { useUIStore } from '@/store/uiStore'
 import { useProfileStore } from '@/store/profileStore'
 import { snapObjectToGrid } from '@/engine/snapping'
+import { setGizmoActive } from './gizmoState'
 
 type TransformControlsRef = ComponentRef<typeof TransformControls>
 
@@ -45,6 +46,7 @@ export function TransformGizmo({ target, objectId }: TransformGizmoProps) {
       if (orbitControls) {
         ;(orbitControls as unknown as { enabled: boolean }).enabled = !event.value
       }
+      setGizmoActive(!!event.value)
     }
 
     const handleMouseUp = () => {
@@ -81,7 +83,7 @@ export function TransformGizmo({ target, objectId }: TransformGizmoProps) {
       ref={controlsRef}
       object={target}
       mode="translate"
-      translationSnap={snapEnabled ? gridSize / 2 : null}
+      translationSnap={snapEnabled ? gridSize : null}
     />
   )
 }

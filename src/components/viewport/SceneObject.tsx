@@ -14,6 +14,7 @@ import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
 import { TransformGizmo } from './TransformGizmo'
+import { isGizmoActive } from './gizmoState'
 
 interface SceneObjectProps {
   object: GridfinityObject
@@ -132,6 +133,7 @@ export function SceneObject({ object }: SceneObjectProps) {
         position={object.position}
         onClick={(e) => {
           e.stopPropagation()
+          if (isGizmoActive()) return
           selectObject(object.id, e.shiftKey || e.ctrlKey || e.metaKey)
         }}
       >
