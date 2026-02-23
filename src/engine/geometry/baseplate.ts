@@ -119,14 +119,15 @@ export function generateBaseplate(
           if (magnetHoles) {
             const magnetRadius = profile.magnetDiameter / 2
             const magnetDepth = profile.magnetDepth
+            const overshoot = 0.1 // extend below Y=0 to avoid coplanar CSG artifacts
             const magnetGeo = new THREE.CylinderGeometry(
               magnetRadius,
               magnetRadius,
-              magnetDepth,
+              magnetDepth + overshoot,
               segments,
             )
-            // Blind holes in slab bottom
-            magnetGeo.translate(hx, magnetDepth / 2, hz)
+            // Blind holes in slab bottom, shifted down by overshoot/2 to punch through
+            magnetGeo.translate(hx, (magnetDepth - overshoot) / 2, hz)
             holeGeometries.push(magnetGeo)
           }
 
