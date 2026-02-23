@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { Mesh } from 'three'
+import type { Group } from 'three'
 import { Edges } from '@react-three/drei'
 import type {
   GridfinityObject,
@@ -95,7 +95,7 @@ function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
 }
 
 export function SceneObject({ object }: SceneObjectProps) {
-  const [meshNode, setMeshNode] = useState<Mesh | null>(null)
+  const [groupNode, setGroupNode] = useState<Group | null>(null)
   const activeProfile = useProfileStore((s) => s.activeProfile)
   const selectedObjectIds = useUIStore((s) => s.selectedObjectIds)
   const selectObject = useUIStore((s) => s.selectObject)
@@ -127,32 +127,28 @@ export function SceneObject({ object }: SceneObjectProps) {
 
   return (
     <>
-      <mesh
-        ref={setMeshNode}
-        geometry={geometry}
-        position={object.position}
-        onClick={(e) => {
-          e.stopPropagation()
-          if (isGizmoActive()) return
-          selectObject(object.id, e.shiftKey || e.ctrlKey || e.metaKey)
-        }}
-      >
-        <meshStandardMaterial
-          color={isSelected ? '#6b9bd2' : '#b0b0b0'}
-          roughness={0.6}
-          metalness={0.1}
-          transparent={transparencyMode}
-          opacity={objectOpacity}
-          wireframe={showWireframe}
-        />
-        {isSelected && !showWireframe && <Edges threshold={15} color="#4a90d9" lineWidth={2} />}
-      </mesh>
-      {isSingleSelected && meshNode && <TransformGizmo target={meshNode} objectId={object.id} />}
-      {modifierContext && (
-        <group position={object.position}>
-          <ModifierMeshes parentId={object.id} context={modifierContext} />
-        </group>
-      )}
+      <group ref={setGroupNode} position={object.position}>
+        <mesh
+          geometry={geometry}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (isGizmoActive()) return
+            selectObject(object.id, e.shiftKey || e.ctrlKey || e.metaKey)
+          }}
+        >
+          <meshStandardMaterial
+            color={isSelected ? '#6b9bd2' : '#b0b0b0'}
+            roughness={0.6}
+            metalness={0.1}
+            transparent={transparencyMode}
+            opacity={objectOpacity}
+            wireframe={showWireframe}
+          />
+          {isSelected && !showWireframe && <Edges threshold={15} color="#4a90d9" lineWidth={2} />}
+        </mesh>
+        {modifierContext && <ModifierMeshes parentId={object.id} context={modifierContext} />}
+      </group>
+      {isSingleSelected && groupNode && <TransformGizmo target={groupNode} objectId={object.id} />}
     </>
   )
 }
