@@ -4,6 +4,7 @@ import type { GridfinityObject, Modifier, ModifierContext, ProjectData } from '@
 import { PROFILE_OFFICIAL } from '@/engine/constants'
 import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
 import { modifierKindRegistry } from '@/engine/registry/modifierKindRegistry'
+import { useProfileStore } from './profileStore'
 
 interface ProjectStore {
   objects: GridfinityObject[]
@@ -77,12 +78,14 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     const id = uuidv4()
     const name = getNextName(kind)
     const reg = objectKindRegistry.getOrThrow(kind)
+    const profile = useProfileStore.getState().activeProfile
+    const position = reg.getDefaultPosition?.(profile) ?? ([0, 0, 0] as [number, number, number])
 
     const newObject = {
       kind,
       id,
       name,
-      position: [0, 0, 0] as [number, number, number],
+      position,
       params: { ...reg.defaultParams },
     } as unknown as GridfinityObject
 

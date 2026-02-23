@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { computePrintLayout, disposePrintLayout } from '../printLayout'
 import { PROFILE_OFFICIAL } from '../../constants'
-import type { BaseplateObject, BinObject, GridfinityObject } from '@/types/gridfinity'
+import type { BaseplateObject, BinObject, GridfinityObject, LidModifier } from '@/types/gridfinity'
 import { registerBuiltinKinds } from '@/engine/registry/builtins'
 
 beforeAll(() => {
@@ -115,6 +115,42 @@ describe('computePrintLayout', () => {
     expect(result[0].boundingBox.width).toBeGreaterThan(0)
     expect(result[0].boundingBox.depth).toBeGreaterThan(0)
     expect(result[0].boundingBox.height).toBeGreaterThan(0)
+
+    disposePrintLayout(result)
+  })
+
+  it('includes id and label on each layout item', () => {
+    const objects: GridfinityObject[] = [makeBaseplate()]
+    const result = computePrintLayout(objects, [], PROFILE_OFFICIAL, 256, 256, 10)
+
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('bp-1')
+    expect(result[0].label).toBe('Baseplate bp-1')
+
+    disposePrintLayout(result)
+  })
+
+  it('separates lid modifier as independent print part', () => {
+    const bin = makeBin('bin-1')
+    const lid: LidModifier = {
+      id: 'lid-1',
+      parentId: 'bin-1',
+      kind: 'lid',
+      params: { stacking: false },
+    }
+    const objects: GridfinityObject[] = [bin]
+    const result = computePrintLayout(objects, [lid], PROFILE_OFFICIAL, 350, 350, 10)
+
+    expect(result).toHaveLength(2)
+
+    // First item is the bin
+    expect(result[0].id).toBe('bin-1')
+    expect(result[0].label).toBe('Bin bin-1')
+
+    // Second item is the separated lid
+    expect(result[1].id).toBe('lid-1')
+    expect(result[1].label).toBe('Bin bin-1 - Lid')
+    expect(result[1].geometry.attributes.position.count).toBeGreaterThan(0)
 
     disposePrintLayout(result)
   })

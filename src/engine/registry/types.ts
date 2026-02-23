@@ -88,6 +88,7 @@ export interface ObjectKindRegistration<TParams = Record<string, unknown>> {
   ) => { width: number; depth: number; height: number }
   getPrintRotation: (params: TParams) => Euler
   supportsModifiers: boolean
+  getDefaultPosition?: (profile: GridfinityProfile) => [number, number, number]
   computeModifierContext?: (params: TParams, profile: GridfinityProfile) => ModifierContext
   propertiesSchema?: ParamSchema
   PropertiesComponent?: ComponentType<ObjectPropertiesComponentProps>
@@ -107,6 +108,7 @@ export interface ModifierKindRegistration<TParams = Record<string, unknown>> {
   ) => BufferGeometry | null
   subdividesSpace: boolean
   computeChildContext?: (params: TParams, parentContext: ModifierContext) => ModifierContext
+  separatePrintPart?: boolean
   allowedParentKinds?: string[]
   controlsSchema?: ParamSchema
   ControlsComponent?: ComponentType<ModifierControlsComponentProps>

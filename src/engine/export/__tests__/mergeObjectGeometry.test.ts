@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import {
   mergeObjectWithModifiers,
+  collectSeparatePartModifiers,
   computeBinContext,
   generateModifierGeometry,
 } from '../mergeObjectGeometry'
@@ -16,6 +17,7 @@ import type {
   Modifier,
   DividerGridModifier,
   LabelTabModifier,
+  LidModifier,
 } from '@/types/gridfinity'
 
 function makeBin(overrides?: Partial<BinObject['params']>): BinObject {
@@ -161,5 +163,62 @@ describe('mergeObjectWithModifiers', () => {
     const geo = mergeObjectWithModifiers(bin, modifiers, PROFILE_OFFICIAL)
     expect(geo.attributes.position.count).toBeGreaterThan(0)
     geo.dispose()
+  })
+
+  it('excludes lid modifier geometry from merge (separatePrintPart)', () => {
+    const bin = makeBin()
+    const lid: LidModifier = {
+      id: 'lid-1',
+      parentId: 'bin-1',
+      kind: 'lid',
+      params: { stacking: false },
+    }
+
+    const withoutLid = mergeObjectWithModifiers(bin, [lid], PROFILE_OFFICIAL)
+    const withoutModifiers = mergeObjectWithModifiers(bin, [], PROFILE_OFFICIAL)
+
+    // Lid should be excluded, so vertex count should be the same as no modifiers
+    expect(withoutLid.attributes.position.count).toBe(withoutModifiers.attributes.position.count)
+
+    withoutLid.dispose()
+    withoutModifiers.dispose()
+  })
+})
+
+describe('collectSeparatePartModifiers', () => {
+  it('returns lid modifier geometry for a bin with lid', () => {
+    const bin = makeBin()
+    const lid: LidModifier = {
+      id: 'lid-1',
+      parentId: 'bin-1',
+      kind: 'lid',
+      params: { stacking: false },
+    }
+
+    const parts = collectSeparatePartModifiers(bin.id, [lid], PROFILE_OFFICIAL, bin)
+    expect(parts).toHaveLength(1)
+    expect(parts[0].modifier.id).toBe('lid-1')
+    expect(parts[0].geometry.attributes.position.count).toBeGreaterThan(0)
+
+    for (const p of parts) p.geometry.dispose()
+  })
+
+  it('returns empty for non-separate-part modifiers', () => {
+    const bin = makeBin()
+    const divider: DividerGridModifier = {
+      id: 'div-1',
+      parentId: 'bin-1',
+      kind: 'dividerGrid',
+      params: { dividersX: 1, dividersY: 1, wallThickness: 1.2 },
+    }
+
+    const parts = collectSeparatePartModifiers(bin.id, [divider], PROFILE_OFFICIAL, bin)
+    expect(parts).toHaveLength(0)
+  })
+
+  it('returns empty for baseplates (no modifier support)', () => {
+    const bp = makeBaseplate()
+    const parts = collectSeparatePartModifiers(bp.id, [], PROFILE_OFFICIAL, bp)
+    expect(parts).toHaveLength(0)
   })
 })

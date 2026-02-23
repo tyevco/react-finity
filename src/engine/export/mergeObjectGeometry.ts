@@ -63,6 +63,11 @@ function collectModifierGeometries(
   const geometries: BufferGeometry[] = []
 
   for (const modifier of children) {
+    const reg = modifierKindRegistry.get(modifier.kind)
+
+    // Skip separate print part modifiers -- they are exported independently
+    if (reg?.separatePrintPart) continue
+
     const geo = generateModifierGeometry(modifier, context, profile)
     if (geo && 'position' in geo.attributes) {
       geometries.push(geo)
@@ -87,7 +92,8 @@ function generateObjectGeometry(
 /**
  * Merge an object with all its modifiers into a single BufferGeometry.
  * The result includes the base object geometry plus all modifier geometries
- * recursively collected and merged.
+ * recursively collected and merged. Modifiers with separatePrintPart are
+ * excluded from the merge (they are exported as independent print parts).
  */
 export function mergeObjectWithModifiers(
   object: GridfinityObject,
@@ -117,4 +123,36 @@ export function mergeObjectWithModifiers(
   }
 
   return merged
+}
+
+/**
+ * Collect modifiers marked as separate print parts and generate their
+ * geometry independently. Returns modifier + geometry pairs for layout.
+ */
+export function collectSeparatePartModifiers(
+  objectId: string,
+  modifiers: Modifier[],
+  profile: GridfinityProfile,
+  object: GridfinityObject,
+): { modifier: Modifier; geometry: BufferGeometry }[] {
+  const reg = objectKindRegistry.getOrThrow(object.kind)
+  if (!reg.supportsModifiers || !reg.computeModifierContext) {
+    return []
+  }
+
+  const context = reg.computeModifierContext(asParams(object.params), profile)
+  const results: { modifier: Modifier; geometry: BufferGeometry }[] = []
+
+  const directChildren = modifiers.filter((m) => m.parentId === objectId)
+  for (const modifier of directChildren) {
+    const modReg = modifierKindRegistry.get(modifier.kind)
+    if (!modReg?.separatePrintPart) continue
+
+    const geo = generateModifierGeometry(modifier, context, profile)
+    if (geo && 'position' in geo.attributes) {
+      results.push({ modifier, geometry: geo })
+    }
+  }
+
+  return results
 }

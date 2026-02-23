@@ -91,6 +91,8 @@ describe('exportAllAsSingleSTL', () => {
 
     const items: PrintLayoutItem[] = [
       {
+        id: 'bp-1',
+        label: 'Baseplate 1',
         object: bp,
         geometry: makeTestGeometry(),
         position: [0, 0, 0],
@@ -98,6 +100,8 @@ describe('exportAllAsSingleSTL', () => {
         fitsOnBed: true,
       },
       {
+        id: 'bp-2',
+        label: 'Baseplate 2',
         object: { ...bp, id: 'bp-2', name: 'Baseplate 2' },
         geometry: makeTestGeometry(),
         position: [52, 0, 0],

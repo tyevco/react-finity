@@ -47,10 +47,10 @@ describe('getPrintRotation', () => {
     expect(rotation.z).toBe(0)
   })
 
-  it('returns 180-degree X rotation for bins', () => {
+  it('returns identity rotation for bins (upright, base on bed)', () => {
     const bin = makeBin()
     const rotation = getPrintRotation(bin)
-    expect(rotation.x).toBeCloseTo(Math.PI, 5)
+    expect(rotation.x).toBe(0)
     expect(rotation.y).toBe(0)
     expect(rotation.z).toBe(0)
   })
@@ -101,7 +101,7 @@ describe('applyPrintOrientation', () => {
     oriented.dispose()
   })
 
-  it('bin min Y is approximately 0 after orientation (flipped)', () => {
+  it('bin min Y is approximately 0 after orientation (upright)', () => {
     const bin = makeBin()
     const geo = generateBin(bin.params, PROFILE_OFFICIAL)
     const rotation = getPrintRotation(bin)

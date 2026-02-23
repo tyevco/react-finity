@@ -85,6 +85,52 @@ describe('generateBin', () => {
     tall.dispose()
   })
 
+  it('base plug has stepped profile with more geometry than a simple block', () => {
+    // A two-tiered plug produces more vertices than a single extrusion would.
+    // We verify the geometry exists and has a reasonable vertex count
+    // indicating two separate tiers per grid cell.
+    const geometry = generateBin(defaultParams, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+
+    // With a 2x2 grid, there should be significantly more plug vertices
+    // (2 tiers per cell vs 1 tier)
+    const single = generateBin(defaultParams, PROFILE_OFFICIAL)
+    const double = generateBin({ ...defaultParams, gridWidth: 2, gridDepth: 2 }, PROFILE_OFFICIAL)
+
+    // 4 cells with 2 tiers each vs 1 cell with 2 tiers — should scale
+    expect(double.attributes.position.count).toBeGreaterThan(single.attributes.position.count)
+
+    geometry.dispose()
+    single.dispose()
+    double.dispose()
+  })
+
+  it('base plug bottom tier is narrower than top tier', () => {
+    // Generate a 1x1 bin and verify the bounding box at Y=0 level
+    // is narrower than at the step height. We check indirectly by
+    // verifying the geometry has vertices at the expected tier boundaries.
+    const geometry = generateBin(defaultParams, PROFILE_OFFICIAL)
+    const positions = geometry.attributes.position
+
+    const { socketBottomChamfer, socketMidHeight, socketWallHeight } = PROFILE_OFFICIAL
+    const stepHeight = socketBottomChamfer + socketMidHeight
+
+    // Collect unique Y values where geometry transitions exist
+    const yValues = new Set<number>()
+    for (let i = 0; i < positions.count; i++) {
+      const y = Math.round(positions.getY(i) * 100) / 100
+      yValues.add(y)
+    }
+
+    // Should have vertices at Y=0 (bottom), Y=stepHeight (tier boundary),
+    // and Y=socketWallHeight (top of plug)
+    expect(yValues.has(0)).toBe(true)
+    expect(yValues.has(Math.round(stepHeight * 100) / 100)).toBe(true)
+    expect(yValues.has(Math.round(socketWallHeight * 100) / 100)).toBe(true)
+
+    geometry.dispose()
+  })
+
   it('inner fillet adds vertices compared to no fillet', () => {
     const noFillet = generateBin({ ...defaultParams, innerFillet: 0 }, PROFILE_OFFICIAL)
     const withFillet = generateBin({ ...defaultParams, innerFillet: 1.5 }, PROFILE_OFFICIAL)

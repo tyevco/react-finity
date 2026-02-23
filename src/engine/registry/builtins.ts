@@ -96,8 +96,9 @@ export function registerBuiltinKinds(): void {
     defaultParams: { ...DEFAULT_BIN_PARAMS },
     generateGeometry: generateBin,
     getDimensions: getBinDimensions,
-    getPrintRotation: () => new THREE.Euler(Math.PI, 0, 0),
+    getPrintRotation: () => new THREE.Euler(0, 0, 0),
     supportsModifiers: true,
+    getDefaultPosition: (profile) => [0, profile.baseplateHeight - profile.socketWallHeight, 0],
     computeModifierContext: computeBinModifierContext,
     PropertiesComponent: asPropertiesComponent(BinProperties),
   })
@@ -211,6 +212,7 @@ export function registerBuiltinKinds(): void {
     defaultParams: { ...DEFAULT_LID_PARAMS },
     generateGeometry: generateLid,
     subdividesSpace: false,
+    separatePrintPart: true,
     controlsSchema: {
       fields: [{ key: 'stacking', label: 'Stacking', type: 'switch' }],
     },

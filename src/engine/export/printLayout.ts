@@ -1,9 +1,13 @@
+import * as THREE from 'three'
 import type { BufferGeometry } from 'three'
 import type { GridfinityObject, GridfinityProfile, Modifier } from '@/types/gridfinity'
-import { mergeObjectWithModifiers } from './mergeObjectGeometry'
+import { mergeObjectWithModifiers, collectSeparatePartModifiers } from './mergeObjectGeometry'
 import { getPrintRotation, getOrientedBounds, applyPrintOrientation } from './printOrientation'
+import { modifierKindRegistry } from '@/engine/registry/modifierKindRegistry'
 
 export interface PrintLayoutItem {
+  id: string
+  label: string
   object: GridfinityObject
   geometry: BufferGeometry
   position: [number, number, number]
@@ -31,6 +35,8 @@ export function computePrintLayout(
 
   // Generate merged + oriented geometries and measure bounding boxes
   const items: {
+    id: string
+    label: string
     object: GridfinityObject
     geometry: BufferGeometry
     bounds: { width: number; depth: number; height: number }
@@ -42,7 +48,26 @@ export function computePrintLayout(
     const oriented = applyPrintOrientation(merged, rotation)
     const bounds = getOrientedBounds(merged, rotation)
     merged.dispose()
-    items.push({ object: obj, geometry: oriented, bounds })
+    items.push({ id: obj.id, label: obj.name, object: obj, geometry: oriented, bounds })
+
+    // Collect separate print parts (e.g. lids)
+    const separateParts = collectSeparatePartModifiers(obj.id, modifiers, profile, obj)
+    for (const { modifier, geometry } of separateParts) {
+      const kindReg = modifierKindRegistry.get(modifier.kind)
+      const kindLabel = kindReg?.label ?? modifier.kind
+      // Lids print upside-down (flat top on bed)
+      const partRotation = new THREE.Euler(Math.PI, 0, 0)
+      const partOriented = applyPrintOrientation(geometry, partRotation)
+      const partBounds = getOrientedBounds(geometry, partRotation)
+      geometry.dispose()
+      items.push({
+        id: modifier.id,
+        label: `${obj.name} - ${kindLabel}`,
+        object: obj,
+        geometry: partOriented,
+        bounds: partBounds,
+      })
+    }
   }
 
   // Sort by depth descending for better row packing
@@ -70,10 +95,11 @@ export function computePrintLayout(
     const posX = currentX + bounds.width / 2
     const posZ = currentZ + bounds.depth / 2
 
-    const fitsOnBed =
-      currentX + bounds.width <= bedWidth && currentZ + bounds.depth <= bedDepth
+    const fitsOnBed = currentX + bounds.width <= bedWidth && currentZ + bounds.depth <= bedDepth
 
     result.push({
+      id: item.id,
+      label: item.label,
       object: item.object,
       geometry: item.geometry,
       position: [posX, 0, posZ],

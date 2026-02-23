@@ -40,19 +40,35 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): THRE
   const geometries: THREE.BufferGeometry[] = []
 
   // === 1. Base plugs (one per grid cell) ===
-  // Each plug is a solid rounded-rect block that fits into the baseplate socket
+  // Two-tiered stepped profile matching the baseplate socket:
+  //   - Bottom tier (narrow): fits inside the socket step ring
+  //   - Top tier (wide): fills the full socket cavity above the ledge
   const cellSize = gridSize - tolerance * 2
   const cellRadius = Math.max(0.1, cornerRadius)
+
+  const { socketBottomChamfer, socketMidHeight } = profile
+  const stepHeight = socketBottomChamfer + socketMidHeight // 2.6mm for Official
+  const stepWallThickness = 1.2 // matches baseplate step ring
+  const stepInnerSize = cellSize - stepWallThickness * 2
+  const stepInnerRadius = Math.max(0.1, cellRadius - stepWallThickness)
+  const topTierHeight = socketWallHeight - stepHeight
 
   for (let gx = 0; gx < gridWidth; gx++) {
     for (let gz = 0; gz < gridDepth; gz++) {
       const cx = (gx - (gridWidth - 1) / 2) * gridSize
       const cz = (gz - (gridDepth - 1) / 2) * gridSize
 
-      const plugShape = roundedRectShape(cellSize, cellSize, cellRadius)
-      const plugGeo = extrudeShape(plugShape, socketWallHeight)
-      plugGeo.translate(cx, 0, cz)
-      geometries.push(plugGeo)
+      // Bottom tier (narrow) — fits inside the step ring opening
+      const bottomShape = roundedRectShape(stepInnerSize, stepInnerSize, stepInnerRadius)
+      const bottomGeo = extrudeShape(bottomShape, stepHeight)
+      bottomGeo.translate(cx, 0, cz)
+      geometries.push(bottomGeo)
+
+      // Top tier (wide) — fills the full cavity above the step ledge
+      const topShape = roundedRectShape(cellSize, cellSize, cellRadius)
+      const topGeo = extrudeShape(topShape, topTierHeight)
+      topGeo.translate(cx, stepHeight, cz)
+      geometries.push(topGeo)
     }
   }
 
