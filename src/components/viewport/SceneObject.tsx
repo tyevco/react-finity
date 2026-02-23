@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { BufferGeometry } from 'three'
 import type { Group } from 'three'
 import { Edges } from '@react-three/drei'
 import type {
@@ -113,7 +114,8 @@ export function SceneObject({ object }: SceneObjectProps) {
   const isSingleSelected = selectedObjectIds.length === 1 && isSelected
 
   const geometry = useMemo(() => {
-    const reg = objectKindRegistry.getOrThrow(object.kind)
+    const reg = objectKindRegistry.get(object.kind)
+    if (!reg) return new BufferGeometry()
     return reg.generateGeometry(object.params as unknown as Record<string, unknown>, activeProfile)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [object.kind, object.params, activeProfile, curveQuality])

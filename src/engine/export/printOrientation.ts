@@ -40,6 +40,25 @@ export function getOrientedBounds(
 }
 
 /**
+ * Compute bounding dimensions from a geometry that has already been oriented
+ * (i.e., already rotated and translated to sit on the print bed at Y=0).
+ */
+export function getBoundsFromOriented(oriented: THREE.BufferGeometry): {
+  width: number
+  depth: number
+  height: number
+} {
+  oriented.computeBoundingBox()
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const box = oriented.boundingBox!
+  return {
+    width: box.max.x - box.min.x,
+    depth: box.max.z - box.min.z,
+    height: box.max.y - box.min.y,
+  }
+}
+
+/**
  * Apply print orientation to a geometry: rotate and translate so it
  * sits flat on the print bed (min Y = 0).
  *

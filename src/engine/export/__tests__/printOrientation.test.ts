@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { Euler } from 'three'
-import { getPrintRotation, getOrientedBounds, applyPrintOrientation } from '../printOrientation'
+import {
+  getPrintRotation,
+  getOrientedBounds,
+  getBoundsFromOriented,
+  applyPrintOrientation,
+} from '../printOrientation'
 import { generateBaseplate } from '../../geometry/baseplate'
 import { generateBin } from '../../geometry/bin'
 import { PROFILE_OFFICIAL } from '../../constants'
@@ -85,6 +90,25 @@ describe('getOrientedBounds', () => {
     expect(bounds.height).toBeGreaterThan(10) // bin has height
 
     geo.dispose()
+  })
+})
+
+describe('getBoundsFromOriented', () => {
+  it('matches getOrientedBounds for a bin', () => {
+    const bin = makeBin()
+    const geo = generateBin(bin.params, PROFILE_OFFICIAL)
+    const rotation = getPrintRotation(bin)
+
+    const orientedBounds = getOrientedBounds(geo, rotation)
+    const oriented = applyPrintOrientation(geo, rotation)
+    const fromOriented = getBoundsFromOriented(oriented)
+
+    expect(fromOriented.width).toBeCloseTo(orientedBounds.width, 2)
+    expect(fromOriented.depth).toBeCloseTo(orientedBounds.depth, 2)
+    expect(fromOriented.height).toBeCloseTo(orientedBounds.height, 2)
+
+    geo.dispose()
+    oriented.dispose()
   })
 })
 
