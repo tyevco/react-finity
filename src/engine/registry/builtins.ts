@@ -10,6 +10,7 @@ import { generateLabelTab } from '@/engine/geometry/modifiers/labelTab'
 import { generateScoop } from '@/engine/geometry/modifiers/scoop'
 import { generateInsert } from '@/engine/geometry/modifiers/insert'
 import { generateLid } from '@/engine/geometry/modifiers/lid'
+import { generateFingerScoop } from '@/engine/geometry/modifiers/fingerScoop'
 import {
   DEFAULT_BASEPLATE_PARAMS,
   DEFAULT_BIN_PARAMS,
@@ -18,6 +19,7 @@ import {
   DEFAULT_SCOOP_PARAMS,
   DEFAULT_INSERT_PARAMS,
   DEFAULT_LID_PARAMS,
+  DEFAULT_FINGER_SCOOP_PARAMS,
 } from '@/engine/constants'
 import type {
   BinParams,
@@ -215,6 +217,33 @@ export function registerBuiltinKinds(): void {
     separatePrintPart: true,
     controlsSchema: {
       fields: [{ key: 'stacking', label: 'Stacking', type: 'switch' }],
+    },
+  })
+
+  modifierKindRegistry.register({
+    kind: 'fingerScoop',
+    label: 'Finger Scoop',
+    color: '#90caf9',
+    defaultParams: { ...DEFAULT_FINGER_SCOOP_PARAMS },
+    generateGeometry: generateFingerScoop,
+    subdividesSpace: false,
+    subtractive: true,
+    controlsSchema: {
+      fields: [
+        {
+          key: 'wall',
+          label: 'Wall',
+          type: 'select',
+          options: [
+            { value: 'front', label: 'Front' },
+            { value: 'back', label: 'Back' },
+            { value: 'left', label: 'Left' },
+            { value: 'right', label: 'Right' },
+          ],
+        },
+        { key: 'width', label: 'Width', type: 'slider', min: 10, max: 30, step: 1, unit: 'mm' },
+        { key: 'depth', label: 'Depth', type: 'slider', min: 5, max: 20, step: 1, unit: 'mm' },
+      ],
     },
   })
 

@@ -26,7 +26,7 @@ export function generateBaseplate(
   params: BaseplateParams,
   profile: GridfinityProfile,
 ): BufferGeometry {
-  const { gridWidth, gridDepth, magnetHoles, screwHoles } = params
+  const { gridWidth, gridDepth, slim, magnetHoles, screwHoles } = params
   const {
     gridSize,
     baseplateHeight,
@@ -41,14 +41,17 @@ export function generateBaseplate(
   const totalDepth = gridDepth * gridSize
   const cellInnerSize = gridSize - tolerance * 2
   const cellCornerRadius = Math.max(0.1, baseplateCornerRadius - tolerance)
-  const slabHeight = baseplateHeight - socketWallHeight
+  const slabHeight = slim ? 0 : baseplateHeight - socketWallHeight
+  const frameBaseY = slabHeight
 
   const geometries: BufferGeometry[] = []
 
-  // === Layer 1: Solid base slab ===
-  const slabShape = roundedRectShape(totalWidth, totalDepth, baseplateCornerRadius)
-  const slabGeo = extrudeShape(slabShape, slabHeight)
-  geometries.push(slabGeo)
+  // === Layer 1: Solid base slab (skipped in slim mode) ===
+  if (!slim) {
+    const slabShape = roundedRectShape(totalWidth, totalDepth, baseplateCornerRadius)
+    const slabGeo = extrudeShape(slabShape, baseplateHeight - socketWallHeight)
+    geometries.push(slabGeo)
+  }
 
   // === Layer 2: Grid frame with socket cavities ===
   // Full footprint shape with per-cell rectangular holes punched out
@@ -63,7 +66,7 @@ export function generateBaseplate(
     }
   }
   const frameGeo = extrudeShape(frameShape, socketWallHeight)
-  frameGeo.translate(0, slabHeight, 0)
+  frameGeo.translate(0, frameBaseY, 0)
   geometries.push(frameGeo)
 
   // === Layer 3: Per-cell socket step rings ===
@@ -87,7 +90,7 @@ export function generateBaseplate(
         stepInnerRadius,
         stepHeight,
       )
-      ringGeo.translate(cx, slabHeight, cz)
+      ringGeo.translate(cx, frameBaseY, cz)
       geometries.push(ringGeo)
     }
   }
@@ -98,8 +101,8 @@ export function generateBaseplate(
   // Clean up source geometries
   for (const g of geometries) g.dispose()
 
-  // === Layer 4: CSG subtraction for magnet/screw holes ===
-  if (magnetHoles || screwHoles) {
+  // === Layer 4: CSG subtraction for magnet/screw holes (disabled in slim mode) ===
+  if (!slim && (magnetHoles || screwHoles)) {
     const holeGeometries: BufferGeometry[] = []
     const segments = getCurveSegments() * 3
 
@@ -179,6 +182,6 @@ export function getBaseplateDimensions(
   return {
     width: params.gridWidth * profile.gridSize,
     depth: params.gridDepth * profile.gridSize,
-    height: profile.baseplateHeight,
+    height: params.slim ? profile.socketWallHeight : profile.baseplateHeight,
   }
 }

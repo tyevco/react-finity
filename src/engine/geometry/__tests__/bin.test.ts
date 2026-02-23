@@ -11,6 +11,9 @@ describe('generateBin', () => {
     stackingLip: false,
     wallThickness: 1.2,
     innerFillet: 0,
+    magnetHoles: false,
+    weightHoles: false,
+    honeycombBase: false,
   }
 
   it('generates geometry with vertices and faces', () => {
@@ -160,6 +163,37 @@ describe('generateBin', () => {
     withFillet.dispose()
   })
 
+  it('magnet holes change vertex count via CSG', () => {
+    const without = generateBin({ ...defaultParams, magnetHoles: false }, PROFILE_OFFICIAL)
+    const with_ = generateBin({ ...defaultParams, magnetHoles: true }, PROFILE_OFFICIAL)
+
+    expect(with_.attributes.position.count).not.toBe(without.attributes.position.count)
+
+    without.dispose()
+    with_.dispose()
+  })
+
+  it('weight holes change vertex count via CSG', () => {
+    const without = generateBin({ ...defaultParams, weightHoles: false }, PROFILE_OFFICIAL)
+    const with_ = generateBin({ ...defaultParams, weightHoles: true }, PROFILE_OFFICIAL)
+
+    expect(with_.attributes.position.count).not.toBe(without.attributes.position.count)
+
+    without.dispose()
+    with_.dispose()
+  })
+
+  it('honeycomb base adds vertices from hex holes', () => {
+    const without = generateBin({ ...defaultParams, honeycombBase: false }, PROFILE_OFFICIAL)
+    const with_ = generateBin({ ...defaultParams, honeycombBase: true }, PROFILE_OFFICIAL)
+
+    // Hex holes in the floor shape produce more vertices
+    expect(with_.attributes.position.count).toBeGreaterThan(without.attributes.position.count)
+
+    without.dispose()
+    with_.dispose()
+  })
+
   it('default bin with innerFillet=0 matches existing behavior', () => {
     const geometry = generateBin(defaultParams, PROFILE_OFFICIAL)
     expect(geometry).toBeDefined()
@@ -179,6 +213,9 @@ describe('getBinDimensions', () => {
         stackingLip: true,
         wallThickness: 1.2,
         innerFillet: 0,
+        magnetHoles: false,
+        weightHoles: false,
+        honeycombBase: false,
       },
       PROFILE_OFFICIAL,
     )
@@ -197,6 +234,9 @@ describe('getBinDimensions', () => {
         stackingLip: false,
         wallThickness: 1.2,
         innerFillet: 0,
+        magnetHoles: false,
+        weightHoles: false,
+        honeycombBase: false,
       },
       PROFILE_OFFICIAL,
     )

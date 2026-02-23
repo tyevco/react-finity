@@ -63,7 +63,13 @@ describe('exportObjectAsSTL', () => {
   })
 
   it('handles real baseplate geometry', () => {
-    const params = { gridWidth: 1, gridDepth: 1, magnetHoles: false, screwHoles: false }
+    const params = {
+      gridWidth: 1,
+      gridDepth: 1,
+      slim: false,
+      magnetHoles: false,
+      screwHoles: false,
+    }
     const geo = generateBaseplate(params, PROFILE_OFFICIAL)
 
     expect(() => {
@@ -86,7 +92,7 @@ describe('exportAllAsSingleSTL', () => {
       name: 'Baseplate 1',
       kind: 'baseplate',
       position: [0, 0, 0],
-      params: { gridWidth: 1, gridDepth: 1, magnetHoles: false, screwHoles: false },
+      params: { gridWidth: 1, gridDepth: 1, slim: false, magnetHoles: false, screwHoles: false },
     }
 
     const items: PrintLayoutItem[] = [

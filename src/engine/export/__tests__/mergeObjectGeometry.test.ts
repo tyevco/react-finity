@@ -18,6 +18,7 @@ import type {
   DividerGridModifier,
   LabelTabModifier,
   LidModifier,
+  FingerScoopModifier,
 } from '@/types/gridfinity'
 
 function makeBin(overrides?: Partial<BinObject['params']>): BinObject {
@@ -33,6 +34,9 @@ function makeBin(overrides?: Partial<BinObject['params']>): BinObject {
       stackingLip: true,
       wallThickness: 1.2,
       innerFillet: 0,
+      magnetHoles: false,
+      weightHoles: false,
+      honeycombBase: false,
       ...overrides,
     },
   }
@@ -47,6 +51,7 @@ function makeBaseplate(): BaseplateObject {
     params: {
       gridWidth: 1,
       gridDepth: 1,
+      slim: false,
       magnetHoles: false,
       screwHoles: false,
     },
@@ -163,6 +168,25 @@ describe('mergeObjectWithModifiers', () => {
     const geo = mergeObjectWithModifiers(bin, modifiers, PROFILE_OFFICIAL)
     expect(geo.attributes.position.count).toBeGreaterThan(0)
     geo.dispose()
+  })
+
+  it('subtractive modifier (finger scoop) changes vertex count via CSG', () => {
+    const bin = makeBin()
+    const baseGeo = mergeObjectWithModifiers(bin, [], PROFILE_OFFICIAL)
+    const baseCount = baseGeo.attributes.position.count
+
+    const fingerScoop: FingerScoopModifier = {
+      id: 'fs-1',
+      parentId: 'bin-1',
+      kind: 'fingerScoop',
+      params: { wall: 'front', width: 20, depth: 15 },
+    }
+    const mergedGeo = mergeObjectWithModifiers(bin, [fingerScoop], PROFILE_OFFICIAL)
+    // CSG subtraction changes vertex count
+    expect(mergedGeo.attributes.position.count).not.toBe(baseCount)
+
+    baseGeo.dispose()
+    mergedGeo.dispose()
   })
 
   it('excludes lid modifier geometry from merge (separatePrintPart)', () => {

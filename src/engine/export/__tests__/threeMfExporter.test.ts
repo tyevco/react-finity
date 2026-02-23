@@ -127,7 +127,13 @@ describe('exportObjectAs3MF', () => {
   })
 
   it('handles real baseplate geometry', async () => {
-    const params = { gridWidth: 1, gridDepth: 1, magnetHoles: false, screwHoles: false }
+    const params = {
+      gridWidth: 1,
+      gridDepth: 1,
+      slim: false,
+      magnetHoles: false,
+      screwHoles: false,
+    }
     const geo = generateBaseplate(params, PROFILE_OFFICIAL)
 
     await expect(exportObjectAs3MF(geo, 'Baseplate')).resolves.not.toThrow()
@@ -159,7 +165,7 @@ describe('exportAllAs3MF', () => {
       name: 'Baseplate 1',
       kind: 'baseplate',
       position: [0, 0, 0],
-      params: { gridWidth: 1, gridDepth: 1, magnetHoles: false, screwHoles: false },
+      params: { gridWidth: 1, gridDepth: 1, slim: false, magnetHoles: false, screwHoles: false },
     }
 
     const items: PrintLayoutItem[] = [

@@ -1,5 +1,6 @@
 import type { BufferGeometry } from 'three'
-import { Shape } from 'three'
+import { Shape, CylinderGeometry } from 'three'
+import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg'
 
 import type { BinParams, GridfinityProfile } from '@/types/gridfinity'
 
@@ -8,6 +9,8 @@ import {
   extrudeShape,
   mergeGeometries,
   createHollowExtrusion,
+  createHexagonHolePath,
+  getCurveSegments,
 } from './primitives'
 
 /**
@@ -20,7 +23,17 @@ import {
  * 4. Stacking lip (optional) — raised rim at top edge for bin stacking
  */
 export function generateBin(params: BinParams, profile: GridfinityProfile): BufferGeometry {
-  const { gridWidth, gridDepth, heightUnits, stackingLip, wallThickness, innerFillet } = params
+  const {
+    gridWidth,
+    gridDepth,
+    heightUnits,
+    stackingLip,
+    wallThickness,
+    innerFillet,
+    magnetHoles,
+    weightHoles,
+    honeycombBase,
+  } = params
   const { gridSize, heightUnit, binCornerRadius, tolerance, socketWallHeight, stackingLipHeight } =
     profile
 
@@ -88,6 +101,30 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): Buff
 
   // === 3. Interior floor ===
   const floorShape = roundedRectShape(innerWidth, innerDepth, innerRadius)
+
+  // Honeycomb pattern: hex holes in the floor to save material
+  if (honeycombBase) {
+    const hexRadius = 4 // 8mm flat-to-flat
+    const hexWall = 1.2 // wall between hexagons
+    const hexSpacingX = (hexRadius + hexWall / 2) * Math.sqrt(3)
+    const hexSpacingZ = (hexRadius + hexWall / 2) * 1.5
+    const margin = hexRadius + hexWall
+    const halfW = innerWidth / 2 - margin
+    const halfD = innerDepth / 2 - margin
+
+    let row = 0
+    for (let z = -halfD; z <= halfD; z += hexSpacingZ) {
+      const xOffset = row % 2 === 1 ? hexSpacingX / 2 : 0
+      for (let x = -halfW + xOffset; x <= halfW; x += hexSpacingX) {
+        // Skip hexes whose center is too close to the rounded rect edge
+        if (Math.abs(x) <= halfW && Math.abs(z) <= halfD) {
+          floorShape.holes.push(createHexagonHolePath(hexRadius, x, z))
+        }
+      }
+      row++
+    }
+  }
+
   const floorGeo = extrudeShape(floorShape, wt)
   floorGeo.translate(0, socketWallHeight, 0)
   geometries.push(floorGeo)
@@ -152,10 +189,85 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): Buff
   }
 
   // Merge all sub-geometries
-  const result = mergeGeometries(geometries)
+  let result = mergeGeometries(geometries)
 
   // Clean up source geometries
   for (const g of geometries) g.dispose()
+
+  // === 6. CSG subtraction for magnet/weight holes in base plug ===
+  if (magnetHoles || weightHoles) {
+    const holeGeometries: BufferGeometry[] = []
+    const segments = getCurveSegments() * 3
+    const cellSize = gridSize - tolerance * 2
+
+    for (let gx = 0; gx < gridWidth; gx++) {
+      for (let gz = 0; gz < gridDepth; gz++) {
+        const cx = (gx - (gridWidth - 1) / 2) * gridSize
+        const cz = (gz - (gridDepth - 1) / 2) * gridSize
+
+        if (magnetHoles) {
+          // 4 magnet holes per cell at corners, matching baseplate positions
+          const cornerOffset = cellSize / 2 - 4.0
+          const corners = [
+            [cx - cornerOffset, cz - cornerOffset],
+            [cx + cornerOffset, cz - cornerOffset],
+            [cx - cornerOffset, cz + cornerOffset],
+            [cx + cornerOffset, cz + cornerOffset],
+          ]
+          const magnetRadius = profile.magnetDiameter / 2
+          const magnetDepth = profile.magnetDepth
+          const overshoot = 0.1
+
+          for (const [hx, hz] of corners) {
+            const magnetGeo = new CylinderGeometry(
+              magnetRadius,
+              magnetRadius,
+              magnetDepth + overshoot,
+              segments,
+            )
+            // Blind holes from bottom of plug, overshoot below Y=0
+            magnetGeo.translate(hx, (magnetDepth - overshoot) / 2, hz)
+            holeGeometries.push(magnetGeo)
+          }
+        }
+
+        if (weightHoles) {
+          // 1 weight hole per cell at center (penny-sized)
+          const weightDiameter = 20
+          const weightDepth = 2
+          const overshoot = 0.1
+          const weightGeo = new CylinderGeometry(
+            weightDiameter / 2,
+            weightDiameter / 2,
+            weightDepth + overshoot,
+            segments,
+          )
+          weightGeo.translate(cx, (weightDepth - overshoot) / 2, cz)
+          holeGeometries.push(weightGeo)
+        }
+      }
+    }
+
+    if (holeGeometries.length > 0) {
+      const mergedHoles = mergeGeometries(holeGeometries)
+      for (const g of holeGeometries) g.dispose()
+
+      const evaluator = new Evaluator()
+      evaluator.attributes = ['position', 'normal']
+      const baseBrush = new Brush(result)
+      const holeBrush = new Brush(mergedHoles)
+
+      const csgResult = evaluator.evaluate(baseBrush, holeBrush, SUBTRACTION)
+      const finalGeometry = csgResult.geometry
+
+      result.dispose()
+      mergedHoles.dispose()
+      baseBrush.geometry.dispose()
+      holeBrush.geometry.dispose()
+
+      result = finalGeometry
+    }
+  }
 
   return result
 }

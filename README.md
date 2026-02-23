@@ -4,14 +4,15 @@ A browser-based parametric 3D modeling application for the [Gridfinity](https://
 
 ## Features
 
-- **Parametric baseplate generation** -- configurable grid size with socket profiles, magnet holes, and screw holes
-- **Bin/container generation** -- configurable width, depth, and height with corner fillets, stacking lip, and hollow interior
+- **Parametric baseplate generation** -- configurable grid size with socket profiles, magnet holes, screw holes, and slim mode
+- **Bin/container generation** -- configurable width, depth, and height with corner fillets, stacking lip, hollow interior, magnet holes, weight holes, and honeycomb base
 - **Modifier system** -- composable modifiers that attach to bins:
   - Divider Grid -- internal divider walls with configurable count and thickness
   - Label Tab -- angled label surface on any wall face
   - Scoop -- curved cutout for easy part access
   - Insert -- open-top compartment grid with rim and internal walls
   - Lid -- flat or stacking lid variant
+  - Finger Scoop -- U-shaped notch in wall top for easy finger access (subtractive)
 - **Print Layout view** -- dedicated view with virtual print bed, automatic FDM-optimal orientation, and row-based object arrangement
 - **STL export** -- binary STL export of individual objects, all objects as ZIP, or merged plate STL
 - **Export settings** -- configurable export scale (0.1x-10x) and polygon quality (Low/Medium/High)
@@ -123,7 +124,8 @@ See [ROADMAP.md](ROADMAP.md) for the full development plan. Current status:
 - Phase 4: Modifier System & Advanced Geometry -- Complete
 - Phase 5: Export & Print Layout -- Complete
 - Phase 6: Polish & Advanced UX -- Complete
-- Phase 7: Desktop App (Tauri) -- Planned
+- Phase 7: Extensible Framework -- Complete
+- Phase 8: Desktop App (Tauri) -- Planned
 
 ## Contributing
 

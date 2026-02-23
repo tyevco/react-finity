@@ -1,4 +1,5 @@
 import type { BufferGeometry } from 'three'
+import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg'
 import type {
   GridfinityObject,
   GridfinityProfile,
@@ -53,14 +54,20 @@ function computeChildContext(modifier: Modifier, parentContext: ModifierContext)
   return parentContext
 }
 
+interface CollectedModifierGeometries {
+  additive: BufferGeometry[]
+  subtractive: BufferGeometry[]
+}
+
 function collectModifierGeometries(
   parentId: string,
   context: ModifierContext,
   allModifiers: Modifier[],
   profile: GridfinityProfile,
-): BufferGeometry[] {
+): CollectedModifierGeometries {
   const children = allModifiers.filter((m) => m.parentId === parentId)
-  const geometries: BufferGeometry[] = []
+  const additive: BufferGeometry[] = []
+  const subtractive: BufferGeometry[] = []
 
   for (const modifier of children) {
     const reg = modifierKindRegistry.get(modifier.kind)
@@ -70,15 +77,20 @@ function collectModifierGeometries(
 
     const geo = generateModifierGeometry(modifier, context, profile)
     if (geo && 'position' in geo.attributes) {
-      geometries.push(geo)
+      if (reg?.subtractive) {
+        subtractive.push(geo)
+      } else {
+        additive.push(geo)
+      }
     }
 
     const childContext = computeChildContext(modifier, context)
     const childGeos = collectModifierGeometries(modifier.id, childContext, allModifiers, profile)
-    geometries.push(...childGeos)
+    additive.push(...childGeos.additive)
+    subtractive.push(...childGeos.subtractive)
   }
 
-  return geometries
+  return { additive, subtractive }
 }
 
 function generateObjectGeometry(
@@ -108,21 +120,50 @@ export function mergeObjectWithModifiers(
   }
 
   const context = reg.computeModifierContext(asParams(object.params), profile)
-  const modifierGeometries = collectModifierGeometries(object.id, context, modifiers, profile)
+  const { additive, subtractive } = collectModifierGeometries(
+    object.id,
+    context,
+    modifiers,
+    profile,
+  )
 
-  if (modifierGeometries.length === 0) {
+  if (additive.length === 0 && subtractive.length === 0) {
     return baseGeometry
   }
 
-  const allGeometries = [baseGeometry, ...modifierGeometries]
-  const merged = mergeGeometries(allGeometries)
+  // Merge base + additive geometries
+  const additiveGeometries = [baseGeometry, ...additive]
+  let result = mergeGeometries(additiveGeometries)
 
   baseGeometry.dispose()
-  for (const geo of modifierGeometries) {
+  for (const geo of additive) {
     geo.dispose()
   }
 
-  return merged
+  // CSG subtract subtractive modifiers
+  if (subtractive.length > 0) {
+    const mergedSubtractive = mergeGeometries(subtractive)
+    for (const geo of subtractive) {
+      geo.dispose()
+    }
+
+    const evaluator = new Evaluator()
+    evaluator.attributes = ['position', 'normal']
+    const baseBrush = new Brush(result)
+    const subtractBrush = new Brush(mergedSubtractive)
+
+    const csgResult = evaluator.evaluate(baseBrush, subtractBrush, SUBTRACTION)
+    const finalGeometry = csgResult.geometry
+
+    result.dispose()
+    mergedSubtractive.dispose()
+    baseBrush.geometry.dispose()
+    subtractBrush.geometry.dispose()
+
+    result = finalGeometry
+  }
+
+  return result
 }
 
 /**

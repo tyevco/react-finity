@@ -64,6 +64,9 @@ describe('historyStore', () => {
           stackingLip: true,
           wallThickness: 1.2,
           innerFillet: 0,
+          magnetHoles: false,
+          weightHoles: false,
+          honeycombBase: false,
         },
       },
     ]
@@ -99,6 +102,9 @@ describe('historyStore', () => {
           stackingLip: true,
           wallThickness: 1.2,
           innerFillet: 0,
+          magnetHoles: false,
+          weightHoles: false,
+          honeycombBase: false,
         },
       },
     ]

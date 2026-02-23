@@ -12,6 +12,7 @@ test.describe('Properties Panel', () => {
     await expect(page.getByText('Dimension Profile')).toBeVisible()
     await expect(page.getByText('Grid Width')).toBeVisible()
     await expect(page.getByText('Grid Depth')).toBeVisible()
+    await expect(page.getByText('Slim')).toBeVisible()
     await expect(page.getByText('Magnet Holes')).toBeVisible()
     await expect(page.getByText('Screw Holes')).toBeVisible()
     await expect(page.getByText('Dimensions', { exact: true })).toBeVisible()
@@ -33,15 +34,34 @@ test.describe('Properties Panel', () => {
     await expect(depthSlider).toHaveAttribute('aria-valuenow', '3')
   })
 
+  test('slim toggle is off by default', async ({ page }) => {
+    // Default: slim=false
+    const slimSwitch = page.getByRole('switch').first()
+    await expect(slimSwitch).toHaveAttribute('data-state', 'unchecked')
+  })
+
+  test('toggling slim switch changes state and dimensions', async ({ page }) => {
+    const slimSwitch = page.getByRole('switch').first()
+
+    await slimSwitch.click()
+    await expect(slimSwitch).toHaveAttribute('data-state', 'checked')
+    // Slim height = socketWallHeight = 4.65mm
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('126 x 126 x 4.65 mm')
+
+    await slimSwitch.click()
+    await expect(slimSwitch).toHaveAttribute('data-state', 'unchecked')
+    await expect(page.getByTestId('dimensions-readout')).toHaveText('126 x 126 x 7 mm')
+  })
+
   test('magnet holes toggle is on by default', async ({ page }) => {
-    // Default: magnetHoles=true
-    const magnetSwitch = page.getByRole('switch').first()
+    // Default: magnetHoles=true (now index 1 due to Slim switch)
+    const magnetSwitch = page.getByRole('switch').nth(1)
     await expect(magnetSwitch).toHaveAttribute('data-state', 'checked')
   })
 
   test('screw holes toggle is off by default', async ({ page }) => {
-    // Default: screwHoles=false
-    const screwSwitch = page.getByRole('switch').nth(1)
+    // Default: screwHoles=false (now index 2 due to Slim switch)
+    const screwSwitch = page.getByRole('switch').nth(2)
     await expect(screwSwitch).toHaveAttribute('data-state', 'unchecked')
   })
 
@@ -72,7 +92,7 @@ test.describe('Properties Panel', () => {
   })
 
   test('toggling magnet holes switch changes state', async ({ page }) => {
-    const magnetSwitch = page.getByRole('switch').first()
+    const magnetSwitch = page.getByRole('switch').nth(1)
 
     // Initially checked
     await expect(magnetSwitch).toHaveAttribute('data-state', 'checked')
@@ -87,7 +107,7 @@ test.describe('Properties Panel', () => {
   })
 
   test('toggling screw holes switch changes state', async ({ page }) => {
-    const screwSwitch = page.getByRole('switch').nth(1)
+    const screwSwitch = page.getByRole('switch').nth(2)
 
     // Initially unchecked
     await expect(screwSwitch).toHaveAttribute('data-state', 'unchecked')

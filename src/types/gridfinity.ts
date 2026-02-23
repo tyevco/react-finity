@@ -21,6 +21,7 @@ export interface GridfinityProfile {
 export interface BaseplateParams {
   gridWidth: number // grid units (1-10)
   gridDepth: number // grid units (1-10)
+  slim: boolean
   magnetHoles: boolean
   screwHoles: boolean
 }
@@ -32,6 +33,9 @@ export interface BinParams {
   stackingLip: boolean
   wallThickness: number // override or use profile default
   innerFillet: number // internal edge fillet radius in mm (0 = sharp, max 3)
+  magnetHoles: boolean
+  weightHoles: boolean
+  honeycombBase: boolean
 }
 
 export type BuiltinObjectKind = 'baseplate' | 'bin'
@@ -64,7 +68,13 @@ export type GridfinityObject = BaseplateObject | BinObject | GenericGridfinityOb
 
 export type WallFace = 'front' | 'back' | 'left' | 'right'
 
-export type BuiltinModifierKind = 'dividerGrid' | 'labelTab' | 'scoop' | 'insert' | 'lid'
+export type BuiltinModifierKind =
+  | 'dividerGrid'
+  | 'labelTab'
+  | 'scoop'
+  | 'insert'
+  | 'lid'
+  | 'fingerScoop'
 export type ModifierKind = BuiltinModifierKind | (string & {})
 
 export interface ModifierBase {
@@ -129,6 +139,16 @@ export interface LidModifier extends ModifierBase {
   params: LidModifierParams
 }
 
+export interface FingerScoopModifierParams {
+  wall: WallFace
+  width: number // mm (10-30)
+  depth: number // mm (5-20, how far down from wall top)
+}
+export interface FingerScoopModifier extends ModifierBase {
+  kind: 'fingerScoop'
+  params: FingerScoopModifierParams
+}
+
 export interface GenericModifier extends ModifierBase {
   params: Record<string, unknown>
 }
@@ -139,6 +159,7 @@ export type Modifier =
   | ScoopModifier
   | InsertModifier
   | LidModifier
+  | FingerScoopModifier
   | GenericModifier
 
 export type ViewportBackground = 'dark' | 'light' | 'neutral'

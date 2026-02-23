@@ -82,10 +82,16 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 - **Scoop** modifier — curved scoop cutout on a selectable wall face with configurable radius (0 = auto-calculated from wall height).
 - **Insert** modifier — open-top compartment grid (compartmentsX/Y 1-10, wall thickness) that generates a rim and internal divider walls. Sub-modifiers can nest inside insert compartments.
 - **Lid** modifier — flat or stacking lid variant (boolean toggle), replacing the original standalone lid object type. Attaches as a modifier on a bin.
+- **Finger Scoop** modifier — U-shaped notch cut from the top of a bin wall for easy finger access (subtractive modifier, CSG-subtracted during export).
 - **Inner fillet** on bins — configurable fillet radius (0-3mm) for internal bottom edges of the bin cavity.
+- **Slim baseplate** — thinner baseplate that removes the solid slab, keeping only the socket frame. Saves material.
+- **Bin magnet holes** — 4 magnet pockets per grid cell in the bin base plug, matching baseplate magnet positions.
+- **Bin weight holes** — larger penny-sized cylindrical pockets centered in each bin grid cell for added weight/stability.
+- **Honeycomb base** — hexagonal hole pattern in the bin floor to save material.
+- **Subtractive modifier support** — modifiers can be marked `subtractive: true` in the registry, causing the export merge pipeline to CSG-subtract their geometry from the base object.
 - **Modifier UI** — "Modifiers" section in BinProperties with an Add dropdown menu, per-modifier cards with controls and a remove button, and recursive sub-modifier support.
 - **Modifier rendering** — each modifier generates its own `BufferGeometry` and is rendered as a separate mesh in the viewport. `ModifierContext` provides inner dimensions so modifiers adapt to their parent's geometry.
-- Unit tests for all 5 modifier geometry generators (29 tests) and modifier store actions
+- Unit tests for all 6 modifier geometry generators and modifier store actions
 - E2E tests for modifier UI workflows (adding, configuring, removing modifiers)
 
 **Deferred to Phase 6:**
@@ -158,7 +164,7 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 
 **Delivered:**
 - **Registry infrastructure** -- `ObjectKindRegistry` and `ModifierKindRegistry` singleton classes with register/get/getAll/freeze APIs
-- **Builtin registration** -- all 2 object kinds and 5 modifier kinds registered via `registerBuiltinKinds()` in `src/engine/registry/builtins.ts`
+- **Builtin registration** -- all 2 object kinds and 6 modifier kinds registered via `registerBuiltinKinds()` in `src/engine/registry/builtins.ts`
 - **Full migration** -- all switch statements on `object.kind` and `modifier.kind` replaced with registry lookups across export, store, viewport, and UI layers
 - **Widened type system** -- `GridfinityObjectKind` and `ModifierKind` accept extensible string values; `GenericGridfinityObject` and `GenericModifier` types for custom kinds; type guards in `src/types/guards.ts`
 - **Schema-driven UI** -- `SchemaPropertiesPanel` and `SchemaModifierControls` components render property editors from `ParamSchema` definitions; scoop and lid modifiers converted to schema-driven controls

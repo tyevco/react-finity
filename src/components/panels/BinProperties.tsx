@@ -134,6 +134,44 @@ export function BinProperties({ object }: BinPropertiesProps) {
 
       <Separator />
 
+      {/* Base Options */}
+      <Label className="text-xs text-muted-foreground">Base Options</Label>
+
+      {/* Magnet Holes */}
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Magnet Holes</Label>
+        <Switch
+          checked={object.params.magnetHoles}
+          onCheckedChange={(checked) => {
+            updateObjectParams(object.id, { magnetHoles: checked })
+          }}
+        />
+      </div>
+
+      {/* Weight Holes */}
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Weight Holes</Label>
+        <Switch
+          checked={object.params.weightHoles}
+          onCheckedChange={(checked) => {
+            updateObjectParams(object.id, { weightHoles: checked })
+          }}
+        />
+      </div>
+
+      {/* Honeycomb Base */}
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Honeycomb Base</Label>
+        <Switch
+          checked={object.params.honeycombBase}
+          onCheckedChange={(checked) => {
+            updateObjectParams(object.id, { honeycombBase: checked })
+          }}
+        />
+      </div>
+
+      <Separator />
+
       {/* Dimensions readout */}
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">Dimensions</Label>

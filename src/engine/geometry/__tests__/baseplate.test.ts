@@ -7,6 +7,7 @@ describe('generateBaseplate', () => {
   const defaultParams: BaseplateParams = {
     gridWidth: 1,
     gridDepth: 1,
+    slim: false,
     magnetHoles: false,
     screwHoles: false,
   }
@@ -73,6 +74,51 @@ describe('generateBaseplate', () => {
     geometry.dispose()
   })
 
+  it('slim mode generates fewer vertices than full mode (no slab)', () => {
+    const full = generateBaseplate(defaultParams, PROFILE_OFFICIAL)
+    const slim = generateBaseplate({ ...defaultParams, slim: true }, PROFILE_OFFICIAL)
+
+    expect(slim.attributes.position.count).toBeLessThan(full.attributes.position.count)
+
+    full.dispose()
+    slim.dispose()
+  })
+
+  it('slim mode bounding box is shorter than full mode', () => {
+    const full = generateBaseplate(defaultParams, PROFILE_OFFICIAL)
+    const slim = generateBaseplate({ ...defaultParams, slim: true }, PROFILE_OFFICIAL)
+
+    full.computeBoundingBox()
+    slim.computeBoundingBox()
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const fullHeight = full.boundingBox!.max.y - full.boundingBox!.min.y
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const slimHeight = slim.boundingBox!.max.y - slim.boundingBox!.min.y
+
+    expect(slimHeight).toBeLessThan(fullHeight)
+
+    full.dispose()
+    slim.dispose()
+  })
+
+  it('slim mode disables magnet/screw holes', () => {
+    const slimNoHoles = generateBaseplate(
+      { ...defaultParams, slim: true, magnetHoles: false },
+      PROFILE_OFFICIAL,
+    )
+    const slimWithHoles = generateBaseplate(
+      { ...defaultParams, slim: true, magnetHoles: true },
+      PROFILE_OFFICIAL,
+    )
+
+    // In slim mode, holes are disabled regardless of the flag
+    expect(slimWithHoles.attributes.position.count).toBe(slimNoHoles.attributes.position.count)
+
+    slimNoHoles.dispose()
+    slimWithHoles.dispose()
+  })
+
   it('bounding box matches expected dimensions for 1x1 grid', () => {
     const geometry = generateBaseplate(defaultParams, PROFILE_OFFICIAL)
     geometry.computeBoundingBox()
@@ -96,7 +142,7 @@ describe('generateBaseplate', () => {
 describe('getBaseplateDimensions', () => {
   it('returns correct dimensions for a 3x3 baseplate', () => {
     const dims = getBaseplateDimensions(
-      { gridWidth: 3, gridDepth: 3, magnetHoles: false, screwHoles: false },
+      { gridWidth: 3, gridDepth: 3, slim: false, magnetHoles: false, screwHoles: false },
       PROFILE_OFFICIAL,
     )
 
@@ -107,12 +153,23 @@ describe('getBaseplateDimensions', () => {
 
   it('returns correct dimensions for a 1x1 baseplate', () => {
     const dims = getBaseplateDimensions(
-      { gridWidth: 1, gridDepth: 1, magnetHoles: false, screwHoles: false },
+      { gridWidth: 1, gridDepth: 1, slim: false, magnetHoles: false, screwHoles: false },
       PROFILE_OFFICIAL,
     )
 
     expect(dims.width).toBe(42)
     expect(dims.depth).toBe(42)
     expect(dims.height).toBe(7)
+  })
+
+  it('returns reduced height for slim baseplate', () => {
+    const dims = getBaseplateDimensions(
+      { gridWidth: 1, gridDepth: 1, slim: true, magnetHoles: false, screwHoles: false },
+      PROFILE_OFFICIAL,
+    )
+
+    expect(dims.width).toBe(42)
+    expect(dims.depth).toBe(42)
+    expect(dims.height).toBe(PROFILE_OFFICIAL.socketWallHeight) // 4.65mm
   })
 })

@@ -148,6 +148,41 @@ test.describe('Bin Properties Panel', () => {
     await expect(page.getByTestId('dimensions-readout')).toHaveText('42 x 42 x 21 mm')
   })
 
+  test('base options toggles visible and off by default', async ({ page }) => {
+    await expect(page.getByText('Base Options')).toBeVisible()
+    await expect(page.getByText('Magnet Holes')).toBeVisible()
+    await expect(page.getByText('Weight Holes')).toBeVisible()
+    await expect(page.getByText('Honeycomb Base')).toBeVisible()
+  })
+
+  test('magnet holes toggle changes state', async ({ page }) => {
+    // Find the Magnet Holes switch (after Stacking Lip switch)
+    const magnetLabel = page.getByText('Magnet Holes').locator('..')
+    const magnetSwitch = magnetLabel.getByRole('switch')
+
+    await expect(magnetSwitch).toHaveAttribute('data-state', 'unchecked')
+    await magnetSwitch.click()
+    await expect(magnetSwitch).toHaveAttribute('data-state', 'checked')
+  })
+
+  test('weight holes toggle changes state', async ({ page }) => {
+    const weightLabel = page.getByText('Weight Holes').locator('..')
+    const weightSwitch = weightLabel.getByRole('switch')
+
+    await expect(weightSwitch).toHaveAttribute('data-state', 'unchecked')
+    await weightSwitch.click()
+    await expect(weightSwitch).toHaveAttribute('data-state', 'checked')
+  })
+
+  test('honeycomb base toggle changes state', async ({ page }) => {
+    const honeycombLabel = page.getByText('Honeycomb Base').locator('..')
+    const honeycombSwitch = honeycombLabel.getByRole('switch')
+
+    await expect(honeycombSwitch).toHaveAttribute('data-state', 'unchecked')
+    await honeycombSwitch.click()
+    await expect(honeycombSwitch).toHaveAttribute('data-state', 'checked')
+  })
+
   test('inner fillet slider visible and defaults to None', async ({ page }) => {
     await expect(page.getByText('Inner Fillet')).toBeVisible()
     await expect(page.getByText('None')).toBeVisible()
@@ -180,9 +215,10 @@ test.describe('Bin Modifiers', () => {
 
     await expect(page.getByRole('menuitem', { name: 'Divider Grid' })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: 'Label Tab' })).toBeVisible()
-    await expect(page.getByRole('menuitem', { name: 'Scoop' })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: 'Scoop', exact: true })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: 'Insert' })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: 'Lid' })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: 'Finger Scoop' })).toBeVisible()
   })
 
   test('can add a divider grid modifier', async ({ page }) => {
@@ -218,15 +254,15 @@ test.describe('Bin Modifiers', () => {
 
   test('can add a scoop modifier', async ({ page }) => {
     await page.getByTestId('add-modifier-btn').click()
-    await page.getByRole('menuitem', { name: 'Scoop' }).click()
+    await page.getByRole('menuitem', { name: 'Scoop', exact: true }).click()
 
     await expect(page.getByTestId('modifier-scoop')).toBeVisible()
-    await expect(page.getByText('Scoop')).toBeVisible()
+    await expect(page.getByTestId('modifier-scoop').getByText('Scoop')).toBeVisible()
   })
 
   test('scoop controls render correctly', async ({ page }) => {
     await page.getByTestId('add-modifier-btn').click()
-    await page.getByRole('menuitem', { name: 'Scoop' }).click()
+    await page.getByRole('menuitem', { name: 'Scoop', exact: true }).click()
 
     await expect(page.getByText('Radius')).toBeVisible()
   })
@@ -261,6 +297,23 @@ test.describe('Bin Modifiers', () => {
 
     const lidCard = page.getByTestId('modifier-lid')
     await expect(lidCard.getByText('Stacking')).toBeVisible()
+  })
+
+  test('can add a finger scoop modifier', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Finger Scoop' }).click()
+
+    await expect(page.getByTestId('modifier-fingerScoop')).toBeVisible()
+    await expect(page.getByText('Finger Scoop')).toBeVisible()
+  })
+
+  test('finger scoop controls render correctly', async ({ page }) => {
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Finger Scoop' }).click()
+
+    const card = page.getByTestId('modifier-fingerScoop')
+    await expect(card.getByText('Width')).toBeVisible()
+    await expect(card.getByText('Depth')).toBeVisible()
   })
 
   test('can remove a modifier', async ({ page }) => {

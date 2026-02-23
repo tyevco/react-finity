@@ -107,6 +107,7 @@ export interface ModifierKindRegistration<TParams = Record<string, unknown>> {
     profile: GridfinityProfile,
   ) => BufferGeometry | null
   subdividesSpace: boolean
+  subtractive?: boolean
   computeChildContext?: (params: TParams, parentContext: ModifierContext) => ModifierContext
   separatePrintPart?: boolean
   allowedParentKinds?: string[]

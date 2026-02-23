@@ -148,6 +148,26 @@ export function createHollowExtrusion(
 }
 
 /**
+ * Create a hexagon hole Path (clockwise winding for use as Shape.hole)
+ * centered at (cx, cz) with the given radius. Flat-top orientation.
+ */
+export function createHexagonHolePath(radius: number, cx: number, cz: number): Path {
+  const path = new Path()
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2 + Math.PI / 6 // flat-top orientation
+    const x = cx + radius * Math.cos(angle)
+    const z = cz + radius * Math.sin(angle)
+    if (i === 0) {
+      path.moveTo(x, z)
+    } else {
+      path.lineTo(x, z)
+    }
+  }
+  path.closePath()
+  return path
+}
+
+/**
  * Merge multiple geometries into one.
  */
 export function mergeGeometries(geometries: BufferGeometry[]): BufferGeometry {

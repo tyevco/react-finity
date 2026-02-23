@@ -5,6 +5,7 @@ import type {
   ScoopModifierParams,
   InsertModifierParams,
   LidModifierParams,
+  FingerScoopModifierParams,
   PrintBedPreset,
 } from '@/types/gridfinity'
 
@@ -52,6 +53,7 @@ export const DEFAULT_PROFILES: Record<string, GridfinityProfile> = {
 export const DEFAULT_BASEPLATE_PARAMS = {
   gridWidth: 3,
   gridDepth: 3,
+  slim: false,
   magnetHoles: true,
   screwHoles: false,
 } as const
@@ -63,6 +65,9 @@ export const DEFAULT_BIN_PARAMS = {
   stackingLip: true,
   wallThickness: 1.2,
   innerFillet: 0,
+  magnetHoles: false,
+  weightHoles: false,
+  honeycombBase: false,
 } as const
 
 export const DEFAULT_DIVIDER_GRID_PARAMS: DividerGridModifierParams = {
@@ -90,6 +95,12 @@ export const DEFAULT_INSERT_PARAMS: InsertModifierParams = {
 
 export const DEFAULT_LID_PARAMS: LidModifierParams = {
   stacking: false,
+}
+
+export const DEFAULT_FINGER_SCOOP_PARAMS: FingerScoopModifierParams = {
+  wall: 'front',
+  width: 20,
+  depth: 15,
 }
 
 export const PRINT_BED_PRESETS: Record<string, PrintBedPreset> = {

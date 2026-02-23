@@ -30,10 +30,11 @@ describe('registerBuiltinKinds', () => {
     expect(objectKindRegistry.getAllKinds().sort()).toEqual(['baseplate', 'bin'])
   })
 
-  it('registers all 5 modifier kinds', () => {
-    expect(modifierKindRegistry.getAll()).toHaveLength(5)
+  it('registers all 6 modifier kinds', () => {
+    expect(modifierKindRegistry.getAll()).toHaveLength(6)
     expect(modifierKindRegistry.getAllKinds().sort()).toEqual([
       'dividerGrid',
+      'fingerScoop',
       'insert',
       'labelTab',
       'lid',

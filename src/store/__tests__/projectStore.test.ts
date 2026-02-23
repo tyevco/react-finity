@@ -26,6 +26,7 @@ describe('projectStore', () => {
     expect(objects[0].params).toEqual({
       gridWidth: 3,
       gridDepth: 3,
+      slim: false,
       magnetHoles: true,
       screwHoles: false,
     })
@@ -81,13 +82,18 @@ describe('projectStore', () => {
     expect(useProjectStore.getState().modifiers).toHaveLength(0)
   })
 
-  it('adds a bin object with innerFillet default', () => {
+  it('adds a bin object with correct defaults', () => {
     const id = useProjectStore.getState().addObject('bin')
     const obj = useProjectStore.getState().objects[0]
 
     expect(obj.id).toBe(id)
     expect(obj.kind).toBe('bin')
-    expect(obj.params).toMatchObject({ innerFillet: 0 })
+    expect(obj.params).toMatchObject({
+      innerFillet: 0,
+      magnetHoles: false,
+      weightHoles: false,
+      honeycombBase: false,
+    })
   })
 })
 
@@ -301,6 +307,9 @@ describe('modifier CRUD', () => {
             stackingLip: true,
             wallThickness: 1.2,
             innerFillet: 0,
+            magnetHoles: false,
+            weightHoles: false,
+            honeycombBase: false,
           },
         },
       ],
@@ -337,6 +346,9 @@ describe('modifier CRUD', () => {
             stackingLip: true,
             wallThickness: 1.2,
             innerFillet: 0,
+            magnetHoles: false,
+            weightHoles: false,
+            honeycombBase: false,
           },
         },
         {
@@ -347,6 +359,7 @@ describe('modifier CRUD', () => {
           params: {
             gridWidth: 3,
             gridDepth: 3,
+            slim: false,
             magnetHoles: true,
             screwHoles: false,
           },
@@ -379,6 +392,9 @@ describe('modifier CRUD', () => {
           stackingLip: true,
           wallThickness: 1.2,
           innerFillet: 0,
+          magnetHoles: false,
+          weightHoles: false,
+          honeycombBase: false,
         },
       },
       {
@@ -386,7 +402,13 @@ describe('modifier CRUD', () => {
         id: '2',
         name: 'Custom Name',
         position: [0, 0, 0],
-        params: { gridWidth: 3, gridDepth: 3, magnetHoles: true, screwHoles: false },
+        params: {
+          gridWidth: 3,
+          gridDepth: 3,
+          slim: false,
+          magnetHoles: true,
+          screwHoles: false,
+        },
       },
       {
         kind: 'bin',
@@ -400,6 +422,9 @@ describe('modifier CRUD', () => {
           stackingLip: true,
           wallThickness: 1.2,
           innerFillet: 0,
+          magnetHoles: false,
+          weightHoles: false,
+          honeycombBase: false,
         },
       },
     ])

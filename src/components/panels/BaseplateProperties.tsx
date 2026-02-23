@@ -63,6 +63,17 @@ export function BaseplateProperties({ object }: BaseplatePropertiesProps) {
 
       <Separator />
 
+      {/* Slim */}
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Slim</Label>
+        <Switch
+          checked={object.params.slim}
+          onCheckedChange={(checked) => {
+            updateObjectParams(object.id, { slim: checked })
+          }}
+        />
+      </div>
+
       {/* Magnet Holes */}
       <div className="flex items-center justify-between">
         <Label className="text-xs">Magnet Holes</Label>

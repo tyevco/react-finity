@@ -14,7 +14,7 @@ function makeBaseplate(id = 'bp-1'): BaseplateObject {
     name: `Baseplate ${id}`,
     kind: 'baseplate',
     position: [0, 0, 0],
-    params: { gridWidth: 1, gridDepth: 1, magnetHoles: false, screwHoles: false },
+    params: { gridWidth: 1, gridDepth: 1, slim: false, magnetHoles: false, screwHoles: false },
   }
 }
 
@@ -31,6 +31,9 @@ function makeBin(id = 'bin-1'): BinObject {
       stackingLip: true,
       wallThickness: 1.2,
       innerFillet: 0,
+      magnetHoles: false,
+      weightHoles: false,
+      honeycombBase: false,
     },
   }
 }

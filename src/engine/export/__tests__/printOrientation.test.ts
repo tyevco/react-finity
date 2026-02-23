@@ -17,7 +17,7 @@ function makeBaseplate(): BaseplateObject {
     name: 'Test Baseplate',
     kind: 'baseplate',
     position: [0, 0, 0],
-    params: { gridWidth: 1, gridDepth: 1, magnetHoles: false, screwHoles: false },
+    params: { gridWidth: 1, gridDepth: 1, slim: false, magnetHoles: false, screwHoles: false },
   }
 }
 
@@ -34,6 +34,9 @@ function makeBin(): BinObject {
       stackingLip: true,
       wallThickness: 1.2,
       innerFillet: 0,
+      magnetHoles: false,
+      weightHoles: false,
+      honeycombBase: false,
     },
   }
 }
