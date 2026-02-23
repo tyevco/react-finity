@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, GizmoHelper, GizmoViewport } from '@react-three/drei'
@@ -80,8 +80,8 @@ function PrintScene() {
     return items
   }, [objects, modifiers, activeProfile, bed.width, bed.depth, printBedSpacing])
 
-  // Dispose previous layout geometries on unmount/recompute
-  useMemo(() => {
+  // Dispose layout geometries on unmount/recompute
+  useEffect(() => {
     return () => {
       disposePrintLayout(layoutItems)
     }
@@ -108,7 +108,7 @@ function PrintScene() {
 
       {/* Objects on the print bed */}
       {layoutItems.map((item) => (
-        <PrintObject key={item.object.id} item={item} />
+        <PrintObject key={item.id} item={item} />
       ))}
 
       {/* Gizmo helper */}

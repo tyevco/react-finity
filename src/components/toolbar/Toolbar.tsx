@@ -97,12 +97,17 @@ export function Toolbar() {
     const obj = objects.find((o) => o.id === singleSelectedId)
     if (!obj) return
 
-    const merged = mergeObjectWithModifiers(obj, modifiers, activeProfile)
-    const rotation = getPrintRotation(obj)
-    const oriented = applyPrintOrientation(merged, rotation)
-    exportObjectAsSTL(oriented, obj.name, exportScale)
-    merged.dispose()
-    oriented.dispose()
+    let merged: ReturnType<typeof mergeObjectWithModifiers> | null = null
+    let oriented: ReturnType<typeof applyPrintOrientation> | null = null
+    try {
+      merged = mergeObjectWithModifiers(obj, modifiers, activeProfile)
+      const rotation = getPrintRotation(obj)
+      oriented = applyPrintOrientation(merged, rotation)
+      exportObjectAsSTL(oriented, obj.name, exportScale)
+    } finally {
+      merged?.dispose()
+      oriented?.dispose()
+    }
   }
 
   const handleExportSelected3MF = () => {
@@ -114,8 +119,13 @@ export function Toolbar() {
     const rotation = getPrintRotation(obj)
     const oriented = applyPrintOrientation(merged, rotation)
     void exportObjectAs3MF(oriented, obj.name, exportScale)
-    merged.dispose()
-    oriented.dispose()
+      .catch(() => {
+        // TODO: show toast notification
+      })
+      .finally(() => {
+        merged.dispose()
+        oriented.dispose()
+      })
   }
 
   const handleSaveAs = () => {

@@ -55,16 +55,21 @@ export function exportObjectAsSTL(geometry: THREE.BufferGeometry, name: string, 
  * Export all print layout items as individual STL files bundled in a ZIP.
  */
 export async function exportAllAsZip(items: PrintLayoutItem[], scale = 1): Promise<void> {
-  const zip = new JSZip()
+  try {
+    const zip = new JSZip()
 
-  for (const item of items) {
-    const data = geometryToSTLBinary(item.geometry, scale)
-    const filename = `${sanitizeFilename(item.object.name)}.stl`
-    zip.file(filename, data)
+    for (const item of items) {
+      const data = geometryToSTLBinary(item.geometry, scale)
+      const filename = `${sanitizeFilename(item.label)}.stl`
+      zip.file(filename, data)
+    }
+
+    const blob = await zip.generateAsync({ type: 'blob' })
+    triggerDownload(blob, 'react-finity-export.zip')
+  } catch (error) {
+    console.error('Failed to export ZIP:', error)
+    throw error
   }
-
-  const blob = await zip.generateAsync({ type: 'blob' })
-  triggerDownload(blob, 'react-finity-export.zip')
 }
 
 /**
@@ -75,75 +80,81 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
   if (items.length === 0) return
 
   const geometries: THREE.BufferGeometry[] = []
+  let merged: THREE.BufferGeometry | null = null
 
-  for (const item of items) {
-    const clone = item.geometry.clone()
-    const [x, y, z] = item.position
-    clone.translate(x, y, z)
-    geometries.push(clone)
-  }
-
-  // Merge all positioned geometries
-  const merged = new THREE.BufferGeometry()
-  let totalVertices = 0
-  let totalIndices = 0
-
-  for (const geo of geometries) {
-    totalVertices += geo.attributes.position.count
-    if (geo.index) {
-      totalIndices += geo.index.count
-    } else {
-      totalIndices += geo.attributes.position.count
-    }
-  }
-
-  const positions = new Float32Array(totalVertices * 3)
-  const normals = new Float32Array(totalVertices * 3)
-  const indices = new Uint32Array(totalIndices)
-
-  let vertexOffset = 0
-  let indexOffset = 0
-
-  for (const geo of geometries) {
-    const posAttr = geo.attributes.position as THREE.BufferAttribute
-    const normAttr = geo.attributes.normal as THREE.BufferAttribute | undefined
-
-    for (let i = 0; i < posAttr.count * 3; i++) {
-      positions[vertexOffset * 3 + i] = posAttr.array[i]
+  try {
+    for (const item of items) {
+      const clone = item.geometry.clone()
+      const [x, y, z] = item.position
+      clone.translate(x, y, z)
+      geometries.push(clone)
     }
 
-    if (normAttr) {
-      for (let i = 0; i < normAttr.count * 3; i++) {
-        normals[vertexOffset * 3 + i] = normAttr.array[i]
+    // Merge all positioned geometries
+    merged = new THREE.BufferGeometry()
+    let totalVertices = 0
+    let totalIndices = 0
+
+    for (const geo of geometries) {
+      totalVertices += geo.attributes.position.count
+      if (geo.index) {
+        totalIndices += geo.index.count
+      } else {
+        totalIndices += geo.attributes.position.count
       }
     }
 
-    if (geo.index) {
-      for (let i = 0; i < geo.index.count; i++) {
-        indices[indexOffset + i] = geo.index.array[i] + vertexOffset
+    const positions = new Float32Array(totalVertices * 3)
+    const normals = new Float32Array(totalVertices * 3)
+    const indices = new Uint32Array(totalIndices)
+
+    let vertexOffset = 0
+    let indexOffset = 0
+
+    for (const geo of geometries) {
+      const posAttr = geo.attributes.position as THREE.BufferAttribute
+      const normAttr = geo.attributes.normal as THREE.BufferAttribute | undefined
+
+      for (let i = 0; i < posAttr.count * 3; i++) {
+        positions[vertexOffset * 3 + i] = posAttr.array[i]
       }
-      indexOffset += geo.index.count
-    } else {
-      for (let i = 0; i < posAttr.count; i++) {
-        indices[indexOffset + i] = vertexOffset + i
+
+      if (normAttr) {
+        for (let i = 0; i < normAttr.count * 3; i++) {
+          normals[vertexOffset * 3 + i] = normAttr.array[i]
+        }
       }
-      indexOffset += posAttr.count
+
+      if (geo.index) {
+        for (let i = 0; i < geo.index.count; i++) {
+          indices[indexOffset + i] = geo.index.array[i] + vertexOffset
+        }
+        indexOffset += geo.index.count
+      } else {
+        for (let i = 0; i < posAttr.count; i++) {
+          indices[indexOffset + i] = vertexOffset + i
+        }
+        indexOffset += posAttr.count
+      }
+
+      vertexOffset += posAttr.count
     }
 
-    vertexOffset += posAttr.count
-  }
+    merged.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3))
+    merged.setIndex(new THREE.BufferAttribute(indices, 1))
+    merged.computeVertexNormals()
 
-  merged.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3))
-  merged.setIndex(new THREE.BufferAttribute(indices, 1))
-  merged.computeVertexNormals()
-
-  const buffer = geometryToSTLBinary(merged, scale)
-  const blob = new Blob([buffer], { type: 'application/octet-stream' })
-  triggerDownload(blob, 'react-finity-plate.stl')
-
-  merged.dispose()
-  for (const geo of geometries) {
-    geo.dispose()
+    const buffer = geometryToSTLBinary(merged, scale)
+    const blob = new Blob([buffer], { type: 'application/octet-stream' })
+    triggerDownload(blob, 'react-finity-plate.stl')
+  } catch (error) {
+    console.error('Failed to export single STL:', error)
+    throw error
+  } finally {
+    merged?.dispose()
+    for (const geo of geometries) {
+      geo.dispose()
+    }
   }
 }

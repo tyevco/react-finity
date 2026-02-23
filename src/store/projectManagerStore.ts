@@ -23,8 +23,14 @@ function readProjectData(id: string): ProjectData | null {
   }
 }
 
-function writeProjectData(id: string, data: ProjectData): void {
-  localStorage.setItem(projectDataKey(id), JSON.stringify(data))
+function writeProjectData(id: string, data: ProjectData): boolean {
+  try {
+    localStorage.setItem(projectDataKey(id), JSON.stringify(data))
+    return true
+  } catch (error) {
+    console.error('Failed to write project data (localStorage quota exceeded?):', error)
+    return false
+  }
 }
 
 function deleteProjectData(id: string): void {
@@ -101,7 +107,10 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
           }))
         }
 
-        writeProjectData(projectId, { objects, modifiers })
+        if (!writeProjectData(projectId, { objects, modifiers })) {
+          // Revert dirty flag so auto-save retries on next change
+          set({ isDirty: true })
+        }
       },
 
       saveProjectAs: (name: string) => {
@@ -121,7 +130,9 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
           updatedAt: now,
         }
 
-        writeProjectData(projectId, { objects, modifiers })
+        if (!writeProjectData(projectId, { objects, modifiers })) {
+          return
+        }
 
         set((s) => ({
           currentProjectId: projectId,

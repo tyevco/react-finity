@@ -135,10 +135,15 @@ export async function exportObjectAs3MF(
   name: string,
   scale = 1,
 ): Promise<void> {
-  const meshXml = geometryToMeshXml(geometry, scale)
-  const modelXml = buildModelXml([{ id: 1, name, meshXml }], [{ objectId: 1 }])
-  const blob = await build3MFBlob(modelXml)
-  triggerDownload(blob, `${sanitizeFilename(name)}.3mf`)
+  try {
+    const meshXml = geometryToMeshXml(geometry, scale)
+    const modelXml = buildModelXml([{ id: 1, name, meshXml }], [{ objectId: 1 }])
+    const blob = await build3MFBlob(modelXml)
+    triggerDownload(blob, `${sanitizeFilename(name)}.3mf`)
+  } catch (error) {
+    console.error('Failed to export 3MF:', error)
+    throw error
+  }
 }
 
 /**
@@ -149,28 +154,34 @@ export async function exportObjectAs3MF(
 export async function exportAllAs3MF(items: PrintLayoutItem[], scale = 1): Promise<void> {
   if (items.length === 0) return
 
-  const objects: ModelObject[] = []
-  const buildItems: BuildItem[] = []
   const clones: THREE.BufferGeometry[] = []
 
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i]
-    const clone = item.geometry.clone()
-    const [x, y, z] = item.position
-    clone.translate(x, y, z)
-    clones.push(clone)
+  try {
+    const objects: ModelObject[] = []
+    const buildItems: BuildItem[] = []
 
-    const id = i + 1
-    const meshXml = geometryToMeshXml(clone, scale)
-    objects.push({ id, name: item.object.name, meshXml })
-    buildItems.push({ objectId: id })
-  }
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      const clone = item.geometry.clone()
+      const [x, y, z] = item.position
+      clone.translate(x, y, z)
+      clones.push(clone)
 
-  const modelXml = buildModelXml(objects, buildItems)
-  const blob = await build3MFBlob(modelXml)
-  triggerDownload(blob, 'react-finity-plate.3mf')
+      const id = i + 1
+      const meshXml = geometryToMeshXml(clone, scale)
+      objects.push({ id, name: item.label, meshXml })
+      buildItems.push({ objectId: id })
+    }
 
-  for (const clone of clones) {
-    clone.dispose()
+    const modelXml = buildModelXml(objects, buildItems)
+    const blob = await build3MFBlob(modelXml)
+    triggerDownload(blob, 'react-finity-plate.3mf')
+  } catch (error) {
+    console.error('Failed to export all as 3MF:', error)
+    throw error
+  } finally {
+    for (const clone of clones) {
+      clone.dispose()
+    }
   }
 }
