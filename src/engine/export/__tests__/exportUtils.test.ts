@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { sanitizeFilename, triggerDownload } from '../exportUtils'
 
 describe('sanitizeFilename', () => {
@@ -34,9 +34,14 @@ describe('sanitizeFilename', () => {
 describe('triggerDownload', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    vi.useFakeTimers()
   })
 
-  it('creates a link element, clicks it, and cleans up', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('creates a link element, clicks it, and defers cleanup', () => {
     const fakeUrl = 'blob:http://localhost/fake-id'
     const createObjUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue(fakeUrl)
     const revokeObjUrlSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(
@@ -58,9 +63,17 @@ describe('triggerDownload', () => {
     const blob = new Blob(['test'], { type: 'text/plain' })
     triggerDownload(blob, 'test.txt')
 
+    // Click and append happen synchronously
     expect(createObjUrlSpy).toHaveBeenCalledWith(blob)
     expect(clickSpy).toHaveBeenCalledOnce()
     expect(appendSpy).toHaveBeenCalledOnce()
+
+    // Cleanup is deferred via setTimeout
+    expect(removeSpy).not.toHaveBeenCalled()
+    expect(revokeObjUrlSpy).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(100)
+
     expect(removeSpy).toHaveBeenCalledOnce()
     expect(revokeObjUrlSpy).toHaveBeenCalledWith(fakeUrl)
   })
