@@ -2,10 +2,7 @@ import * as THREE from 'three'
 import { STLExporter } from 'three/addons/exporters/STLExporter.js'
 import JSZip from 'jszip'
 import type { PrintLayoutItem } from './printLayout'
-
-function sanitizeFilename(name: string): string {
-  return name.replace(/[^a-zA-Z0-9_\-. ]/g, '_').trim() || 'object'
-}
+import { sanitizeFilename, triggerDownload } from './exportUtils'
 
 function geometryToSTLBinary(geometry: THREE.BufferGeometry, scale = 1): ArrayBuffer {
   const exporter = new STLExporter()
@@ -29,17 +26,6 @@ function geometryToSTLBinary(geometry: THREE.BufferGeometry, scale = 1): ArrayBu
   }
 
   return arrayBuffer
-}
-
-function triggerDownload(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
 }
 
 /**

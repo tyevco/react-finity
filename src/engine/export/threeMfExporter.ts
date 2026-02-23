@@ -1,21 +1,7 @@
 import type * as THREE from 'three'
 import JSZip from 'jszip'
 import type { PrintLayoutItem } from './printLayout'
-
-function sanitizeFilename(name: string): string {
-  return name.replace(/[^a-zA-Z0-9_\-. ]/g, '_').trim() || 'object'
-}
-
-function triggerDownload(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
+import { sanitizeFilename, triggerDownload } from './exportUtils'
 
 function escapeXml(str: string): string {
   return str
