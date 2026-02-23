@@ -5,6 +5,7 @@ import type { Object3D } from 'three'
 import { useProjectStore } from '@/store/projectStore'
 import { useUIStore } from '@/store/uiStore'
 import { useProfileStore } from '@/store/profileStore'
+import { snapObjectToGrid } from '@/engine/snapping'
 
 type TransformControlsRef = ComponentRef<typeof TransformControls>
 
@@ -16,9 +17,14 @@ interface TransformGizmoProps {
 export function TransformGizmo({ target, objectId }: TransformGizmoProps) {
   const controlsRef = useRef<TransformControlsRef>(null)
   const updateObjectPosition = useProjectStore((s) => s.updateObjectPosition)
+  const obj = useProjectStore((s) => s.objects.find((o) => o.id === objectId))
   const snapEnabled = useUIStore((s) => s.snapToGrid)
   const gridSize = useProfileStore((s) => s.activeProfile.gridSize)
   const orbitControls = useThree((s) => s.controls)
+
+  const objParams = obj?.params as Record<string, unknown> | undefined
+  const gridWidth = objParams?.gridWidth as number | undefined
+  const gridDepth = objParams?.gridDepth as number | undefined
 
   useEffect(() => {
     const tc = controlsRef.current
@@ -42,11 +48,13 @@ export function TransformGizmo({ target, objectId }: TransformGizmoProps) {
     }
 
     const handleMouseUp = () => {
-      const pos: [number, number, number] = [
-        target.position.x,
-        target.position.y,
-        target.position.z,
-      ]
+      let pos: [number, number, number] = [target.position.x, target.position.y, target.position.z]
+
+      if (snapEnabled && gridWidth != null && gridDepth != null) {
+        pos = snapObjectToGrid(pos, gridSize, gridWidth, gridDepth)
+        target.position.set(pos[0], pos[1], pos[2])
+      }
+
       updateObjectPosition(objectId, pos)
     }
 
@@ -57,14 +65,23 @@ export function TransformGizmo({ target, objectId }: TransformGizmoProps) {
       evTarget.removeEventListener('dragging-changed', handleDraggingChanged)
       evTarget.removeEventListener('mouseUp', handleMouseUp)
     }
-  }, [target, objectId, orbitControls, updateObjectPosition])
+  }, [
+    target,
+    objectId,
+    orbitControls,
+    updateObjectPosition,
+    snapEnabled,
+    gridSize,
+    gridWidth,
+    gridDepth,
+  ])
 
   return (
     <TransformControls
       ref={controlsRef}
       object={target}
       mode="translate"
-      translationSnap={snapEnabled ? gridSize : null}
+      translationSnap={snapEnabled ? gridSize / 2 : null}
     />
   )
 }

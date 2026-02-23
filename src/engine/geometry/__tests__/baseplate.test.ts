@@ -27,26 +27,50 @@ describe('generateBaseplate', () => {
       PROFILE_OFFICIAL,
     )
 
-    // Larger grid should have more vertices
+    // Larger grid should have more vertices (more cells = more cavities + step rings)
     expect(large.attributes.position.count).toBeGreaterThan(small.attributes.position.count)
 
     small.dispose()
     large.dispose()
   })
 
-  it('generates additional geometry when magnet holes are enabled', () => {
+  it('generates different geometry when magnet holes are enabled', () => {
     const withoutHoles = generateBaseplate(
       { ...defaultParams, magnetHoles: false },
       PROFILE_OFFICIAL,
     )
     const withHoles = generateBaseplate({ ...defaultParams, magnetHoles: true }, PROFILE_OFFICIAL)
 
-    // With holes should store hole geometries in userData
-    expect(withHoles.userData.holeGeometries).toBeDefined()
-    expect(withoutHoles.userData.holeGeometries).toBeUndefined()
+    // CSG subtraction changes vertex count
+    expect(withHoles.attributes.position.count).not.toBe(withoutHoles.attributes.position.count)
 
     withoutHoles.dispose()
     withHoles.dispose()
+  })
+
+  it('generates different geometry when screw holes are enabled', () => {
+    const withoutHoles = generateBaseplate(
+      { ...defaultParams, screwHoles: false },
+      PROFILE_OFFICIAL,
+    )
+    const withHoles = generateBaseplate({ ...defaultParams, screwHoles: true }, PROFILE_OFFICIAL)
+
+    expect(withHoles.attributes.position.count).not.toBe(withoutHoles.attributes.position.count)
+
+    withoutHoles.dispose()
+    withHoles.dispose()
+  })
+
+  it('generates more vertices than a simple solid block (cavity construction)', () => {
+    const geometry = generateBaseplate(defaultParams, PROFILE_OFFICIAL)
+
+    // A simple solid extruded rounded rect would have relatively few vertices.
+    // The socket cavity construction (frame with holes + step rings) produces significantly more.
+    // A basic rounded rect extrusion typically produces ~68-100 vertices.
+    // With cavities and step rings, we expect well above that.
+    expect(geometry.attributes.position.count).toBeGreaterThan(150)
+
+    geometry.dispose()
   })
 
   it('bounding box matches expected dimensions for 1x1 grid', () => {

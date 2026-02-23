@@ -2,49 +2,12 @@ import * as THREE from 'three'
 
 import type { BinParams, GridfinityProfile } from '@/types/gridfinity'
 
-import { roundedRectShape, extrudeShape, mergeGeometries } from './primitives'
-
-/**
- * Create a rounded rectangle Path (clockwise winding) for use as a hole
- * in a THREE.Shape. Opposite winding to roundedRectShape (CCW).
- */
-function roundedRectHolePath(width: number, depth: number, radius: number): THREE.Path {
-  const r = Math.min(radius, width / 2, depth / 2)
-  const hw = width / 2
-  const hd = depth / 2
-  const path = new THREE.Path()
-
-  // Clockwise: BL→left edge up→TL→top edge right→TR→right edge down→BR→bottom edge left
-  path.moveTo(-hw + r, -hd)
-  path.quadraticCurveTo(-hw, -hd, -hw, -hd + r)
-  path.lineTo(-hw, hd - r)
-  path.quadraticCurveTo(-hw, hd, -hw + r, hd)
-  path.lineTo(hw - r, hd)
-  path.quadraticCurveTo(hw, hd, hw, hd - r)
-  path.lineTo(hw, -hd + r)
-  path.quadraticCurveTo(hw, -hd, hw - r, -hd)
-  path.lineTo(-hw + r, -hd)
-
-  return path
-}
-
-/**
- * Create a hollow extruded shape (tube with rounded-rect cross section).
- * Uses Shape.holes to cut out the interior.
- */
-function createHollowExtrusion(
-  outerWidth: number,
-  outerDepth: number,
-  outerRadius: number,
-  innerWidth: number,
-  innerDepth: number,
-  innerRadius: number,
-  height: number,
-): THREE.BufferGeometry {
-  const shape = roundedRectShape(outerWidth, outerDepth, outerRadius)
-  shape.holes.push(roundedRectHolePath(innerWidth, innerDepth, innerRadius))
-  return extrudeShape(shape, height)
-}
+import {
+  roundedRectShape,
+  extrudeShape,
+  mergeGeometries,
+  createHollowExtrusion,
+} from './primitives'
 
 /**
  * Generate bin geometry from parameters and profile.

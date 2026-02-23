@@ -74,6 +74,77 @@ export function createCylinder(
 }
 
 /**
+ * Create a rounded rectangle Path (clockwise winding) for use as a hole
+ * in a THREE.Shape. Opposite winding to roundedRectShape (CCW).
+ */
+export function roundedRectHolePath(width: number, depth: number, radius: number): THREE.Path {
+  const r = Math.min(radius, width / 2, depth / 2)
+  const hw = width / 2
+  const hd = depth / 2
+  const path = new THREE.Path()
+
+  // Clockwise: BL→left edge up→TL→top edge right→TR→right edge down→BR→bottom edge left
+  path.moveTo(-hw + r, -hd)
+  path.quadraticCurveTo(-hw, -hd, -hw, -hd + r)
+  path.lineTo(-hw, hd - r)
+  path.quadraticCurveTo(-hw, hd, -hw + r, hd)
+  path.lineTo(hw - r, hd)
+  path.quadraticCurveTo(hw, hd, hw, hd - r)
+  path.lineTo(hw, -hd + r)
+  path.quadraticCurveTo(hw, -hd, hw - r, -hd)
+  path.lineTo(-hw + r, -hd)
+
+  return path
+}
+
+/**
+ * Create a rounded rectangle hole Path offset to a given center (cx, cz).
+ * Clockwise winding for use as a Shape.hole.
+ */
+export function roundedRectHolePathAt(
+  width: number,
+  depth: number,
+  radius: number,
+  cx: number,
+  cz: number,
+): THREE.Path {
+  const r = Math.min(radius, width / 2, depth / 2)
+  const hw = width / 2
+  const hd = depth / 2
+  const path = new THREE.Path()
+
+  path.moveTo(cx - hw + r, cz - hd)
+  path.quadraticCurveTo(cx - hw, cz - hd, cx - hw, cz - hd + r)
+  path.lineTo(cx - hw, cz + hd - r)
+  path.quadraticCurveTo(cx - hw, cz + hd, cx - hw + r, cz + hd)
+  path.lineTo(cx + hw - r, cz + hd)
+  path.quadraticCurveTo(cx + hw, cz + hd, cx + hw, cz + hd - r)
+  path.lineTo(cx + hw, cz - hd + r)
+  path.quadraticCurveTo(cx + hw, cz - hd, cx + hw - r, cz - hd)
+  path.lineTo(cx - hw + r, cz - hd)
+
+  return path
+}
+
+/**
+ * Create a hollow extruded shape (tube with rounded-rect cross section).
+ * Uses Shape.holes to cut out the interior.
+ */
+export function createHollowExtrusion(
+  outerWidth: number,
+  outerDepth: number,
+  outerRadius: number,
+  innerWidth: number,
+  innerDepth: number,
+  innerRadius: number,
+  height: number,
+): THREE.BufferGeometry {
+  const shape = roundedRectShape(outerWidth, outerDepth, outerRadius)
+  shape.holes.push(roundedRectHolePath(innerWidth, innerDepth, innerRadius))
+  return extrudeShape(shape, height)
+}
+
+/**
  * Merge multiple geometries into one.
  */
 export function mergeGeometries(geometries: THREE.BufferGeometry[]): THREE.BufferGeometry {
