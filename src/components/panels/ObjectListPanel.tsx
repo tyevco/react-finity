@@ -1,16 +1,11 @@
 import { useState } from 'react'
-import { Grid3x3, Trash2, Box, GripVertical } from 'lucide-react'
+import { Trash2, GripVertical, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useProjectStore } from '@/store/projectStore'
 import { useUIStore } from '@/store/uiStore'
 import { cn } from '@/lib/utils'
-import type { GridfinityObjectKind } from '@/types/gridfinity'
-
-const kindIcons: Record<GridfinityObjectKind, typeof Grid3x3> = {
-  baseplate: Grid3x3,
-  bin: Box,
-}
+import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
 
 export function ObjectListPanel() {
   const objects = useProjectStore((s) => s.objects)
@@ -63,7 +58,7 @@ export function ObjectListPanel() {
             </div>
           ) : (
             objects.map((obj, index) => {
-              const Icon = kindIcons[obj.kind]
+              const Icon = objectKindRegistry.get(obj.kind)?.icon ?? HelpCircle
               const isSelected = selectedObjectIds.includes(obj.id)
               const isDragging = dragIndex === index
               const isDropTarget = dropIndex === index && dragIndex !== index

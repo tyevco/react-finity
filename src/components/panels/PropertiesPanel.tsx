@@ -1,8 +1,8 @@
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { BaseplateProperties } from './BaseplateProperties'
-import { BinProperties } from './BinProperties'
 import { useProjectStore } from '@/store/projectStore'
 import { useUIStore } from '@/store/uiStore'
+import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
+import type { ObjectPropertiesComponentProps } from '@/engine/registry/types'
 
 export function PropertiesPanel() {
   const objects = useProjectStore((s) => s.objects)
@@ -43,11 +43,23 @@ export function PropertiesPanel() {
                 </div>
 
                 {/* Kind-specific properties */}
-                {singleSelected.kind === 'baseplate' && (
-                  <BaseplateProperties object={singleSelected} />
-                )}
-
-                {singleSelected.kind === 'bin' && <BinProperties object={singleSelected} />}
+                {(() => {
+                  const reg = objectKindRegistry.get(singleSelected.kind)
+                  if (!reg) {
+                    return (
+                      <div className="text-xs text-muted-foreground">
+                        Unknown object kind: {singleSelected.kind}
+                      </div>
+                    )
+                  }
+                  if (reg.PropertiesComponent) {
+                    const props = {
+                      object: singleSelected,
+                    } as unknown as ObjectPropertiesComponentProps
+                    return <reg.PropertiesComponent {...props} />
+                  }
+                  return null
+                })()}
               </>
             )
           )}

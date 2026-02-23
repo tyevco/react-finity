@@ -12,19 +12,8 @@ import {
 import type { Modifier, ModifierKind } from '@/types/gridfinity'
 import { useProjectStore } from '@/store/projectStore'
 import { cn } from '@/lib/utils'
-import { DividerGridControls } from './modifiers/DividerGridControls'
-import { LabelTabControls } from './modifiers/LabelTabControls'
-import { ScoopControls } from './modifiers/ScoopControls'
-import { InsertControls } from './modifiers/InsertControls'
-import { LidControls } from './modifiers/LidControls'
-
-const MODIFIER_LABELS: Record<ModifierKind, string> = {
-  dividerGrid: 'Divider Grid',
-  labelTab: 'Label Tab',
-  scoop: 'Scoop',
-  insert: 'Insert',
-  lid: 'Lid',
-}
+import { modifierKindRegistry } from '@/engine/registry/modifierKindRegistry'
+import type { ModifierControlsComponentProps } from '@/engine/registry/types'
 
 interface ModifierSectionProps {
   parentId: string
@@ -93,19 +82,14 @@ export function ModifierSection({ parentId, depth = 0 }: ModifierSectionProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => addModifier(parentId, 'dividerGrid')}>
-              Divider Grid
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addModifier(parentId, 'labelTab')}>
-              Label Tab
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addModifier(parentId, 'scoop')}>
-              Scoop
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addModifier(parentId, 'insert')}>
-              Insert
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addModifier(parentId, 'lid')}>Lid</DropdownMenuItem>
+            {modifierKindRegistry.getAll().map((reg) => (
+              <DropdownMenuItem
+                key={reg.kind}
+                onClick={() => addModifier(parentId, reg.kind as ModifierKind)}
+              >
+                {reg.label}
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -185,7 +169,7 @@ function ModifierCard({
         <div className="flex items-center gap-1">
           <GripVertical className="h-3.5 w-3.5 cursor-grab text-muted-foreground opacity-50" />
           <span className="text-xs font-medium">
-            {MODIFIER_LABELS[modifier.kind]}
+            {modifierKindRegistry.get(modifier.kind)?.label ?? modifier.kind}
             {wallLabel}
           </span>
         </div>
@@ -209,16 +193,11 @@ function ModifierCard({
 }
 
 function ModifierControls({ modifier }: { modifier: Modifier }) {
-  switch (modifier.kind) {
-    case 'dividerGrid':
-      return <DividerGridControls modifier={modifier} />
-    case 'labelTab':
-      return <LabelTabControls modifier={modifier} />
-    case 'scoop':
-      return <ScoopControls modifier={modifier} />
-    case 'insert':
-      return <InsertControls modifier={modifier} />
-    case 'lid':
-      return <LidControls modifier={modifier} />
+  const reg = modifierKindRegistry.get(modifier.kind)
+  if (!reg) return null
+  if (reg.ControlsComponent) {
+    const props = { modifier } as unknown as ModifierControlsComponentProps
+    return <reg.ControlsComponent {...props} />
   }
+  return null
 }

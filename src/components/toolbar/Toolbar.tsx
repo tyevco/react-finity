@@ -44,7 +44,13 @@ import { mergeObjectWithModifiers } from '@/engine/export/mergeObjectGeometry'
 import { getPrintRotation, applyPrintOrientation } from '@/engine/export/printOrientation'
 import { exportObjectAsSTL } from '@/engine/export/stlExporter'
 import { exportObjectAs3MF } from '@/engine/export/threeMfExporter'
-import type { ViewportBackground, LightingPreset, CameraPreset } from '@/types/gridfinity'
+import type {
+  ViewportBackground,
+  LightingPreset,
+  CameraPreset,
+  GridfinityObjectKind,
+} from '@/types/gridfinity'
+import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
 
 export function Toolbar() {
   const addObject = useProjectStore((s) => s.addObject)
@@ -88,16 +94,6 @@ export function Toolbar() {
   const [saveAsName, setSaveAsName] = useState('')
 
   const isMobile = useIsMobile()
-
-  const handleAddBaseplate = () => {
-    const id = addObject('baseplate')
-    selectObject(id)
-  }
-
-  const handleAddBin = () => {
-    const id = addObject('bin')
-    selectObject(id)
-  }
 
   const singleSelectedId = selectedObjectIds.length === 1 ? selectedObjectIds[0] : null
 
@@ -301,8 +297,17 @@ export function Toolbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={handleAddBaseplate}>Baseplate</DropdownMenuItem>
-                <DropdownMenuItem onClick={handleAddBin}>Bin</DropdownMenuItem>
+                {objectKindRegistry.getAll().map((reg) => (
+                  <DropdownMenuItem
+                    key={reg.kind}
+                    onClick={() => {
+                      const id = addObject(reg.kind as GridfinityObjectKind)
+                      selectObject(id)
+                    }}
+                  >
+                    {reg.label}
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -344,8 +349,17 @@ export function Toolbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={handleAddBaseplate}>Baseplate</DropdownMenuItem>
-              <DropdownMenuItem onClick={handleAddBin}>Bin</DropdownMenuItem>
+              {objectKindRegistry.getAll().map((reg) => (
+                <DropdownMenuItem
+                  key={reg.kind}
+                  onClick={() => {
+                    const id = addObject(reg.kind as GridfinityObjectKind)
+                    selectObject(id)
+                  }}
+                >
+                  {reg.label}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
