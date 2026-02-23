@@ -586,5 +586,43 @@ describe('modifier CRUD', () => {
       expect(obj2Mods).toHaveLength(1)
       expect(obj2Mods[0].id).toBe(otherMod)
     })
+
+    it('preserves relative ordering of interleaved non-sibling modifiers', () => {
+      const obj1 = useProjectStore.getState().addObject('bin')
+      const obj2 = useProjectStore.getState().addObject('bin')
+      // Interleave: [A1, B1, A2, B2]
+      const a1 = useProjectStore.getState().addModifier(obj1, 'dividerGrid')
+      const b1 = useProjectStore.getState().addModifier(obj2, 'scoop')
+      const a2 = useProjectStore.getState().addModifier(obj1, 'labelTab')
+      const b2 = useProjectStore.getState().addModifier(obj2, 'lid')
+
+      // Reorder obj1 modifiers: move A1 (index 0) to after A2 (index 1)
+      useProjectStore.getState().reorderModifier(obj1, 0, 1)
+
+      const allMods = useProjectStore.getState().modifiers
+      // obj2 modifiers should still appear in their original positions relative to each other
+      const obj2Indices = allMods
+        .map((m, i) => (m.parentId === obj2 ? i : -1))
+        .filter((i) => i >= 0)
+      expect(allMods[obj2Indices[0]].id).toBe(b1)
+      expect(allMods[obj2Indices[1]].id).toBe(b2)
+
+      // obj1 modifiers should be reordered: A2 before A1
+      const obj1Mods = allMods.filter((m) => m.parentId === obj1)
+      expect(obj1Mods[0].id).toBe(a2)
+      expect(obj1Mods[1].id).toBe(a1)
+    })
+
+    it('returns unchanged state when fromIndex equals toIndex', () => {
+      const objId = useProjectStore.getState().addObject('bin')
+      useProjectStore.getState().addModifier(objId, 'dividerGrid')
+      useProjectStore.getState().addModifier(objId, 'labelTab')
+
+      const before = useProjectStore.getState().modifiers
+      useProjectStore.getState().reorderModifier(objId, 0, 0)
+      const after = useProjectStore.getState().modifiers
+
+      expect(after).toBe(before)
+    })
   })
 })

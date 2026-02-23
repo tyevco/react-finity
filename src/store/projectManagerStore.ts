@@ -230,15 +230,24 @@ export function setIsLoadingProject(value: boolean): void {
   isLoadingProject = value
 }
 
-// Subscribe to projectStore changes and trigger auto-save.
-const originalLoadProjectData = useProjectStore.getState().loadProjectData
-useProjectStore.setState({
-  loadProjectData: (data) => {
-    isLoadingProject = true
-    originalLoadProjectData(data)
-    isLoadingProject = false
-  },
-})
+// Wrap loadProjectData to set the isLoadingProject flag, preventing
+// auto-save and history tracking during project loads.
+// Guard against double-wrapping on HMR module re-execution.
+const _loadProjectData = useProjectStore.getState().loadProjectData
+if (!(_loadProjectData as unknown as Record<string, unknown>).__isWrapped) {
+  const wrappedLoad = Object.assign(
+    (data: ProjectData) => {
+      isLoadingProject = true
+      try {
+        _loadProjectData(data)
+      } finally {
+        isLoadingProject = false
+      }
+    },
+    { __isWrapped: true as const },
+  )
+  useProjectStore.setState({ loadProjectData: wrappedLoad })
+}
 
 useProjectStore.subscribe((state, prevState) => {
   if (isLoadingProject) return

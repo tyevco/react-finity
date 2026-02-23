@@ -251,13 +251,40 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
   reorderModifier: (parentId: string, fromIndex: number, toIndex: number) => {
     set((state) => {
-      const parentMods = state.modifiers.filter((m) => m.parentId === parentId)
-      const otherMods = state.modifiers.filter((m) => m.parentId !== parentId)
+      const modifiers = [...state.modifiers]
 
-      const [moved] = parentMods.splice(fromIndex, 1)
-      parentMods.splice(toIndex, 0, moved)
+      // Find flat-array indices for this parent's modifiers
+      const parentIndices: number[] = []
+      for (let i = 0; i < modifiers.length; i++) {
+        if (modifiers[i].parentId === parentId) {
+          parentIndices.push(i)
+        }
+      }
 
-      return { modifiers: [...otherMods, ...parentMods] }
+      if (fromIndex < 0 || fromIndex >= parentIndices.length) return state
+      if (toIndex < 0 || toIndex >= parentIndices.length) return state
+      if (fromIndex === toIndex) return state
+
+      // Remove the modifier at fromIndex (in the parent's local ordering)
+      const removeAt = parentIndices[fromIndex]
+      const [moved] = modifiers.splice(removeAt, 1)
+
+      // After removal, recalculate parent indices
+      const newParentIndices: number[] = []
+      for (let i = 0; i < modifiers.length; i++) {
+        if (modifiers[i].parentId === parentId) {
+          newParentIndices.push(i)
+        }
+      }
+
+      // Insert at the target position among siblings
+      const insertAt =
+        toIndex >= newParentIndices.length
+          ? newParentIndices[newParentIndices.length - 1] + 1
+          : newParentIndices[toIndex]
+      modifiers.splice(insertAt, 0, moved)
+
+      return { modifiers }
     })
   },
 
