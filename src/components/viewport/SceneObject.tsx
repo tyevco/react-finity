@@ -6,23 +6,14 @@ import type {
   GridfinityProfile,
   Modifier,
   ModifierContext,
-  ModifierKind,
 } from '@/types/gridfinity'
-import { generateBaseplate } from '@/engine/geometry/baseplate'
-import { generateBin } from '@/engine/geometry/bin'
-import { generateModifierGeometry, computeBinContext } from '@/engine/export/mergeObjectGeometry'
+import { generateModifierGeometry } from '@/engine/export/mergeObjectGeometry'
+import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
+import { modifierKindRegistry } from '@/engine/registry/modifierKindRegistry'
 import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
 import { TransformGizmo } from './TransformGizmo'
-
-const MODIFIER_COLORS: Record<ModifierKind, string> = {
-  dividerGrid: '#a8d8ea',
-  labelTab: '#f9c784',
-  scoop: '#b5e8b5',
-  insert: '#d4a5e5',
-  lid: '#f5a5a5',
-}
 
 interface SceneObjectProps {
   object: GridfinityObject
@@ -71,43 +62,18 @@ function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modifier, context, profile, curveQuality])
 
-  // Compute child context for nested modifiers
   const childContext = useMemo((): ModifierContext | null => {
-    if (modifier.kind === 'dividerGrid') {
-      const { dividersX, dividersY, wallThickness } = modifier.params
-      if (dividersX === 0 && dividersY === 0) return context
-      const compartmentWidth = (context.innerWidth - wallThickness * dividersX) / (dividersX + 1)
-      const compartmentDepth = (context.innerDepth - wallThickness * dividersY) / (dividersY + 1)
-      return {
-        innerWidth: compartmentWidth,
-        innerDepth: compartmentDepth,
-        wallHeight: context.wallHeight,
-        floorY: context.floorY,
-        centerX: context.centerX,
-        centerZ: context.centerZ,
-      }
-    }
-    if (modifier.kind === 'insert') {
-      const { compartmentsX, compartmentsY, wallThickness } = modifier.params
-      const rimInnerWidth = context.innerWidth - wallThickness * 2
-      const rimInnerDepth = context.innerDepth - wallThickness * 2
-      const compartmentWidth = (rimInnerWidth - wallThickness * (compartmentsX - 1)) / compartmentsX
-      const compartmentDepth = (rimInnerDepth - wallThickness * (compartmentsY - 1)) / compartmentsY
-      return {
-        innerWidth: compartmentWidth,
-        innerDepth: compartmentDepth,
-        wallHeight: context.wallHeight,
-        floorY: context.floorY,
-        centerX: context.centerX,
-        centerZ: context.centerZ,
-      }
+    const reg = modifierKindRegistry.get(modifier.kind)
+    if (reg?.subdividesSpace && reg.computeChildContext) {
+      return reg.computeChildContext(modifier.params as unknown as Record<string, unknown>, context)
     }
     return context
   }, [modifier, context])
 
   if (!geometry || !('position' in geometry.attributes)) return null
 
-  const color = MODIFIER_COLORS[modifier.kind]
+  const reg = modifierKindRegistry.get(modifier.kind)
+  const color = reg?.color ?? '#cccccc'
   const opacity = transparencyMode ? 0.4 : 0.9
 
   return (
@@ -140,18 +106,18 @@ export function SceneObject({ object }: SceneObjectProps) {
   const isSingleSelected = selectedObjectIds.length === 1 && isSelected
 
   const geometry = useMemo(() => {
-    switch (object.kind) {
-      case 'baseplate':
-        return generateBaseplate(object.params, activeProfile)
-      case 'bin':
-        return generateBin(object.params, activeProfile)
-    }
+    const reg = objectKindRegistry.getOrThrow(object.kind)
+    return reg.generateGeometry(object.params as unknown as Record<string, unknown>, activeProfile)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [object.kind, object.params, activeProfile, curveQuality])
 
-  const binContext = useMemo(() => {
-    if (object.kind === 'bin') {
-      return computeBinContext(object.params, activeProfile)
+  const modifierContext = useMemo(() => {
+    const reg = objectKindRegistry.get(object.kind)
+    if (reg?.supportsModifiers && reg.computeModifierContext) {
+      return reg.computeModifierContext(
+        object.params as unknown as Record<string, unknown>,
+        activeProfile,
+      )
     }
     return null
   }, [object.kind, object.params, activeProfile])
@@ -180,9 +146,9 @@ export function SceneObject({ object }: SceneObjectProps) {
         {isSelected && !showWireframe && <Edges threshold={15} color="#4a90d9" lineWidth={2} />}
       </mesh>
       {isSingleSelected && meshNode && <TransformGizmo target={meshNode} objectId={object.id} />}
-      {binContext && (
+      {modifierContext && (
         <group position={object.position}>
-          <ModifierMeshes parentId={object.id} context={binContext} />
+          <ModifierMeshes parentId={object.id} context={modifierContext} />
         </group>
       )}
     </>

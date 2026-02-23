@@ -1,8 +1,7 @@
 import { Html } from '@react-three/drei'
 import type { GridfinityObject, GridfinityProfile } from '@/types/gridfinity'
 import { useProfileStore } from '@/store/profileStore'
-import { getBaseplateDimensions } from '@/engine/geometry/baseplate'
-import { getBinDimensions } from '@/engine/geometry/bin'
+import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
 
 interface MeasurementOverlayProps {
   object: GridfinityObject
@@ -12,12 +11,9 @@ function getDimensions(
   object: GridfinityObject,
   profile: GridfinityProfile,
 ): { width: number; depth: number; height: number } | null {
-  switch (object.kind) {
-    case 'baseplate':
-      return getBaseplateDimensions(object.params, profile)
-    case 'bin':
-      return getBinDimensions(object.params, profile)
-  }
+  const reg = objectKindRegistry.get(object.kind)
+  if (!reg) return null
+  return reg.getDimensions(object.params as unknown as Record<string, unknown>, profile)
 }
 
 export function MeasurementOverlay({ object }: MeasurementOverlayProps) {
