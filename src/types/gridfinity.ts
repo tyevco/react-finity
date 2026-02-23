@@ -34,10 +34,12 @@ export interface BinParams {
   innerFillet: number // internal edge fillet radius in mm (0 = sharp, max 3)
 }
 
-export type GridfinityObjectKind = 'baseplate' | 'bin'
+export type BuiltinObjectKind = 'baseplate' | 'bin'
+export type GridfinityObjectKind = BuiltinObjectKind | (string & {})
 
 export interface GridfinityObjectBase {
   id: string
+  kind: string
   name: string
   position: [number, number, number]
 }
@@ -52,18 +54,23 @@ export interface BinObject extends GridfinityObjectBase {
   params: BinParams
 }
 
-export type GridfinityObject = BaseplateObject | BinObject
+export interface GenericGridfinityObject extends GridfinityObjectBase {
+  params: Record<string, unknown>
+}
+
+export type GridfinityObject = BaseplateObject | BinObject | GenericGridfinityObject
 
 // --- Modifier system ---
 
 export type WallFace = 'front' | 'back' | 'left' | 'right'
 
-export type ModifierKind = 'dividerGrid' | 'labelTab' | 'scoop' | 'insert' | 'lid'
+export type BuiltinModifierKind = 'dividerGrid' | 'labelTab' | 'scoop' | 'insert' | 'lid'
+export type ModifierKind = BuiltinModifierKind | (string & {})
 
 export interface ModifierBase {
   id: string
   parentId: string // can be an object ID or another modifier's ID
-  kind: ModifierKind
+  kind: string
 }
 
 export interface ModifierContext {
@@ -122,12 +129,17 @@ export interface LidModifier extends ModifierBase {
   params: LidModifierParams
 }
 
+export interface GenericModifier extends ModifierBase {
+  params: Record<string, unknown>
+}
+
 export type Modifier =
   | DividerGridModifier
   | LabelTabModifier
   | ScoopModifier
   | InsertModifier
   | LidModifier
+  | GenericModifier
 
 export type ViewportBackground = 'dark' | 'light' | 'neutral'
 export type LightingPreset = 'studio' | 'outdoor' | 'soft'

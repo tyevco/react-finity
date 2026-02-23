@@ -1,32 +1,21 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
-import type {
-  GridfinityObject,
-  BaseplateParams,
-  BinParams,
-  GridfinityObjectKind,
-  Modifier,
-  ModifierKind,
-  ModifierContext,
-  ProjectData,
-} from '@/types/gridfinity'
+import type { GridfinityObject, Modifier, ModifierContext, ProjectData } from '@/types/gridfinity'
 import { PROFILE_OFFICIAL } from '@/engine/constants'
 import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
 import { modifierKindRegistry } from '@/engine/registry/modifierKindRegistry'
 
-type AnyModifierParams = Record<string, unknown>
-
 interface ProjectStore {
   objects: GridfinityObject[]
   modifiers: Modifier[]
-  addObject: (kind: GridfinityObjectKind) => string
-  updateObjectParams: (id: string, params: Partial<BaseplateParams | BinParams>) => void
+  addObject: (kind: string) => string
+  updateObjectParams: (id: string, params: Record<string, unknown>) => void
   updateObjectPosition: (id: string, position: [number, number, number]) => void
   updateObjectName: (id: string, name: string) => void
   removeObject: (id: string) => void
   clearObjects: () => void
-  addModifier: (parentId: string, kind: ModifierKind) => string
-  updateModifierParams: (id: string, params: AnyModifierParams) => void
+  addModifier: (parentId: string, kind: string) => string
+  updateModifierParams: (id: string, params: Record<string, unknown>) => void
   removeModifier: (id: string) => void
   loadProjectData: (data: ProjectData) => void
   getModifiersForParent: (parentId: string) => Modifier[]
@@ -39,13 +28,13 @@ interface ProjectStore {
 
 let objectCounter = 0
 
-function getNextName(kind: GridfinityObjectKind): string {
+function getNextName(kind: string): string {
   objectCounter++
   const reg = objectKindRegistry.getOrThrow(kind)
   return `${reg.label} ${objectCounter}`
 }
 
-function getDefaultModifierParams(kind: ModifierKind): Record<string, unknown> {
+function getDefaultModifierParams(kind: string): Record<string, unknown> {
   const reg = modifierKindRegistry.getOrThrow(kind)
   return { ...reg.defaultParams }
 }
@@ -84,7 +73,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   objects: [],
   modifiers: [],
 
-  addObject: (kind: GridfinityObjectKind) => {
+  addObject: (kind: string) => {
     const id = uuidv4()
     const name = getNextName(kind)
     const reg = objectKindRegistry.getOrThrow(kind)
@@ -105,7 +94,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     set((state) => ({
       objects: state.objects.map((obj) =>
         obj.id === id ? { ...obj, params: { ...obj.params, ...params } } : obj,
-      ) as GridfinityObject[],
+      ),
     }))
   },
 
@@ -142,7 +131,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     set({ objects: data.objects, modifiers: data.modifiers })
   },
 
-  addModifier: (parentId: string, kind: ModifierKind) => {
+  addModifier: (parentId: string, kind: string) => {
     const id = uuidv4()
     const params = getDefaultModifierParams(kind)
 
@@ -156,7 +145,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     set((state) => ({
       modifiers: state.modifiers.map((mod) =>
         mod.id === id ? { ...mod, params: { ...mod.params, ...params } } : mod,
-      ) as Modifier[],
+      ),
     }))
   },
 

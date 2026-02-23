@@ -44,12 +44,7 @@ import { mergeObjectWithModifiers } from '@/engine/export/mergeObjectGeometry'
 import { getPrintRotation, applyPrintOrientation } from '@/engine/export/printOrientation'
 import { exportObjectAsSTL } from '@/engine/export/stlExporter'
 import { exportObjectAs3MF } from '@/engine/export/threeMfExporter'
-import type {
-  ViewportBackground,
-  LightingPreset,
-  CameraPreset,
-  GridfinityObjectKind,
-} from '@/types/gridfinity'
+import type { ViewportBackground, LightingPreset, CameraPreset } from '@/types/gridfinity'
 import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
 
 export function Toolbar() {
@@ -301,7 +296,7 @@ export function Toolbar() {
                   <DropdownMenuItem
                     key={reg.kind}
                     onClick={() => {
-                      const id = addObject(reg.kind as GridfinityObjectKind)
+                      const id = addObject(reg.kind)
                       selectObject(id)
                     }}
                   >
@@ -353,7 +348,7 @@ export function Toolbar() {
                 <DropdownMenuItem
                   key={reg.kind}
                   onClick={() => {
-                    const id = addObject(reg.kind as GridfinityObjectKind)
+                    const id = addObject(reg.kind)
                     selectObject(id)
                   }}
                 >

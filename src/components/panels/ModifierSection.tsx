@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { Modifier, ModifierKind } from '@/types/gridfinity'
+import type { Modifier } from '@/types/gridfinity'
 import { useProjectStore } from '@/store/projectStore'
 import { cn } from '@/lib/utils'
 import { modifierKindRegistry } from '@/engine/registry/modifierKindRegistry'
@@ -83,10 +83,7 @@ export function ModifierSection({ parentId, depth = 0 }: ModifierSectionProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {modifierKindRegistry.getAll().map((reg) => (
-              <DropdownMenuItem
-                key={reg.kind}
-                onClick={() => addModifier(parentId, reg.kind as ModifierKind)}
-              >
+              <DropdownMenuItem key={reg.kind} onClick={() => addModifier(parentId, reg.kind)}>
                 {reg.label}
               </DropdownMenuItem>
             ))}
@@ -149,7 +146,7 @@ function ModifierCard({
   onDrop,
   onDragEnd,
 }: ModifierCardProps) {
-  const wallLabel = 'wall' in modifier.params ? ` (${modifier.params.wall})` : ''
+  const wallLabel = 'wall' in modifier.params ? ` (${String(modifier.params.wall)})` : ''
 
   return (
     <div
