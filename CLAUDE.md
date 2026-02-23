@@ -35,6 +35,12 @@ src/
 │   │   ├── modifiers/     # Modifier geometry generators (divider, label, scoop, insert, lid)
 │   │   └── __tests__/     # Unit tests for geometry
 │   │       └── modifiers/ # Unit tests for modifier geometry
+│   ├── registry/          # Extensible kind registry system
+│   │   ├── types.ts       # Registration interfaces, ParamSchema types
+│   │   ├── objectKindRegistry.ts   # Object kind registry singleton
+│   │   ├── modifierKindRegistry.ts # Modifier kind registry singleton
+│   │   ├── builtins.ts    # Built-in kind registrations (baseplate, bin, all modifiers)
+│   │   └── __tests__/     # Unit tests for registries
 │   ├── export/            # Export & print layout utilities
 │   │   ├── mergeObjectGeometry.ts  # Merge object + modifiers into single geometry
 │   │   ├── printOrientation.ts     # Optimal FDM print orientation per object kind
@@ -55,8 +61,9 @@ docs/                      # Architecture decision records & research documents
 
 ### Key Patterns
 
-- **Discriminated unions** for object types: `GridfinityObject = BaseplateObject | BinObject`, switched on `object.kind`
-- **Modifier system**: Modifiers are composable entities that attach to bins (or other modifiers) via `parentId`. The union type `Modifier = DividerGridModifier | LabelTabModifier | ScoopModifier | InsertModifier | LidModifier` is switched on `modifier.kind`. Modifiers are stored flat in the project store and rendered recursively.
+- **Registry pattern**: All object and modifier kinds are registered via `objectKindRegistry` and `modifierKindRegistry` singletons in `src/engine/registry/`. Built-in kinds are registered in `builtins.ts`, called from `main.tsx`. The registry replaces all switch statements -- geometry generation, print orientation, UI rendering, store defaults, and viewport display all use registry lookups. New kinds only need their files + one registration call.
+- **Discriminated unions** for object types: `GridfinityObject = BaseplateObject | BinObject | GenericGridfinityObject`, with built-in kinds narrowed via type guards in `src/types/guards.ts`. The type system accepts extensible string kinds via `(string & {})` widening.
+- **Modifier system**: Modifiers are composable entities that attach to bins (or other modifiers) via `parentId`. The union type `Modifier` includes built-in modifier types plus `GenericModifier` for extensibility. Modifiers are stored flat in the project store and rendered recursively. Each modifier kind is registered with its geometry generator, default params, and either a custom `ControlsComponent` or a declarative `controlsSchema`.
 - **ModifierContext**: When rendering modifier geometry, a `ModifierContext` object provides the available inner dimensions (width, depth, wall height, floor Y). This context flows from bin params down through nested modifiers, allowing each modifier to adapt to its parent's geometry.
 - **Geometry generators** are pure functions: `generate*(params, profile) → BufferGeometry`. They use `roundedRectShape()`, `extrudeShape()`, and `mergeGeometries()` from `primitives.ts`. Modifier generators take the form: `generate*(params, context, profile) → BufferGeometry`.
 - **Polygon quality system**: `primitives.ts` exposes a module-level `setCurveQuality(quality)` / `getCurveSegments()` API. The `curveQuality` setting in `uiStore` drives segment counts (low=4, medium=8, high=16) used by `extrudeShape()`, `createCylinder()`, and `scoop.ts`. Viewport components include `curveQuality` in useMemo deps to trigger geometry regeneration on quality changes.
@@ -66,36 +73,38 @@ docs/                      # Architecture decision records & research documents
 - **Properties panels**: One component per object kind (`BaseplateProperties`, `BinProperties`), following the same pattern of sliders/switches with label + value display. BinProperties includes a `ModifierSection` that renders modifier cards recursively.
 - **View mode system**: The app has two views — Edit (design with panels + viewport) and Print Layout (print bed preview + export). `activeView` in `uiStore` controls which view is rendered. The toolbar shows a toggle and conditionally renders view-specific controls.
 - **Export pipeline**: `mergeObjectGeometry.ts` merges an object with all its modifiers into a single `BufferGeometry`. `printOrientation.ts` computes the optimal FDM print rotation. `printLayout.ts` arranges objects on a virtual print bed. `stlExporter.ts` exports to binary STL with optional ZIP bundling and configurable scale factor. `threeMfExporter.ts` exports to 3MF format using JSZip for OPC archive creation, sharing the same `PrintLayoutItem[]` interface as the STL exporter.
-- **Shared geometry functions**: `generateModifierGeometry()` and `computeBinContext()` are defined in `src/engine/export/mergeObjectGeometry.ts` and imported by both `SceneObject.tsx` (for viewport rendering) and the export pipeline (for merging). Avoid duplicating these.
+- **Shared geometry functions**: `generateModifierGeometry()` in `src/engine/export/mergeObjectGeometry.ts` uses the modifier registry to generate geometry, imported by both `SceneObject.tsx` (for viewport rendering) and the export pipeline (for merging). Modifier context computation (`computeChildContext`) is provided by each modifier's registration.
 - **Responsive design**: The `md:` breakpoint (768px) divides mobile from desktop. The `useIsMobile()` hook in `src/hooks/useIsMobile.ts` provides JS-level detection via `matchMedia`. On mobile, panels render as Sheet overlays (`src/components/ui/sheet.tsx`) instead of inline sidebars; the toolbar collapses secondary actions (camera presets, snap-to-grid, viewport settings, project dropdown) into an overflow menu. All interactive elements use responsive Tailwind classes (e.g., `h-9 w-9 md:h-7 md:w-7`) to meet minimum touch target sizes on mobile.
 - **Undo/redo system**: `historyStore` maintains past/future snapshot stacks (max 50) of `{objects, modifiers}` state. A module-level subscription to `projectStore` captures state changes with 300ms debounce to avoid flooding history during slider drags. The `isLoadingProject` flag and `isUndoRedoInProgress` flag prevent re-entrant pushes during undo/redo and project load operations. History clears when `currentProjectId` changes. `undo()`/`redo()` set `projectStore` state directly via `setState()`.
 - **Multi-select**: `uiStore` tracks `selectedObjectIds: string[]` (not a single ID). `selectObject(id, additive?)` replaces or adds to selection. `toggleObjectSelection(id)` toggles. `clearSelection()` resets. Components check `selectedObjectIds.includes(id)` for highlighting. Properties panel shows single-object properties for one selection, "N objects selected" for multi, and empty state for none. Transform gizmo only renders for single selection.
 - **Copy/paste/duplicate**: `duplicateObjects(ids)` in `projectStore` deep-copies objects and their modifiers with new UUIDs, remapping parent-child relationships. Position offset by [42, 0, 0] (one grid unit). Module-level `clipboard: string[]` in `useKeyboardShortcuts.ts` for Ctrl+C/Ctrl+V.
 - **Drag reordering**: HTML5 Drag and Drop API (no external library) for object list and modifier cards. `reorderObject(fromIndex, toIndex)` and `reorderModifier(parentId, fromIndex, toIndex)` actions in `projectStore`. Visual feedback via opacity and border indicators during drag.
-- **Viewport display modes**: `uiStore` holds `showWireframe`, `transparencyMode`, `sectionView`, `sectionPlaneY`. `SceneObject.tsx` applies wireframe/transparency to materials. `Viewport.tsx` manages `gl.clippingPlanes` for section view. Modifier meshes use `MODIFIER_COLORS` map for color-coding by kind.
+- **Viewport display modes**: `uiStore` holds `showWireframe`, `transparencyMode`, `sectionView`, `sectionPlaneY`. `SceneObject.tsx` applies wireframe/transparency to materials. `Viewport.tsx` manages `gl.clippingPlanes` for section view. Modifier meshes use colors from their registry registration (`color` field on `ModifierKindRegistration`).
 - **Path alias**: `@/` maps to `src/` (configured in vite.config.ts and tsconfig)
 
 ### Adding a New Object Kind
 
-1. Types already defined in `src/types/gridfinity.ts` (params interface + object interface)
-2. Default params in `src/engine/constants.ts`
-3. Geometry generator in `src/engine/geometry/<kind>.ts` — export `generate<Kind>()` and `get<Kind>Dimensions()`
-4. Properties panel in `src/components/panels/<Kind>Properties.tsx`
-5. Wire into `SceneObject.tsx` (add `case` to geometry switch)
-6. Wire into `PropertiesPanel.tsx` (replace placeholder)
-7. Enable in `Toolbar.tsx` (remove `disabled`, add click handler)
+1. Define params interface in `src/types/gridfinity.ts` (or keep params as `Record<string, unknown>` for simple kinds)
+2. Add default params in `src/engine/constants.ts`
+3. Create geometry generator in `src/engine/geometry/<kind>.ts` -- export `generate<Kind>(params, profile) → BufferGeometry` and `get<Kind>Dimensions(params, profile)`
+4. Create properties component in `src/components/panels/<Kind>Properties.tsx` OR define a `propertiesSchema` for schema-driven UI
+5. Register in `src/engine/registry/builtins.ts` with `objectKindRegistry.register({...})` -- provide kind, label, icon, defaultParams, generateGeometry, getDimensions, getPrintRotation, supportsModifiers, and optionally PropertiesComponent or propertiesSchema
+6. Add unit tests in `src/engine/geometry/__tests__/<kind>.test.ts`
+7. Add E2E tests in `e2e/add-object.spec.ts` and `e2e/<kind>-properties.spec.ts`
+
+No changes needed in SceneObject.tsx, PropertiesPanel.tsx, Toolbar.tsx, or any other UI file -- the registry handles dispatching automatically.
 
 ### Adding a New Modifier Kind
 
-1. Add params interface and modifier interface to `src/types/gridfinity.ts`, add to `Modifier` union and `ModifierKind` type
-2. Add default params in `getDefaultModifierParams()` in `src/store/projectStore.ts`
-3. Create geometry generator in `src/engine/geometry/modifiers/<kind>.ts` — export `generate<Kind>(params, context, profile) → BufferGeometry`
-4. Create controls component in `src/components/panels/modifiers/<Kind>Controls.tsx`
-5. Wire into `ModifierSection.tsx` (import controls, add to switch + dropdown menu)
-6. Wire into `SceneObject.tsx` `generateModifierGeometry()` switch
-7. If the modifier subdivides space (like dividers or inserts), compute child `ModifierContext` in `ModifierMesh` and in `getModifierContext()` in the store
-8. Add unit tests in `src/engine/geometry/__tests__/modifiers/<kind>.test.ts`
-9. Add E2E tests in `e2e/bin-properties.spec.ts` (modifier UI section)
+1. Define params interface in `src/types/gridfinity.ts` (optional for simple modifiers)
+2. Add default params in `src/engine/constants.ts`
+3. Create geometry generator in `src/engine/geometry/modifiers/<kind>.ts` -- export `generate<Kind>(params, context, profile) → BufferGeometry`
+4. Create controls component in `src/components/panels/modifiers/<Kind>Controls.tsx` OR define a `controlsSchema` for schema-driven UI
+5. Register in `src/engine/registry/builtins.ts` with `modifierKindRegistry.register({...})` -- provide kind, label, color, defaultParams, generateGeometry, subdividesSpace, and optionally computeChildContext, ControlsComponent or controlsSchema
+6. Add unit tests in `src/engine/geometry/__tests__/modifiers/<kind>.test.ts`
+7. Add E2E tests in `e2e/bin-properties.spec.ts` (modifier UI section)
+
+No changes needed in ModifierSection.tsx, SceneObject.tsx, mergeObjectGeometry.ts, or any other existing file -- the registry handles dispatching automatically.
 
 ## Testing Requirements
 
@@ -186,10 +195,11 @@ Research documents and architecture decision records live in the `docs/` directo
 ## Roadmap
 
 See `ROADMAP.md` for the full project phases. Current status:
-- Phase 1: Foundation & App Shell — Complete
-- Phase 2: Bin Generation & Core Features — Complete
-- Phase 3: Interactivity & Manipulation — Complete
-- Phase 4: Modifier System & Advanced Geometry — Complete
-- Phase 5: Export & Print Layout — Complete
-- Phase 6: Polish & Advanced UX — Complete
-- Phase 7+: See ROADMAP.md
+- Phase 1: Foundation & App Shell -- Complete
+- Phase 2: Bin Generation & Core Features -- Complete
+- Phase 3: Interactivity & Manipulation -- Complete
+- Phase 4: Modifier System & Advanced Geometry -- Complete
+- Phase 5: Export & Print Layout -- Complete
+- Phase 6: Polish & Advanced UX -- Complete
+- Phase 7: Extensible Framework -- Complete
+- Phase 8+: See ROADMAP.md

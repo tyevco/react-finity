@@ -150,7 +150,24 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 
 ---
 
-## Phase 7: Desktop App (Tauri) 🔲
+## Phase 7: Extensible Framework ✅
+
+**Status:** Complete
+
+**Goal:** Registry-based extensible architecture for object and modifier kinds, replacing hardcoded switch statements.
+
+**Delivered:**
+- **Registry infrastructure** -- `ObjectKindRegistry` and `ModifierKindRegistry` singleton classes with register/get/getAll/freeze APIs
+- **Builtin registration** -- all 2 object kinds and 5 modifier kinds registered via `registerBuiltinKinds()` in `src/engine/registry/builtins.ts`
+- **Full migration** -- all switch statements on `object.kind` and `modifier.kind` replaced with registry lookups across export, store, viewport, and UI layers
+- **Widened type system** -- `GridfinityObjectKind` and `ModifierKind` accept extensible string values; `GenericGridfinityObject` and `GenericModifier` types for custom kinds; type guards in `src/types/guards.ts`
+- **Schema-driven UI** -- `SchemaPropertiesPanel` and `SchemaModifierControls` components render property editors from `ParamSchema` definitions; scoop and lid modifiers converted to schema-driven controls
+- **Adding a new kind** now requires only creating its files (generator, optional UI component) and one registration call in `builtins.ts`
+- See `docs/extensible-framework-design.md` for the full architecture design
+
+---
+
+## Phase 8: Desktop App (Tauri) 🔲
 
 **Status:** Planned
 
@@ -162,8 +179,8 @@ Long-term, the app will transition to a native desktop experience via Tauri whil
 - Native file dialogs for export
 - Auto-update system
 - OS-level menu bar integration
-- Potential: multi-window support (viewport + properties in separate windows)
-- Potential: native Rust geometry engine for massive performance gains
+- Multi-window support (viewport + properties in separate windows)
+- Native Rust geometry engine for massive performance gains
 
 ---
 

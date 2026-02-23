@@ -2,8 +2,8 @@
 
 Architecture research and design for making React-Finity's object and modifier system extensible, enabling new kinds to be added through a registration API rather than manual wiring across 15+ files.
 
-**Status:** Proposed
-**Date:** 2026-02-22
+**Status:** Phase 1 Implemented
+**Date:** 2026-02-22 (proposed), 2026-02-23 (Phase 1 implemented)
 **Scope:** Internal registry (Phase 1) + external plugin support (Phase 2)
 
 ---
@@ -1109,7 +1109,7 @@ Convert the simpler modifier controls (scoop, lid) to use schemas instead of han
 
 ## Implementation Phases
 
-### Phase 1: Internal Registry (this project)
+### Phase 1: Internal Registry (this project) -- IMPLEMENTED
 
 All steps 1-8 above. Result: all built-in kinds register through the registry, new kinds can be added by creating files + a registration call.
 
@@ -1117,7 +1117,14 @@ All steps 1-8 above. Result: all built-in kinds register through the registry, n
 - All switch statements on `kind` are removed from core application code
 - Adding a new object/modifier kind requires creating its files and adding one registration call in `builtins.ts`
 - All existing tests pass
-- Schema-driven UI works for at least 2 modifier kinds
+- Schema-driven UI works for at least 2 modifier kinds (scoop + lid)
+
+**Implementation notes:**
+- Registry singletons: `objectKindRegistry` and `modifierKindRegistry` in `src/engine/registry/`
+- Registration happens in `src/engine/registry/builtins.ts`, called from `src/main.tsx` before React renders
+- Type system widened with `GenericGridfinityObject` and `GenericModifier` for custom kinds
+- Type guards available in `src/types/guards.ts` for built-in kind narrowing
+- Schema-driven components: `SchemaPropertiesPanel` and `SchemaModifierControls` in `src/components/panels/`
 
 ### Phase 2: External Plugin Support (future)
 
