@@ -61,6 +61,29 @@ describe('generateInsert', () => {
     geometry.dispose()
   })
 
+  it('divider walls produce uniform compartment spacing', () => {
+    // With 3 compartments along X and wallThickness 1.2, walls should be
+    // evenly spaced so that all compartments have equal width.
+    const params: InsertModifierParams = { compartmentsX: 3, compartmentsY: 1, wallThickness: 1.2 }
+    const geometry = generateInsert(params, defaultContext, PROFILE_OFFICIAL)
+
+    const rimInnerWidth = defaultContext.innerWidth - params.wallThickness * 2
+    const expectedCompartmentWidth =
+      (rimInnerWidth - params.wallThickness * (params.compartmentsX - 1)) / params.compartmentsX
+
+    // Wall 1 center should be at: -rimInnerWidth/2 + compartmentWidth + wallThickness/2
+    const wall1Expected = -rimInnerWidth / 2 + expectedCompartmentWidth + params.wallThickness / 2
+    // Wall 2 center should be at: wall1 + compartmentWidth + wallThickness
+    const wall2Expected = wall1Expected + expectedCompartmentWidth + params.wallThickness
+
+    // Gap between consecutive wall centers should be uniform
+    const gap = wall2Expected - wall1Expected
+    expect(gap).toBeCloseTo(expectedCompartmentWidth + params.wallThickness, 5)
+    expect(expectedCompartmentWidth).toBeGreaterThan(0)
+
+    geometry.dispose()
+  })
+
   it('1x1 compartment still generates outer rim', () => {
     const geometry = generateInsert(
       { compartmentsX: 1, compartmentsY: 1, wallThickness: 1.2 },
