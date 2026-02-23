@@ -84,9 +84,10 @@ describe('registerBuiltinKinds', () => {
     }
   })
 
-  it('all modifier kinds have a ControlsComponent', () => {
+  it('all modifier kinds have a ControlsComponent or controlsSchema', () => {
     for (const reg of modifierKindRegistry.getAll()) {
-      expect(reg.ControlsComponent).toBeDefined()
+      const hasControls = reg.ControlsComponent !== undefined || reg.controlsSchema !== undefined
+      expect(hasControls).toBe(true)
     }
   })
 

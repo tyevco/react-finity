@@ -30,9 +30,7 @@ import { BaseplateProperties } from '@/components/panels/BaseplateProperties'
 import { BinProperties } from '@/components/panels/BinProperties'
 import { DividerGridControls } from '@/components/panels/modifiers/DividerGridControls'
 import { LabelTabControls } from '@/components/panels/modifiers/LabelTabControls'
-import { ScoopControls } from '@/components/panels/modifiers/ScoopControls'
 import { InsertControls } from '@/components/panels/modifiers/InsertControls'
-import { LidControls } from '@/components/panels/modifiers/LidControls'
 import type { ComponentType } from 'react'
 import type { ObjectPropertiesComponentProps, ModifierControlsComponentProps } from './types'
 
@@ -152,7 +150,30 @@ export function registerBuiltinKinds(): void {
     defaultParams: { ...DEFAULT_SCOOP_PARAMS },
     generateGeometry: generateScoop,
     subdividesSpace: false,
-    ControlsComponent: asControlsComponent(ScoopControls),
+    controlsSchema: {
+      fields: [
+        {
+          key: 'wall',
+          label: 'Wall',
+          type: 'select',
+          options: [
+            { value: 'front', label: 'Front' },
+            { value: 'back', label: 'Back' },
+            { value: 'left', label: 'Left' },
+            { value: 'right', label: 'Right' },
+          ],
+        },
+        {
+          key: 'radius',
+          label: 'Radius',
+          type: 'slider',
+          min: 0,
+          max: 20,
+          step: 1,
+          unit: 'mm',
+        },
+      ],
+    },
   })
 
   modifierKindRegistry.register({
@@ -190,7 +211,9 @@ export function registerBuiltinKinds(): void {
     defaultParams: { ...DEFAULT_LID_PARAMS },
     generateGeometry: generateLid,
     subdividesSpace: false,
-    ControlsComponent: asControlsComponent(LidControls),
+    controlsSchema: {
+      fields: [{ key: 'stacking', label: 'Stacking', type: 'switch' }],
+    },
   })
 
   objectKindRegistry.freeze()
