@@ -1,5 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, beforeAll } from 'vitest'
 import { useProjectStore, resetObjectCounter } from '../projectStore'
+import { registerBuiltinKinds } from '@/engine/registry/builtins'
+
+beforeAll(() => {
+  registerBuiltinKinds()
+})
 
 describe('projectStore', () => {
   beforeEach(() => {

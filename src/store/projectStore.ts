@@ -7,31 +7,14 @@ import type {
   GridfinityObjectKind,
   Modifier,
   ModifierKind,
-  DividerGridModifierParams,
-  LabelTabModifierParams,
-  ScoopModifierParams,
-  InsertModifierParams,
-  LidModifierParams,
   ModifierContext,
   ProjectData,
 } from '@/types/gridfinity'
-import {
-  DEFAULT_BASEPLATE_PARAMS,
-  DEFAULT_BIN_PARAMS,
-  DEFAULT_DIVIDER_GRID_PARAMS,
-  DEFAULT_LABEL_TAB_PARAMS,
-  DEFAULT_SCOOP_PARAMS,
-  DEFAULT_INSERT_PARAMS,
-  DEFAULT_LID_PARAMS,
-  PROFILE_OFFICIAL,
-} from '@/engine/constants'
+import { PROFILE_OFFICIAL } from '@/engine/constants'
+import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
+import { modifierKindRegistry } from '@/engine/registry/modifierKindRegistry'
 
-type AnyModifierParams =
-  | Partial<DividerGridModifierParams>
-  | Partial<LabelTabModifierParams>
-  | Partial<ScoopModifierParams>
-  | Partial<InsertModifierParams>
-  | Partial<LidModifierParams>
+type AnyModifierParams = Record<string, unknown>
 
 interface ProjectStore {
   objects: GridfinityObject[]
@@ -58,26 +41,13 @@ let objectCounter = 0
 
 function getNextName(kind: GridfinityObjectKind): string {
   objectCounter++
-  const kindNames: Record<GridfinityObjectKind, string> = {
-    baseplate: 'Baseplate',
-    bin: 'Bin',
-  }
-  return `${kindNames[kind]} ${objectCounter}`
+  const reg = objectKindRegistry.getOrThrow(kind)
+  return `${reg.label} ${objectCounter}`
 }
 
-function getDefaultModifierParams(kind: ModifierKind): Modifier['params'] {
-  switch (kind) {
-    case 'dividerGrid':
-      return { ...DEFAULT_DIVIDER_GRID_PARAMS }
-    case 'labelTab':
-      return { ...DEFAULT_LABEL_TAB_PARAMS }
-    case 'scoop':
-      return { ...DEFAULT_SCOOP_PARAMS }
-    case 'insert':
-      return { ...DEFAULT_INSERT_PARAMS }
-    case 'lid':
-      return { ...DEFAULT_LID_PARAMS }
-  }
+function getDefaultModifierParams(kind: ModifierKind): Record<string, unknown> {
+  const reg = modifierKindRegistry.getOrThrow(kind)
+  return { ...reg.defaultParams }
 }
 
 export function resetObjectCounter(objects: GridfinityObject[]): void {
@@ -117,29 +87,15 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   addObject: (kind: GridfinityObjectKind) => {
     const id = uuidv4()
     const name = getNextName(kind)
+    const reg = objectKindRegistry.getOrThrow(kind)
 
-    let newObject: GridfinityObject
-
-    switch (kind) {
-      case 'baseplate':
-        newObject = {
-          kind: 'baseplate',
-          id,
-          name,
-          position: [0, 0, 0],
-          params: { ...DEFAULT_BASEPLATE_PARAMS },
-        }
-        break
-      case 'bin':
-        newObject = {
-          kind: 'bin',
-          id,
-          name,
-          position: [0, 0, 0],
-          params: { ...DEFAULT_BIN_PARAMS },
-        }
-        break
-    }
+    const newObject = {
+      kind,
+      id,
+      name,
+      position: [0, 0, 0] as [number, number, number],
+      params: { ...reg.defaultParams },
+    } as unknown as GridfinityObject
 
     set((state) => ({ objects: [...state.objects, newObject] }))
     return id
@@ -190,7 +146,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     const id = uuidv4()
     const params = getDefaultModifierParams(kind)
 
-    const newModifier = { id, parentId, kind, params } as Modifier
+    const newModifier = { id, parentId, kind, params } as unknown as Modifier
 
     set((state) => ({ modifiers: [...state.modifiers, newModifier] }))
     return id
@@ -318,25 +274,15 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     const state = get()
 
     const obj = state.objects.find((o) => o.id === parentId)
-    if (obj?.kind === 'bin') {
-      const { gridWidth, gridDepth, heightUnits, wallThickness } = obj.params
-      const profile = PROFILE_OFFICIAL
-      const { gridSize, heightUnit, tolerance, socketWallHeight } = profile
-
-      const outerWidth = gridWidth * gridSize - tolerance * 2
-      const outerDepth = gridDepth * gridSize - tolerance * 2
-      const innerWidth = outerWidth - wallThickness * 2
-      const innerDepth = outerDepth - wallThickness * 2
-      const wallHeight = heightUnits * heightUnit
-
-      return {
-        innerWidth,
-        innerDepth,
-        wallHeight,
-        floorY: socketWallHeight + wallThickness,
-        centerX: 0,
-        centerZ: 0,
+    if (obj) {
+      const objReg = objectKindRegistry.get(obj.kind)
+      if (objReg?.supportsModifiers && objReg.computeModifierContext) {
+        return objReg.computeModifierContext(
+          obj.params as unknown as Record<string, unknown>,
+          PROFILE_OFFICIAL,
+        )
       }
+      return null
     }
 
     const parentModifier = state.modifiers.find((m) => m.id === parentId)
@@ -344,44 +290,12 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
       const parentContext = state.getModifierContext(parentModifier.parentId)
       if (!parentContext) return null
 
-      if (parentModifier.kind === 'insert') {
-        const insertParams = parentModifier.params
-        const compartmentWidth =
-          (parentContext.innerWidth -
-            insertParams.wallThickness * (insertParams.compartmentsX + 1)) /
-          insertParams.compartmentsX
-        const compartmentDepth =
-          (parentContext.innerDepth -
-            insertParams.wallThickness * (insertParams.compartmentsY + 1)) /
-          insertParams.compartmentsY
-
-        return {
-          innerWidth: compartmentWidth,
-          innerDepth: compartmentDepth,
-          wallHeight: parentContext.wallHeight,
-          floorY: parentContext.floorY,
-          centerX: parentContext.centerX,
-          centerZ: parentContext.centerZ,
-        }
-      }
-
-      if (parentModifier.kind === 'dividerGrid') {
-        const divParams = parentModifier.params
-        const compartmentWidth =
-          (parentContext.innerWidth - divParams.wallThickness * divParams.dividersX) /
-          (divParams.dividersX + 1)
-        const compartmentDepth =
-          (parentContext.innerDepth - divParams.wallThickness * divParams.dividersY) /
-          (divParams.dividersY + 1)
-
-        return {
-          innerWidth: compartmentWidth,
-          innerDepth: compartmentDepth,
-          wallHeight: parentContext.wallHeight,
-          floorY: parentContext.floorY,
-          centerX: parentContext.centerX,
-          centerZ: parentContext.centerZ,
-        }
+      const modReg = modifierKindRegistry.get(parentModifier.kind)
+      if (modReg?.subdividesSpace && modReg.computeChildContext) {
+        return modReg.computeChildContext(
+          parentModifier.params as unknown as Record<string, unknown>,
+          parentContext,
+        )
       }
 
       return parentContext

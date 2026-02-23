@@ -1,6 +1,11 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach, beforeAll } from 'vitest'
 import { useProjectManagerStore } from '../projectManagerStore'
 import { useProjectStore } from '../projectStore'
+import { registerBuiltinKinds } from '@/engine/registry/builtins'
+
+beforeAll(() => {
+  registerBuiltinKinds()
+})
 
 // Mock localStorage
 const localStorageMock = (() => {

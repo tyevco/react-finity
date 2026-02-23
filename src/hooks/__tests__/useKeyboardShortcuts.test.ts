@@ -1,6 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest'
 import { useProjectStore } from '@/store/projectStore'
 import { useUIStore } from '@/store/uiStore'
+import { registerBuiltinKinds } from '@/engine/registry/builtins'
+
+beforeAll(() => {
+  registerBuiltinKinds()
+})
 
 function resetStores() {
   useProjectStore.setState({ objects: [], modifiers: [] })
