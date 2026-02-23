@@ -3,6 +3,7 @@ import { useProjectStore } from '@/store/projectStore'
 import { useUIStore } from '@/store/uiStore'
 import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
 import type { ObjectPropertiesComponentProps } from '@/engine/registry/types'
+import { SchemaPropertiesPanel } from './SchemaPropertiesPanel'
 
 export function PropertiesPanel() {
   const objects = useProjectStore((s) => s.objects)
@@ -57,6 +58,14 @@ export function PropertiesPanel() {
                       object: singleSelected,
                     } as unknown as ObjectPropertiesComponentProps
                     return <reg.PropertiesComponent {...props} />
+                  }
+                  if (reg.propertiesSchema) {
+                    return (
+                      <SchemaPropertiesPanel
+                        schema={reg.propertiesSchema}
+                        object={singleSelected}
+                      />
+                    )
                   }
                   return null
                 })()}

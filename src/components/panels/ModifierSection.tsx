@@ -14,6 +14,7 @@ import { useProjectStore } from '@/store/projectStore'
 import { cn } from '@/lib/utils'
 import { modifierKindRegistry } from '@/engine/registry/modifierKindRegistry'
 import type { ModifierControlsComponentProps } from '@/engine/registry/types'
+import { SchemaModifierControls } from './SchemaModifierControls'
 
 interface ModifierSectionProps {
   parentId: string
@@ -195,6 +196,9 @@ function ModifierControls({ modifier }: { modifier: Modifier }) {
   if (reg.ControlsComponent) {
     const props = { modifier } as unknown as ModifierControlsComponentProps
     return <reg.ControlsComponent {...props} />
+  }
+  if (reg.controlsSchema) {
+    return <SchemaModifierControls schema={reg.controlsSchema} modifier={modifier} />
   }
   return null
 }
