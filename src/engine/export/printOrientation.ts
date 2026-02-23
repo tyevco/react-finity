@@ -43,7 +43,7 @@ export function getOrientedBounds(
  * Compute bounding dimensions from a geometry that has already been oriented
  * (i.e., already rotated and translated to sit on the print bed at Y=0).
  */
-export function getBoundsFromOriented(oriented: THREE.BufferGeometry): {
+export function getBoundsFromOriented(oriented: BufferGeometry): {
   width: number
   depth: number
   height: number

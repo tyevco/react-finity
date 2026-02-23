@@ -26,6 +26,9 @@ interface ProjectStore {
   reorderModifier: (parentId: string, fromIndex: number, toIndex: number) => void
 }
 
+// Module-level counter for auto-naming objects (e.g., "Bin 3"). Stored outside
+// Zustand to avoid triggering store subscriptions on every name generation.
+// Reset by resetObjectCounter() when loading project data.
 let objectCounter = 0
 
 function getNextName(kind: string): string {
@@ -86,7 +89,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
       name,
       position,
       params: { ...reg.defaultParams },
-    } as unknown as GridfinityObject
+    } as unknown as GridfinityObject // Safe: registry defaultParams match the registered kind
 
     set((state) => ({ objects: [...state.objects, newObject] }))
     return id
@@ -137,6 +140,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     const id = uuidv4()
     const params = getDefaultModifierParams(kind)
 
+    // Safe: params come from the registry's defaultParams for this kind
     const newModifier = { id, parentId, kind, params } as unknown as Modifier
 
     set((state) => ({ modifiers: [...state.modifiers, newModifier] }))

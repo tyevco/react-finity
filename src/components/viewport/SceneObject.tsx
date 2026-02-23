@@ -61,6 +61,7 @@ function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
 
   const geometry = useMemo(() => {
     return generateModifierGeometry(modifier, context, profile)
+    // curveQuality triggers regeneration via module-level setCurveQuality() in uiStore
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modifier, context, profile, curveQuality])
 
@@ -117,6 +118,7 @@ export function SceneObject({ object }: SceneObjectProps) {
     const reg = objectKindRegistry.get(object.kind)
     if (!reg) return new BufferGeometry()
     return reg.generateGeometry(object.params as unknown as Record<string, unknown>, activeProfile)
+    // curveQuality triggers regeneration via module-level setCurveQuality() in uiStore
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [object.kind, object.params, activeProfile, curveQuality])
 

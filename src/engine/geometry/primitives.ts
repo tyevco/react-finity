@@ -14,6 +14,10 @@ const QUALITY_SEGMENTS: Record<CurveQuality, number> = {
   high: 16,
 }
 
+// Module-level state: curve segment count is set via setCurveQuality() from
+// uiStore and read by extrudeShape/createCylinder. Stored outside Zustand
+// because geometry generators are pure functions that should not depend on
+// React state. The uiStore synchronizes this value via its setCurveQuality action.
 let activeCurveSegments = QUALITY_SEGMENTS.medium
 
 export function setCurveQuality(quality: CurveQuality): void {

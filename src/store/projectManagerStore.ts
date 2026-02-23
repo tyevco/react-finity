@@ -219,7 +219,10 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
   ),
 )
 
-// Flag to prevent auto-save and history tracking during project load/undo operations.
+// Module-level flag to prevent auto-save and history tracking during project
+// load/undo operations. Stored outside Zustand because it must be synchronously
+// readable by the projectStore subscription callback and the historyStore
+// subscription callback, both of which run outside of React's lifecycle.
 let isLoadingProject = false
 
 export function getIsLoadingProject(): boolean {
@@ -249,12 +252,19 @@ if (!(_loadProjectData as unknown as Record<string, unknown>).__isWrapped) {
   useProjectStore.setState({ loadProjectData: wrappedLoad })
 }
 
-useProjectStore.subscribe((state, prevState) => {
+const unsubProjectChanges = useProjectStore.subscribe((state, prevState) => {
   if (isLoadingProject) return
   if (state.objects !== prevState.objects || state.modifiers !== prevState.modifiers) {
     useProjectManagerStore.getState().markDirty()
   }
 })
+
+// Clean up subscription on HMR to prevent duplicate listeners.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    unsubProjectChanges()
+  })
+}
 
 // Auto-load project data after persist middleware rehydrates.
 if (typeof window !== 'undefined') {

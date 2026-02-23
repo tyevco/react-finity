@@ -1,90 +1,117 @@
-import * as THREE from 'three'
+import type { BufferGeometry } from 'three'
+import { CylinderGeometry } from 'three'
+import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg'
 
 import type { BaseplateParams, GridfinityProfile } from '@/types/gridfinity'
 
-import { roundedRectShape, extrudeShape, mergeGeometries } from './primitives'
+import {
+  roundedRectShape,
+  roundedRectHolePathAt,
+  extrudeShape,
+  createHollowExtrusion,
+  mergeGeometries,
+  getCurveSegments,
+} from './primitives'
 
 /**
  * Generate baseplate geometry from parameters and profile.
  *
  * Gridfinity baseplate structure (cross-section from bottom to top):
- * - Flat base (bottom)
- * - Per grid-cell: raised socket walls forming the Z-shaped interlock profile
- * - Socket profile: stepped walls that bins snap into
- *
- * The socket profile per cell (from outside in, bottom to top):
- * 1. Outer rim at full baseplate height
- * 2. Step down to mid-level
- * 3. Inner floor (lowest point of the socket)
- * 4. Optional magnet/screw holes in corners
+ * Layer 1: Solid base slab (Y=0 to Y=slabHeight)
+ * Layer 2: Grid frame with socket cavities (full footprint with per-cell holes)
+ * Layer 3: Per-cell socket step rings (mid-step ledge inside each cavity)
+ * Layer 4: CSG subtraction for magnet/screw holes (conditional)
  */
 export function generateBaseplate(
   params: BaseplateParams,
   profile: GridfinityProfile,
-): THREE.BufferGeometry {
-  const { gridWidth, gridDepth, magnetHoles, screwHoles } = params
-  const { gridSize, baseplateHeight, baseplateCornerRadius, tolerance } = profile
+): BufferGeometry {
+  const { gridWidth, gridDepth, slim, magnetHoles, screwHoles } = params
+  const {
+    gridSize,
+    baseplateHeight,
+    baseplateCornerRadius,
+    tolerance,
+    socketWallHeight,
+    socketBottomChamfer,
+    socketMidHeight,
+  } = profile
 
-  // Overall dimensions (1 unit = 1mm)
   const totalWidth = gridWidth * gridSize
   const totalDepth = gridDepth * gridSize
-
-  // Create the base slab
-  const baseShape = roundedRectShape(totalWidth, totalDepth, baseplateCornerRadius)
-  const baseGeometry = extrudeShape(baseShape, baseplateHeight)
-
-  // Build socket geometry for each grid cell
-  const socketGeometries: THREE.BufferGeometry[] = []
-  const holeGeometries: THREE.BufferGeometry[] = []
-
-  const cellSize = gridSize
   const cellInnerSize = gridSize - tolerance * 2
+  const cellCornerRadius = Math.max(0.1, baseplateCornerRadius - tolerance)
+  const slabHeight = slim ? 0 : baseplateHeight - socketWallHeight
+  const frameBaseY = slabHeight
 
-  // Socket profile dimensions
-  const socketFloorHeight = 0.6 // bottom of the socket from base top
-  const socketMidStep = 2.6 // mid-step height from base bottom
-  const socketTopRim = baseplateHeight // top of socket walls
+  const geometries: BufferGeometry[] = []
+
+  // === Layer 1: Solid base slab (skipped in slim mode) ===
+  if (!slim) {
+    const slabShape = roundedRectShape(totalWidth, totalDepth, baseplateCornerRadius)
+    const slabGeo = extrudeShape(slabShape, baseplateHeight - socketWallHeight)
+    geometries.push(slabGeo)
+  }
+
+  // === Layer 2: Grid frame with socket cavities ===
+  // Full footprint shape with per-cell rectangular holes punched out
+  const frameShape = roundedRectShape(totalWidth, totalDepth, baseplateCornerRadius)
+  for (let gx = 0; gx < gridWidth; gx++) {
+    for (let gz = 0; gz < gridDepth; gz++) {
+      const cx = (gx - (gridWidth - 1) / 2) * gridSize
+      const cz = (gz - (gridDepth - 1) / 2) * gridSize
+      frameShape.holes.push(
+        roundedRectHolePathAt(cellInnerSize, cellInnerSize, cellCornerRadius, cx, cz),
+      )
+    }
+  }
+  const frameGeo = extrudeShape(frameShape, socketWallHeight)
+  frameGeo.translate(0, frameBaseY, 0)
+  geometries.push(frameGeo)
+
+  // === Layer 3: Per-cell socket step rings ===
+  // Hollow extrusion creating the mid-step ledge inside each socket cavity
+  const stepHeight = socketBottomChamfer + socketMidHeight
+  const stepWallThickness = 1.2
+  const stepInnerSize = cellInnerSize - stepWallThickness * 2
+  const stepInnerRadius = Math.max(0.1, cellCornerRadius - stepWallThickness)
 
   for (let gx = 0; gx < gridWidth; gx++) {
     for (let gz = 0; gz < gridDepth; gz++) {
-      // Cell center position
-      const cx = (gx - (gridWidth - 1) / 2) * cellSize
-      const cz = (gz - (gridDepth - 1) / 2) * cellSize
+      const cx = (gx - (gridWidth - 1) / 2) * gridSize
+      const cz = (gz - (gridDepth - 1) / 2) * gridSize
 
-      // Socket walls: outer raised rim per cell
-      const outerShape = roundedRectShape(
+      const ringGeo = createHollowExtrusion(
         cellInnerSize,
         cellInnerSize,
-        baseplateCornerRadius - tolerance,
+        cellCornerRadius,
+        stepInnerSize,
+        stepInnerSize,
+        stepInnerRadius,
+        stepHeight,
       )
+      ringGeo.translate(cx, frameBaseY, cz)
+      geometries.push(ringGeo)
+    }
+  }
 
-      // Inner cutout for socket (the hollow part bins sit in)
-      const innerWallThickness = 1.6
-      const innerSize = cellInnerSize - innerWallThickness * 2
-      const innerRadius = Math.max(0.1, baseplateCornerRadius - tolerance - innerWallThickness)
+  // Merge layers 1-3
+  let result = mergeGeometries(geometries)
 
-      // Create outer wall extrusion
-      const outerGeo = extrudeShape(outerShape, socketTopRim)
-      outerGeo.translate(cx, 0, cz)
-      socketGeometries.push(outerGeo)
+  // Clean up source geometries
+  for (const g of geometries) g.dispose()
 
-      // Socket floor - fills the inner area at floor level
-      const floorShape = roundedRectShape(innerSize, innerSize, innerRadius)
-      const floorGeo = extrudeShape(floorShape, socketFloorHeight)
-      floorGeo.translate(cx, 0, cz)
-      socketGeometries.push(floorGeo)
+  // === Layer 4: CSG subtraction for magnet/screw holes (disabled in slim mode) ===
+  if (!slim && (magnetHoles || screwHoles)) {
+    const holeGeometries: BufferGeometry[] = []
+    const segments = getCurveSegments() * 3
 
-      // Mid-step ring: between floor and top, a stepped intermediate wall
-      const midRingOuterSize = innerSize + 0.6
-      const midRingRadius = innerRadius + 0.3
-      const midRingShape = roundedRectShape(midRingOuterSize, midRingOuterSize, midRingRadius)
-      const midRingGeo = extrudeShape(midRingShape, socketMidStep)
-      midRingGeo.translate(cx, 0, cz)
-      socketGeometries.push(midRingGeo)
+    for (let gx = 0; gx < gridWidth; gx++) {
+      for (let gz = 0; gz < gridDepth; gz++) {
+        const cx = (gx - (gridWidth - 1) / 2) * gridSize
+        const cz = (gz - (gridDepth - 1) / 2) * gridSize
 
-      // Magnet and screw holes at corners
-      if (magnetHoles || screwHoles) {
-        const cornerOffset = cellInnerSize / 2 - 4.0 // ~4mm from edge
+        const cornerOffset = cellInnerSize / 2 - 4.0
         const corners = [
           [cx - cornerOffset, cz - cornerOffset],
           [cx + cornerOffset, cz - cornerOffset],
@@ -96,42 +123,51 @@ export function generateBaseplate(
           if (magnetHoles) {
             const magnetRadius = profile.magnetDiameter / 2
             const magnetDepth = profile.magnetDepth
-            const magnetGeo = new THREE.CylinderGeometry(
+            const overshoot = 0.1 // extend below Y=0 to avoid coplanar CSG artifacts
+            const magnetGeo = new CylinderGeometry(
               magnetRadius,
               magnetRadius,
-              magnetDepth,
-              24,
+              magnetDepth + overshoot,
+              segments,
             )
-            magnetGeo.translate(hx, magnetDepth / 2, hz)
+            // Blind holes in slab bottom, shifted down by overshoot/2 to punch through
+            magnetGeo.translate(hx, (magnetDepth - overshoot) / 2, hz)
             holeGeometries.push(magnetGeo)
           }
 
           if (screwHoles) {
             const screwRadius = profile.screwDiameter / 2
-            const screwDepth = baseplateHeight
-            const screwGeo = new THREE.CylinderGeometry(screwRadius, screwRadius, screwDepth, 16)
+            const screwDepth = slabHeight + 0.1 // slight overshoot for clean cut
+            const screwGeo = new CylinderGeometry(screwRadius, screwRadius, screwDepth, segments)
+            // Through-holes in slab
             screwGeo.translate(hx, screwDepth / 2, hz)
             holeGeometries.push(screwGeo)
           }
         }
       }
     }
+
+    if (holeGeometries.length > 0) {
+      const mergedHoles = mergeGeometries(holeGeometries)
+      for (const g of holeGeometries) g.dispose()
+
+      const evaluator = new Evaluator()
+      evaluator.attributes = ['position', 'normal']
+      const baseBrush = new Brush(result)
+      const holeBrush = new Brush(mergedHoles)
+
+      const csgResult = evaluator.evaluate(baseBrush, holeBrush, SUBTRACTION)
+      const finalGeometry = csgResult.geometry
+
+      // Dispose intermediates
+      result.dispose()
+      mergedHoles.dispose()
+      baseBrush.geometry.dispose()
+      holeBrush.geometry.dispose()
+
+      result = finalGeometry
+    }
   }
-
-  // Merge all geometries
-  const allGeometries = [baseGeometry, ...socketGeometries]
-  const result = mergeGeometries(allGeometries)
-
-  // Hole geometries are generated for future CSG boolean operations.
-  // They are currently unused, so dispose them to prevent memory leaks.
-  // When CSG support is added, this disposal should be removed and holes
-  // should be subtracted from the base geometry.
-  result.userData = { holeCount: holeGeometries.length }
-  for (const g of holeGeometries) g.dispose()
-
-  // Clean up source geometries
-  baseGeometry.dispose()
-  for (const g of socketGeometries) g.dispose()
 
   return result
 }
@@ -146,6 +182,6 @@ export function getBaseplateDimensions(
   return {
     width: params.gridWidth * profile.gridSize,
     depth: params.gridDepth * profile.gridSize,
-    height: profile.baseplateHeight,
+    height: params.slim ? profile.socketWallHeight : profile.baseplateHeight,
   }
 }

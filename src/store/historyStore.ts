@@ -26,6 +26,10 @@ interface HistoryStore {
   clear: () => void
 }
 
+// Module-level flag to prevent the projectStore subscription from pushing
+// a history snapshot while undo/redo is applying state. Stored outside Zustand
+// because the subscription callback cannot use React hooks and needs
+// synchronous read/write access during setState calls.
 let isUndoRedoInProgress = false
 
 export const useHistoryStore = create<HistoryStore>()((set, get) => ({
@@ -121,7 +125,7 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 let pendingSnapshot: HistorySnapshot | null = null
 
-useProjectStore.subscribe((state, prevState) => {
+const unsubProjectStore = useProjectStore.subscribe((state, prevState) => {
   if (isUndoRedoInProgress) return
   if (getIsLoadingProject()) return
   if (state.objects === prevState.objects && state.modifiers === prevState.modifiers) return
@@ -148,7 +152,7 @@ useProjectStore.subscribe((state, prevState) => {
 // Clear history when switching projects (new project or load project).
 // Skip when currentProjectId changes from null (initial auto-save assigns an ID
 // but that should not wipe the user's undo history).
-useProjectManagerStore.subscribe((state, prevState) => {
+const unsubProjectManager = useProjectManagerStore.subscribe((state, prevState) => {
   if (
     state.currentProjectId !== prevState.currentProjectId &&
     prevState.currentProjectId !== null
@@ -161,3 +165,11 @@ useProjectManagerStore.subscribe((state, prevState) => {
     useHistoryStore.getState().clear()
   }
 })
+
+// Clean up subscriptions on HMR to prevent duplicate listeners.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    unsubProjectStore()
+    unsubProjectManager()
+  })
+}

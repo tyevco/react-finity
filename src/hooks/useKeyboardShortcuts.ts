@@ -8,6 +8,9 @@ import { mergeObjectWithModifiers } from '@/engine/export/mergeObjectGeometry'
 import { getPrintRotation, applyPrintOrientation } from '@/engine/export/printOrientation'
 import { exportObjectAsSTL } from '@/engine/export/stlExporter'
 
+// Module-level clipboard for Ctrl+C/V. Stored outside React state so it
+// persists across component re-renders and is shared by all hook consumers.
+// Uses object IDs (not deep copies) -- validity is checked at paste time.
 let clipboard: string[] = []
 
 export function useKeyboardShortcuts() {
