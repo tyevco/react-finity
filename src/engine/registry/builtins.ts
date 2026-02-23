@@ -21,12 +21,11 @@ import {
   DEFAULT_LID_PARAMS,
   DEFAULT_FINGER_SCOOP_PARAMS,
 } from '@/engine/constants'
+import { computeBinContext } from '@/engine/export/mergeObjectGeometry'
 import type {
-  BinParams,
   DividerGridModifierParams,
   InsertModifierParams,
   ModifierContext,
-  GridfinityProfile,
 } from '@/types/gridfinity'
 import { BaseplateProperties } from '@/components/panels/BaseplateProperties'
 import { BinProperties } from '@/components/panels/BinProperties'
@@ -49,26 +48,6 @@ function asControlsComponent<T>(
   component: ComponentType<T>,
 ): ComponentType<ModifierControlsComponentProps> {
   return component as unknown as ComponentType<ModifierControlsComponentProps>
-}
-
-function computeBinModifierContext(params: BinParams, profile: GridfinityProfile): ModifierContext {
-  const { gridWidth, gridDepth, heightUnits, wallThickness } = params
-  const { gridSize, heightUnit, tolerance, socketWallHeight } = profile
-
-  const outerWidth = gridWidth * gridSize - tolerance * 2
-  const outerDepth = gridDepth * gridSize - tolerance * 2
-  const innerWidth = outerWidth - wallThickness * 2
-  const innerDepth = outerDepth - wallThickness * 2
-  const wallHeight = heightUnits * heightUnit
-
-  return {
-    innerWidth,
-    innerDepth,
-    wallHeight,
-    floorY: socketWallHeight + wallThickness,
-    centerX: 0,
-    centerZ: 0,
-  }
 }
 
 let initialized = false
@@ -101,7 +80,7 @@ export function registerBuiltinKinds(): void {
     getPrintRotation: () => new Euler(0, 0, 0),
     supportsModifiers: true,
     getDefaultPosition: (profile) => [0, profile.baseplateHeight - profile.socketWallHeight, 0],
-    computeModifierContext: computeBinModifierContext,
+    computeModifierContext: computeBinContext,
     PropertiesComponent: asPropertiesComponent(BinProperties),
   })
 

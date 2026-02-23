@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest'
 import { useProjectStore, resetObjectCounter } from '../projectStore'
+import { useProfileStore } from '../profileStore'
 import { registerBuiltinKinds } from '@/engine/registry/builtins'
+import { PROFILE_TIGHT_FIT, PROFILE_OFFICIAL } from '@/engine/constants'
 
 beforeAll(() => {
   registerBuiltinKinds()
@@ -290,6 +292,28 @@ describe('modifier CRUD', () => {
   it('getModifierContext returns null for unknown parent', () => {
     const context = useProjectStore.getState().getModifierContext('nonexistent-id')
     expect(context).toBeNull()
+  })
+
+  it('getModifierContext uses active profile, not hardcoded Official', () => {
+    // Switch to Tight Fit profile (tolerance 0.1 vs Official 0.25)
+    useProfileStore.setState({ activeProfile: PROFILE_TIGHT_FIT, activeProfileKey: 'tightFit' })
+
+    const binId = useProjectStore.getState().addObject('bin')
+    const contextTight = useProjectStore.getState().getModifierContext(binId)
+
+    // Switch to Official profile
+    useProfileStore.setState({ activeProfile: PROFILE_OFFICIAL, activeProfileKey: 'official' })
+    const contextOfficial = useProjectStore.getState().getModifierContext(binId)
+
+    expect(contextTight).not.toBeNull()
+    expect(contextOfficial).not.toBeNull()
+
+    // Tight Fit has smaller tolerance (0.1 vs 0.25), so inner dimensions are larger
+    expect(contextTight!.innerWidth).toBeGreaterThan(contextOfficial!.innerWidth) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    expect(contextTight!.innerDepth).toBeGreaterThan(contextOfficial!.innerDepth) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+
+    // Restore default profile
+    useProfileStore.setState({ activeProfile: PROFILE_OFFICIAL, activeProfileKey: 'official' })
   })
 
   it('loads project data with objects and modifiers', () => {

@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
 import type { GridfinityObject, Modifier, ModifierContext, ProjectData } from '@/types/gridfinity'
-import { PROFILE_OFFICIAL } from '@/engine/constants'
 import { objectKindRegistry } from '@/engine/registry/objectKindRegistry'
 import { modifierKindRegistry } from '@/engine/registry/modifierKindRegistry'
 import { useProfileStore } from './profileStore'
@@ -271,7 +270,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
       if (objReg?.supportsModifiers && objReg.computeModifierContext) {
         return objReg.computeModifierContext(
           obj.params as unknown as Record<string, unknown>,
-          PROFILE_OFFICIAL,
+          useProfileStore.getState().activeProfile,
         )
       }
       return null
