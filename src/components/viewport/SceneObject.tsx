@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Group } from 'three'
 import { Edges } from '@react-three/drei'
 import type {
@@ -63,6 +63,12 @@ function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modifier, context, profile, curveQuality])
 
+  useEffect(() => {
+    return () => {
+      if (geometry) geometry.dispose()
+    }
+  }, [geometry])
+
   const childContext = useMemo((): ModifierContext | null => {
     const reg = modifierKindRegistry.get(modifier.kind)
     if (reg?.subdividesSpace && reg.computeChildContext) {
@@ -111,6 +117,12 @@ export function SceneObject({ object }: SceneObjectProps) {
     return reg.generateGeometry(object.params as unknown as Record<string, unknown>, activeProfile)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [object.kind, object.params, activeProfile, curveQuality])
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose()
+    }
+  }, [geometry])
 
   const modifierContext = useMemo(() => {
     const reg = objectKindRegistry.get(object.kind)

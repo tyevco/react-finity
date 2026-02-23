@@ -122,10 +122,12 @@ export function generateBaseplate(
   const allGeometries = [baseGeometry, ...socketGeometries]
   const result = mergeGeometries(allGeometries)
 
-  // Store hole data as userData for future CSG operations
-  result.userData = {
-    holeGeometries: holeGeometries.length > 0 ? holeGeometries : undefined,
-  }
+  // Hole geometries are generated for future CSG boolean operations.
+  // They are currently unused, so dispose them to prevent memory leaks.
+  // When CSG support is added, this disposal should be removed and holes
+  // should be subtracted from the base geometry.
+  result.userData = { holeCount: holeGeometries.length }
+  for (const g of holeGeometries) g.dispose()
 
   // Clean up source geometries
   baseGeometry.dispose()
