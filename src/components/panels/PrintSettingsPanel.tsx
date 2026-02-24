@@ -90,15 +90,13 @@ export function PrintSettingsPanel() {
 
   const handleExportAll3MF = () => {
     if (layoutItems.length === 0) return
-    void exportAllAs3MF(layoutItems, exportScale).catch(() => {
-      // TODO: show toast notification
-    })
+    exportAllAs3MF(layoutItems, exportScale)
   }
 
   const handleExportOne3MF = (item: (typeof layoutItems)[number]) => {
     const oriented = item.geometry.clone()
     try {
-      void exportObjectAs3MF(oriented, item.label, exportScale)
+      exportObjectAs3MF(oriented, item.label, exportScale)
     } finally {
       oriented.dispose()
     }

@@ -60,9 +60,9 @@ async function readModelXml(): Promise<string> {
 }
 
 describe('exportObjectAs3MF', () => {
-  it('triggers a download with .3mf extension', async () => {
+  it('triggers a download with .3mf extension', () => {
     const geo = makeTestGeometry()
-    await exportObjectAs3MF(geo, 'test-object')
+    exportObjectAs3MF(geo, 'test-object')
 
     expect(downloadState.triggered).toBe(true)
     expect(downloadState.filename).toBe('test-object.3mf')
@@ -70,9 +70,9 @@ describe('exportObjectAs3MF', () => {
     geo.dispose()
   })
 
-  it('sanitizes filenames with special characters', async () => {
+  it('sanitizes filenames with special characters', () => {
     const geo = makeTestGeometry()
-    await exportObjectAs3MF(geo, 'my/object<name>')
+    exportObjectAs3MF(geo, 'my/object<name>')
 
     expect(downloadState.filename).toBe('my_object_name_.3mf')
 
@@ -81,7 +81,7 @@ describe('exportObjectAs3MF', () => {
 
   it('produces a valid ZIP with required 3MF entries', async () => {
     const geo = makeTestGeometry()
-    await exportObjectAs3MF(geo, 'test')
+    exportObjectAs3MF(geo, 'test')
 
     if (capturedBlob === null) {
       throw new Error('Expected capturedBlob to be set')
@@ -96,7 +96,7 @@ describe('exportObjectAs3MF', () => {
 
   it('generates correct vertex and triangle counts in model XML', async () => {
     const geo = makeTestGeometry()
-    await exportObjectAs3MF(geo, 'test')
+    exportObjectAs3MF(geo, 'test')
 
     const modelXml = await readModelXml()
 
@@ -108,7 +108,7 @@ describe('exportObjectAs3MF', () => {
 
   it('declares millimeter units in model XML', async () => {
     const geo = makeTestGeometry()
-    await exportObjectAs3MF(geo, 'test')
+    exportObjectAs3MF(geo, 'test')
 
     const modelXml = await readModelXml()
     expect(modelXml).toContain('unit="millimeter"')
@@ -118,7 +118,7 @@ describe('exportObjectAs3MF', () => {
 
   it('escapes XML special characters in object names', async () => {
     const geo = makeTestGeometry()
-    await exportObjectAs3MF(geo, 'Bin <1> & "2"')
+    exportObjectAs3MF(geo, 'Bin <1> & "2"')
 
     const modelXml = await readModelXml()
     expect(modelXml).toContain('Bin &lt;1&gt; &amp; &quot;2&quot;')
@@ -126,7 +126,7 @@ describe('exportObjectAs3MF', () => {
     geo.dispose()
   })
 
-  it('handles real baseplate geometry', async () => {
+  it('handles real baseplate geometry', () => {
     const params = {
       gridWidth: 1,
       gridDepth: 1,
@@ -136,14 +136,16 @@ describe('exportObjectAs3MF', () => {
     }
     const geo = generateBaseplate(params, PROFILE_OFFICIAL)
 
-    await expect(exportObjectAs3MF(geo, 'Baseplate')).resolves.not.toThrow()
+    expect(() => {
+      exportObjectAs3MF(geo, 'Baseplate')
+    }).not.toThrow()
 
     geo.dispose()
   })
 
   it('applies scale factor when not equal to 1', async () => {
     const geo = makeTestGeometry()
-    await exportObjectAs3MF(geo, 'scaled', 2)
+    exportObjectAs3MF(geo, 'scaled', 2)
 
     const modelXml = await readModelXml()
     // Original vertex at (1,0,0) should become (2,0,0) with scale=2
@@ -154,8 +156,8 @@ describe('exportObjectAs3MF', () => {
 })
 
 describe('exportAllAs3MF', () => {
-  it('does nothing with empty items', async () => {
-    await exportAllAs3MF([])
+  it('does nothing with empty items', () => {
+    exportAllAs3MF([])
     expect(downloadState.triggered).toBe(false)
   })
 
@@ -189,7 +191,7 @@ describe('exportAllAs3MF', () => {
       },
     ]
 
-    await exportAllAs3MF(items)
+    exportAllAs3MF(items)
 
     expect(downloadState.triggered).toBe(true)
     expect(downloadState.filename).toBe('react-finity-plate.3mf')
