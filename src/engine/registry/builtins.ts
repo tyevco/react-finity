@@ -104,8 +104,8 @@ export function registerBuiltinKinds(): void {
       const compartmentDepth =
         (parentContext.innerDepth - wallThickness * dividersY) / (dividersY + 1)
       return {
-        innerWidth: compartmentWidth,
-        innerDepth: compartmentDepth,
+        innerWidth: Math.max(0.1, compartmentWidth),
+        innerDepth: Math.max(0.1, compartmentDepth),
         wallHeight: parentContext.wallHeight,
         floorY: parentContext.floorY,
         centerX: parentContext.centerX,
@@ -170,13 +170,15 @@ export function registerBuiltinKinds(): void {
       parentContext: ModifierContext,
     ): ModifierContext => {
       const { compartmentsX, compartmentsY, wallThickness } = params
+      if (compartmentsX < 1 || compartmentsY < 1) return parentContext
       const rimInnerWidth = parentContext.innerWidth - wallThickness * 2
       const rimInnerDepth = parentContext.innerDepth - wallThickness * 2
+      if (rimInnerWidth <= 0 || rimInnerDepth <= 0) return parentContext
       const compartmentWidth = (rimInnerWidth - wallThickness * (compartmentsX - 1)) / compartmentsX
       const compartmentDepth = (rimInnerDepth - wallThickness * (compartmentsY - 1)) / compartmentsY
       return {
-        innerWidth: compartmentWidth,
-        innerDepth: compartmentDepth,
+        innerWidth: Math.max(0.1, compartmentWidth),
+        innerDepth: Math.max(0.1, compartmentDepth),
         wallHeight: parentContext.wallHeight,
         floorY: parentContext.floorY,
         centerX: parentContext.centerX,

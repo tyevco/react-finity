@@ -59,28 +59,31 @@ export function generateInsert(
     geometries.push(rimGeo)
   }
 
-  // Internal divider walls along X (compartmentsX - 1 walls)
-  // Account for wall thickness when computing positions so that all
-  // compartments have equal width, consistent with computeChildContext.
-  const compartmentWidthX = (rimInnerWidth - wallThickness * (compartmentsX - 1)) / compartmentsX
-  for (let i = 1; i < compartmentsX; i++) {
-    const xPos =
-      centerX - rimInnerWidth / 2 + i * (compartmentWidthX + wallThickness) - wallThickness / 2
-    const shape = roundedRectShape(wallThickness, rimInnerDepth, 0)
-    const geo = extrudeShape(shape, wallHeight)
-    geo.translate(xPos, floorY, centerZ)
-    geometries.push(geo)
-  }
+  // Internal divider walls require positive rim dimensions
+  if (rimInnerWidth > 0 && rimInnerDepth > 0) {
+    // Internal divider walls along X (compartmentsX - 1 walls)
+    // Account for wall thickness when computing positions so that all
+    // compartments have equal width, consistent with computeChildContext.
+    const compartmentWidthX = (rimInnerWidth - wallThickness * (compartmentsX - 1)) / compartmentsX
+    for (let i = 1; i < compartmentsX; i++) {
+      const xPos =
+        centerX - rimInnerWidth / 2 + i * (compartmentWidthX + wallThickness) - wallThickness / 2
+      const shape = roundedRectShape(wallThickness, rimInnerDepth, 0)
+      const geo = extrudeShape(shape, wallHeight)
+      geo.translate(xPos, floorY, centerZ)
+      geometries.push(geo)
+    }
 
-  // Internal divider walls along Z (compartmentsY - 1 walls)
-  const compartmentDepthZ = (rimInnerDepth - wallThickness * (compartmentsY - 1)) / compartmentsY
-  for (let i = 1; i < compartmentsY; i++) {
-    const zPos =
-      centerZ - rimInnerDepth / 2 + i * (compartmentDepthZ + wallThickness) - wallThickness / 2
-    const shape = roundedRectShape(rimInnerWidth, wallThickness, 0)
-    const geo = extrudeShape(shape, wallHeight)
-    geo.translate(centerX, floorY, zPos)
-    geometries.push(geo)
+    // Internal divider walls along Z (compartmentsY - 1 walls)
+    const compartmentDepthZ = (rimInnerDepth - wallThickness * (compartmentsY - 1)) / compartmentsY
+    for (let i = 1; i < compartmentsY; i++) {
+      const zPos =
+        centerZ - rimInnerDepth / 2 + i * (compartmentDepthZ + wallThickness) - wallThickness / 2
+      const shape = roundedRectShape(rimInnerWidth, wallThickness, 0)
+      const geo = extrudeShape(shape, wallHeight)
+      geo.translate(centerX, floorY, zPos)
+      geometries.push(geo)
+    }
   }
 
   if (geometries.length === 0) {

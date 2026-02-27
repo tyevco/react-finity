@@ -69,8 +69,6 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
       objects: previousSnapshot.objects,
       modifiers: previousSnapshot.modifiers,
     })
-    setIsLoadingProject(false)
-    isUndoRedoInProgress = false
 
     set({
       past: newPast,
@@ -78,6 +76,9 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
       canUndo: newPast.length > 0,
       canRedo: true,
     })
+
+    setIsLoadingProject(false)
+    isUndoRedoInProgress = false
 
     useProjectManagerStore.getState().markDirty()
   },
@@ -98,8 +99,6 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
       objects: nextSnapshot.objects,
       modifiers: nextSnapshot.modifiers,
     })
-    setIsLoadingProject(false)
-    isUndoRedoInProgress = false
 
     set({
       past: [...get().past, currentSnapshot],
@@ -107,6 +106,9 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
       canUndo: true,
       canRedo: newFuture.length > 0,
     })
+
+    setIsLoadingProject(false)
+    isUndoRedoInProgress = false
 
     useProjectManagerStore.getState().markDirty()
   },

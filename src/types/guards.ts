@@ -8,6 +8,7 @@ import type {
   ScoopModifier,
   InsertModifier,
   LidModifier,
+  FingerScoopModifier,
 } from './gridfinity'
 
 export function isBaseplateObject(obj: GridfinityObject): obj is BaseplateObject {
@@ -36,4 +37,8 @@ export function isInsertModifier(mod: Modifier): mod is InsertModifier {
 
 export function isLidModifier(mod: Modifier): mod is LidModifier {
   return mod.kind === 'lid'
+}
+
+export function isFingerScoopModifier(mod: Modifier): mod is FingerScoopModifier {
+  return mod.kind === 'fingerScoop'
 }
