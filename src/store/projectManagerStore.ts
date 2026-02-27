@@ -174,6 +174,8 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
 
         if (!writeProjectData(projectId, { objects, modifiers })) {
           console.warn('Project saveAs failed for:', projectId)
+          // Mark dirty so auto-save retries on next change (matches saveProject behavior)
+          set({ isDirty: true })
           return
         }
 
