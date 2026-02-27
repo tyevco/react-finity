@@ -659,4 +659,78 @@ describe('modifier CRUD', () => {
       expect(after).toBe(before)
     })
   })
+
+  describe('getModifierContext with modifier parent', () => {
+    it('returns child context for modifier that subdivides space', () => {
+      const binId = useProjectStore.getState().addObject('bin')
+      const insertId = useProjectStore.getState().addModifier(binId, 'insert')
+
+      // Get context using the insert modifier's ID as the parentId
+      const context = useProjectStore.getState().getModifierContext(insertId)
+      expect(context).not.toBeNull()
+
+      // Insert subdivides space, so the context should have smaller dimensions
+      // than the bin's own modifier context
+      const binContext = useProjectStore.getState().getModifierContext(binId)
+      expect(context!.innerWidth).toBeLessThan(binContext!.innerWidth) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+      expect(context!.innerDepth).toBeLessThan(binContext!.innerDepth) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    })
+
+    it('returns parent context for modifier that does not subdivide space', () => {
+      const binId = useProjectStore.getState().addObject('bin')
+      const scoopId = useProjectStore.getState().addModifier(binId, 'scoop')
+
+      // Scoop does not subdivide space, so context should equal the bin's context
+      const context = useProjectStore.getState().getModifierContext(scoopId)
+      const binContext = useProjectStore.getState().getModifierContext(binId)
+      expect(context).toEqual(binContext)
+    })
+
+    it('returns null for modifier whose parent object does not support modifiers', () => {
+      // Create a baseplate (supportsModifiers: false) and manually attach a modifier to it
+      useProjectStore.setState({
+        objects: [
+          {
+            kind: 'baseplate' as const,
+            id: 'bp-1',
+            name: 'Baseplate 1',
+            position: [0, 0, 0] as [number, number, number],
+            params: {
+              gridWidth: 3,
+              gridDepth: 3,
+              slim: false,
+              magnetHoles: true,
+              screwHoles: false,
+            },
+          },
+        ],
+        modifiers: [
+          {
+            kind: 'dividerGrid' as const,
+            id: 'mod-orphan',
+            parentId: 'bp-1',
+            params: { dividersX: 1, dividersY: 1, wallThickness: 1.2 },
+          },
+        ] as never,
+      })
+
+      const context = useProjectStore.getState().getModifierContext('mod-orphan')
+      expect(context).toBeNull()
+    })
+
+    it('chains context through multiple levels of modifiers', () => {
+      const binId = useProjectStore.getState().addObject('bin')
+      const insertId = useProjectStore.getState().addModifier(binId, 'insert')
+      const divGridId = useProjectStore.getState().addModifier(insertId, 'dividerGrid')
+
+      const context = useProjectStore.getState().getModifierContext(divGridId)
+      expect(context).not.toBeNull()
+
+      // The dividerGrid also subdivides space, so its child context should be
+      // smaller than the insert's child context
+      const insertContext = useProjectStore.getState().getModifierContext(insertId)
+      expect(context!.innerWidth).toBeLessThan(insertContext!.innerWidth) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+      expect(context!.innerDepth).toBeLessThan(insertContext!.innerDepth) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    })
+  })
 })

@@ -288,4 +288,142 @@ describe('projectManagerStore', () => {
     expect(warnSpy).toHaveBeenCalled()
     warnSpy.mockRestore()
   })
+
+  it('loadProject does nothing when project data is corrupted JSON', () => {
+    localStorageMock.setItem('react-finity-project-bad', '{not valid json')
+    useProjectManagerStore.setState({
+      projects: [{ id: 'bad', name: 'Bad', createdAt: '', updatedAt: '' }],
+    })
+
+    useProjectManagerStore.getState().loadProject('bad')
+
+    expect(useProjectManagerStore.getState().currentProjectId).toBeNull()
+    expect(useProjectStore.getState().objects).toEqual([])
+  })
+
+  it('loadProject does nothing when data has non-array objects field', () => {
+    localStorageMock.setItem(
+      'react-finity-project-noarray',
+      JSON.stringify({ objects: 'not-array', modifiers: [] }),
+    )
+    useProjectManagerStore.setState({
+      projects: [{ id: 'noarray', name: 'NoArray', createdAt: '', updatedAt: '' }],
+    })
+
+    useProjectManagerStore.getState().loadProject('noarray')
+
+    expect(useProjectManagerStore.getState().currentProjectId).toBeNull()
+    expect(useProjectStore.getState().objects).toEqual([])
+  })
+
+  it('loadProject does nothing when data has non-array modifiers field', () => {
+    localStorageMock.setItem(
+      'react-finity-project-nomod',
+      JSON.stringify({ objects: [], modifiers: 'not-array' }),
+    )
+    useProjectManagerStore.setState({
+      projects: [{ id: 'nomod', name: 'NoMod', createdAt: '', updatedAt: '' }],
+    })
+
+    useProjectManagerStore.getState().loadProject('nomod')
+
+    expect(useProjectManagerStore.getState().currentProjectId).toBeNull()
+    expect(useProjectStore.getState().objects).toEqual([])
+  })
+
+  it('loadProject does nothing when meta not found in projects list', () => {
+    localStorageMock.setItem(
+      'react-finity-project-orphan',
+      JSON.stringify({ objects: [], modifiers: [] }),
+    )
+    // Do not add the project to the projects array
+    useProjectManagerStore.setState({ projects: [] })
+
+    useProjectManagerStore.getState().loadProject('orphan')
+
+    expect(useProjectManagerStore.getState().currentProjectId).toBeNull()
+  })
+
+  it('saveProject reverts isDirty to true when localStorage write fails', () => {
+    useProjectStore.getState().addObject('bin')
+    useProjectManagerStore.getState().saveProject()
+
+    expect(useProjectManagerStore.getState().isDirty).toBe(false)
+    expect(useProjectManagerStore.getState().currentProjectId).not.toBeNull()
+
+    // Make subsequent writes fail
+    const origSetItem = localStorageMock.setItem
+    localStorageMock.setItem = () => {
+      throw new Error('Quota exceeded')
+    }
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    // writeProjectData logs via console.error; suppress to keep test output clean
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    useProjectManagerStore.getState().markDirty()
+    vi.advanceTimersByTime(2500)
+
+    // isDirty should be reverted to true because the write failed
+    expect(useProjectManagerStore.getState().isDirty).toBe(true)
+    expect(warnSpy).toHaveBeenCalled()
+
+    warnSpy.mockRestore()
+    errorSpy.mockRestore()
+    localStorageMock.setItem = origSetItem
+  })
+
+  it('saveProjectAs sets isDirty and does not update state when localStorage write fails', () => {
+    const origSetItem = localStorageMock.setItem
+    localStorageMock.setItem = () => {
+      throw new Error('Quota exceeded')
+    }
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    // writeProjectData logs via console.error; suppress to keep test output clean
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    useProjectManagerStore.getState().saveProjectAs('Fail Project')
+
+    // Early return: currentProjectId should not be set, project not added
+    expect(useProjectManagerStore.getState().isDirty).toBe(true)
+    expect(useProjectManagerStore.getState().currentProjectId).toBeNull()
+    expect(useProjectManagerStore.getState().projects).toHaveLength(0)
+    expect(useProjectManagerStore.getState().currentProjectName).toBe('Untitled Project')
+    expect(warnSpy).toHaveBeenCalled()
+
+    warnSpy.mockRestore()
+    errorSpy.mockRestore()
+    localStorageMock.setItem = origSetItem
+  })
+
+  it('renameProject does not update currentProjectName for a non-current project', () => {
+    useProjectManagerStore.getState().saveProjectAs('First Project')
+    const firstId = useProjectManagerStore.getState().currentProjectId! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+
+    useProjectManagerStore.getState().saveProjectAs('Active Project')
+
+    expect(useProjectManagerStore.getState().currentProjectName).toBe('Active Project')
+
+    useProjectManagerStore.getState().renameProject(firstId, 'Renamed First')
+
+    // currentProjectName should still reflect the active project
+    expect(useProjectManagerStore.getState().currentProjectName).toBe('Active Project')
+
+    // The non-current project's metadata should be updated
+    const renamedMeta = useProjectManagerStore.getState().projects.find((p) => p.id === firstId)
+    expect(renamedMeta?.name).toBe('Renamed First')
+  })
+
+  it('initializeProject is idempotent — second call is a no-op', () => {
+    // The module-level projectInitialized flag is set to true during module
+    // initialization (via onFinishHydration in jsdom). Both calls here are
+    // effectively no-ops, which is the desired behavior to prevent double loads.
+    useProjectManagerStore.getState().initializeProject()
+    useProjectManagerStore.getState().initializeProject()
+
+    // State should remain unmodified regardless of how many times called
+    expect(useProjectManagerStore.getState().currentProjectId).toBeNull()
+    expect(useProjectStore.getState().objects).toEqual([])
+  })
 })

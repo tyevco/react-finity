@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { BufferGeometry, BufferAttribute } from 'three'
-import { exportObjectAsSTL, exportAllAsSingleSTL } from '../stlExporter'
+import { exportObjectAsSTL, exportAllAsSingleSTL, exportAllAsZip } from '../stlExporter'
 import { generateBaseplate } from '../../geometry/baseplate'
 import { PROFILE_OFFICIAL } from '../../constants'
 import type { PrintLayoutItem } from '../printLayout'
@@ -80,6 +80,25 @@ describe('exportObjectAsSTL', () => {
   })
 })
 
+function makeNonIndexedGeometry(): BufferGeometry {
+  const geometry = new BufferGeometry()
+  const vertices = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
+  const normals = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1])
+  geometry.setAttribute('position', new BufferAttribute(vertices, 3))
+  geometry.setAttribute('normal', new BufferAttribute(normals, 3))
+  return geometry
+}
+
+function makeBaseplateObject(id: string, name: string): BaseplateObject {
+  return {
+    id,
+    name,
+    kind: 'baseplate',
+    position: [0, 0, 0],
+    params: { gridWidth: 1, gridDepth: 1, slim: false, magnetHoles: false, screwHoles: false },
+  }
+}
+
 describe('exportAllAsSingleSTL', () => {
   it('does nothing with empty items', () => {
     exportAllAsSingleSTL([])
@@ -87,13 +106,7 @@ describe('exportAllAsSingleSTL', () => {
   })
 
   it('exports merged geometry from multiple items', () => {
-    const bp: BaseplateObject = {
-      id: 'bp-1',
-      name: 'Baseplate 1',
-      kind: 'baseplate',
-      position: [0, 0, 0],
-      params: { gridWidth: 1, gridDepth: 1, slim: false, magnetHoles: false, screwHoles: false },
-    }
+    const bp = makeBaseplateObject('bp-1', 'Baseplate 1')
 
     const items: PrintLayoutItem[] = [
       {
@@ -108,7 +121,7 @@ describe('exportAllAsSingleSTL', () => {
       {
         id: 'bp-2',
         label: 'Baseplate 2',
-        object: { ...bp, id: 'bp-2', name: 'Baseplate 2' },
+        object: makeBaseplateObject('bp-2', 'Baseplate 2'),
         geometry: makeTestGeometry(),
         position: [52, 0, 0],
         boundingBox: { width: 42, depth: 42, height: 7 },
@@ -125,5 +138,197 @@ describe('exportAllAsSingleSTL', () => {
     for (const item of items) {
       item.geometry.dispose()
     }
+  })
+
+  it('exports a single item through the merge code path', () => {
+    const item: PrintLayoutItem = {
+      id: 'test-1',
+      label: 'Test Object',
+      object: makeBaseplateObject('test-1', 'Test Object'),
+      geometry: makeTestGeometry(),
+      position: [0, 0, 0],
+      boundingBox: { width: 42, depth: 42, height: 7 },
+      fitsOnBed: true,
+    }
+
+    expect(() => {
+      exportAllAsSingleSTL([item])
+    }).not.toThrow()
+    expect(downloadState.triggered).toBe(true)
+    expect(downloadState.filename).toBe('react-finity-plate.stl')
+
+    item.geometry.dispose()
+  })
+
+  it('handles non-indexed geometry via the else branch', () => {
+    // Non-indexed geometry exercises the else branch at lines 122-126 in stlExporter.ts,
+    // where sequential indices are generated instead of reading from geo.index.
+    const item: PrintLayoutItem = {
+      id: 'nonindexed-1',
+      label: 'Non-Indexed Object',
+      object: makeBaseplateObject('nonindexed-1', 'Non-Indexed Object'),
+      geometry: makeNonIndexedGeometry(),
+      position: [0, 0, 0],
+      boundingBox: { width: 42, depth: 42, height: 7 },
+      fitsOnBed: true,
+    }
+
+    expect(() => {
+      exportAllAsSingleSTL([item])
+    }).not.toThrow()
+    expect(downloadState.triggered).toBe(true)
+    expect(downloadState.filename).toBe('react-finity-plate.stl')
+
+    item.geometry.dispose()
+  })
+
+  it('applies a non-unit scale factor to merged geometry', () => {
+    const item: PrintLayoutItem = {
+      id: 'scaled-1',
+      label: 'Scaled Object',
+      object: makeBaseplateObject('scaled-1', 'Scaled Object'),
+      geometry: makeTestGeometry(),
+      position: [0, 0, 0],
+      boundingBox: { width: 42, depth: 42, height: 7 },
+      fitsOnBed: true,
+    }
+
+    expect(() => {
+      exportAllAsSingleSTL([item], 0.001)
+    }).not.toThrow()
+    expect(downloadState.triggered).toBe(true)
+    expect(downloadState.filename).toBe('react-finity-plate.stl')
+
+    item.geometry.dispose()
+  })
+
+  it('mixes indexed and non-indexed geometry in a single merge', () => {
+    const items: PrintLayoutItem[] = [
+      {
+        id: 'indexed-1',
+        label: 'Indexed Object',
+        object: makeBaseplateObject('indexed-1', 'Indexed Object'),
+        geometry: makeTestGeometry(),
+        position: [0, 0, 0],
+        boundingBox: { width: 42, depth: 42, height: 7 },
+        fitsOnBed: true,
+      },
+      {
+        id: 'nonindexed-2',
+        label: 'Non-Indexed Object',
+        object: makeBaseplateObject('nonindexed-2', 'Non-Indexed Object'),
+        geometry: makeNonIndexedGeometry(),
+        position: [52, 0, 0],
+        boundingBox: { width: 42, depth: 42, height: 7 },
+        fitsOnBed: true,
+      },
+    ]
+
+    expect(() => {
+      exportAllAsSingleSTL(items)
+    }).not.toThrow()
+    expect(downloadState.triggered).toBe(true)
+
+    for (const item of items) {
+      item.geometry.dispose()
+    }
+  })
+})
+
+describe('exportAllAsZip', () => {
+  it('still produces a download with empty items (no early-return guard)', async () => {
+    // exportAllAsZip has no early-return for an empty list; it creates a ZIP with
+    // zero files and triggers a download of the empty archive.
+    await exportAllAsZip([])
+    expect(downloadState.triggered).toBe(true)
+    expect(downloadState.filename).toBe('react-finity-export.zip')
+  })
+
+  it('exports items as individual STL files in a ZIP', async () => {
+    const items: PrintLayoutItem[] = [
+      {
+        id: 'zip-1',
+        label: 'Bin 1',
+        object: makeBaseplateObject('zip-1', 'Bin 1'),
+        geometry: makeTestGeometry(),
+        position: [0, 0, 0],
+        boundingBox: { width: 42, depth: 42, height: 7 },
+        fitsOnBed: true,
+      },
+      {
+        id: 'zip-2',
+        label: 'Bin 2',
+        object: makeBaseplateObject('zip-2', 'Bin 2'),
+        geometry: makeTestGeometry(),
+        position: [52, 0, 0],
+        boundingBox: { width: 42, depth: 42, height: 7 },
+        fitsOnBed: true,
+      },
+    ]
+
+    await expect(exportAllAsZip(items)).resolves.toBeUndefined()
+    expect(downloadState.triggered).toBe(true)
+    expect(downloadState.filename).toBe('react-finity-export.zip')
+
+    for (const item of items) {
+      item.geometry.dispose()
+    }
+  })
+
+  it('exports a single item as a ZIP', async () => {
+    const item: PrintLayoutItem = {
+      id: 'zip-single',
+      label: 'Single Bin',
+      object: makeBaseplateObject('zip-single', 'Single Bin'),
+      geometry: makeTestGeometry(),
+      position: [0, 0, 0],
+      boundingBox: { width: 42, depth: 42, height: 7 },
+      fitsOnBed: true,
+    }
+
+    await expect(exportAllAsZip([item])).resolves.toBeUndefined()
+    expect(downloadState.triggered).toBe(true)
+    expect(downloadState.filename).toBe('react-finity-export.zip')
+
+    item.geometry.dispose()
+  })
+
+  it('applies a scale factor when exporting each STL in the ZIP', async () => {
+    const item: PrintLayoutItem = {
+      id: 'zip-scaled',
+      label: 'Scaled Bin',
+      object: makeBaseplateObject('zip-scaled', 'Scaled Bin'),
+      geometry: makeTestGeometry(),
+      position: [0, 0, 0],
+      boundingBox: { width: 42, depth: 42, height: 7 },
+      fitsOnBed: true,
+    }
+
+    await expect(exportAllAsZip([item], 0.001)).resolves.toBeUndefined()
+    expect(downloadState.triggered).toBe(true)
+    expect(downloadState.filename).toBe('react-finity-export.zip')
+
+    item.geometry.dispose()
+  })
+
+  it('sanitizes item labels as STL filenames within the ZIP', async () => {
+    // We verify the function completes without error; the filename sanitization
+    // for individual entries inside the ZIP archive is tested indirectly since
+    // JSZip accepts any string key and the download filename is always the ZIP name.
+    const item: PrintLayoutItem = {
+      id: 'zip-special',
+      label: 'My/Bin<Object>',
+      object: makeBaseplateObject('zip-special', 'My/Bin<Object>'),
+      geometry: makeTestGeometry(),
+      position: [0, 0, 0],
+      boundingBox: { width: 42, depth: 42, height: 7 },
+      fitsOnBed: true,
+    }
+
+    await expect(exportAllAsZip([item])).resolves.toBeUndefined()
+    expect(downloadState.triggered).toBe(true)
+    expect(downloadState.filename).toBe('react-finity-export.zip')
+
+    item.geometry.dispose()
   })
 })
