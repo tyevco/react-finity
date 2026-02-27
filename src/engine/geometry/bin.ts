@@ -152,7 +152,11 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): Buff
   }
 
   // === 5. Inner fillet (optional) ===
-  if (innerFillet > 0) {
+  // Skip fillet when inner dimensions are too small to accommodate the straight
+  // wall sections between corner radii (extrusion length would be zero or negative).
+  const filletWidthSpan = innerWidth - innerRadius * 2
+  const filletDepthSpan = innerDepth - innerRadius * 2
+  if (innerFillet > 0 && filletWidthSpan > 0.01 && filletDepthSpan > 0.01) {
     const filletR = Math.min(innerFillet, wt, wallHeight / 2)
     const floorY = socketWallHeight + wt
 
@@ -164,26 +168,26 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): Buff
     chamferShape.lineTo(0, 0)
 
     // Front wall (negative Z)
-    const frontGeo = extrudeShape(chamferShape, innerWidth - innerRadius * 2)
+    const frontGeo = extrudeShape(chamferShape, filletWidthSpan)
     frontGeo.rotateY(Math.PI / 2)
     frontGeo.translate(-(innerWidth / 2 - innerRadius), floorY, -innerDepth / 2)
     geometries.push(frontGeo)
 
     // Back wall (positive Z)
-    const backGeo = extrudeShape(chamferShape, innerWidth - innerRadius * 2)
+    const backGeo = extrudeShape(chamferShape, filletWidthSpan)
     backGeo.rotateY(Math.PI / 2)
     backGeo.rotateY(Math.PI)
     backGeo.translate(innerWidth / 2 - innerRadius, floorY, innerDepth / 2)
     geometries.push(backGeo)
 
     // Left wall (negative X)
-    const leftGeo = extrudeShape(chamferShape, innerDepth - innerRadius * 2)
+    const leftGeo = extrudeShape(chamferShape, filletDepthSpan)
     leftGeo.rotateY(0)
     leftGeo.translate(-innerWidth / 2, floorY, -(innerDepth / 2 - innerRadius))
     geometries.push(leftGeo)
 
     // Right wall (positive X)
-    const rightGeo = extrudeShape(chamferShape, innerDepth - innerRadius * 2)
+    const rightGeo = extrudeShape(chamferShape, filletDepthSpan)
     rightGeo.rotateY(Math.PI)
     rightGeo.translate(innerWidth / 2, floorY, innerDepth / 2 - innerRadius)
     geometries.push(rightGeo)
