@@ -22,7 +22,11 @@ export function generateModifierGeometry(
   context: ModifierContext,
   profile: GridfinityProfile,
 ): BufferGeometry | null {
-  const reg = modifierKindRegistry.getOrThrow(modifier.kind)
+  const reg = modifierKindRegistry.get(modifier.kind)
+  if (!reg) {
+    console.warn(`Unknown modifier kind "${modifier.kind}", skipping`)
+    return null
+  }
   return reg.generateGeometry(asParams(modifier.params), context, profile)
 }
 
