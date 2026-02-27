@@ -152,15 +152,16 @@ export function mergeObjectWithModifiers(
     const baseBrush = new Brush(result)
     const subtractBrush = new Brush(mergedSubtractive)
 
-    const csgResult = evaluator.evaluate(baseBrush, subtractBrush, SUBTRACTION)
-    const finalGeometry = csgResult.geometry
-
-    result.dispose()
-    mergedSubtractive.dispose()
-    baseBrush.geometry.dispose()
-    subtractBrush.geometry.dispose()
-
-    result = finalGeometry
+    try {
+      const csgResult = evaluator.evaluate(baseBrush, subtractBrush, SUBTRACTION)
+      const finalGeometry = csgResult.geometry
+      result.dispose()
+      result = finalGeometry
+    } finally {
+      mergedSubtractive.dispose()
+      baseBrush.geometry.dispose()
+      subtractBrush.geometry.dispose()
+    }
   }
 
   return result

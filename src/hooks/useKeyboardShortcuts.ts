@@ -104,12 +104,17 @@ export function useKeyboardShortcuts() {
           const obj = objects.find((o) => o.id === selectedObjectIds[0])
           if (obj) {
             const scale = useUIStore.getState().exportScale
-            const merged = mergeObjectWithModifiers(obj, modifiers, profile)
-            const rotation = getPrintRotation(obj)
-            const oriented = applyPrintOrientation(merged, rotation)
-            exportObjectAsSTL(oriented, obj.name, scale)
-            merged.dispose()
-            oriented.dispose()
+            let merged: ReturnType<typeof mergeObjectWithModifiers> | null = null
+            let oriented: ReturnType<typeof applyPrintOrientation> | null = null
+            try {
+              merged = mergeObjectWithModifiers(obj, modifiers, profile)
+              const rotation = getPrintRotation(obj)
+              oriented = applyPrintOrientation(merged, rotation)
+              exportObjectAsSTL(oriented, obj.name, scale)
+            } finally {
+              merged?.dispose()
+              oriented?.dispose()
+            }
           }
         }
       }

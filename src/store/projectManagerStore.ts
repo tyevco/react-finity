@@ -14,7 +14,14 @@ function projectDataKey(id: string): string {
 function isValidObject(obj: unknown): boolean {
   if (typeof obj !== 'object' || obj === null) return false
   const o = obj as Record<string, unknown>
-  return typeof o.id === 'string' && typeof o.kind === 'string' && typeof o.params === 'object'
+  return (
+    typeof o.id === 'string' &&
+    typeof o.kind === 'string' &&
+    o.params !== null &&
+    typeof o.params === 'object' &&
+    Array.isArray(o.position) &&
+    o.position.length === 3
+  )
 }
 
 function isValidModifier(mod: unknown): boolean {
@@ -24,6 +31,7 @@ function isValidModifier(mod: unknown): boolean {
     typeof m.id === 'string' &&
     typeof m.parentId === 'string' &&
     typeof m.kind === 'string' &&
+    m.params !== null &&
     typeof m.params === 'object'
   )
 }
