@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { v4 as uuidv4 } from 'uuid'
 import type { ProjectMeta, ProjectData } from '@/types/gridfinity'
 import { useProjectStore, resetObjectCounter } from './projectStore'
+import { useUIStore } from './uiStore'
 
 const PROJECT_DATA_KEY_PREFIX = 'react-finity-project-'
 const AUTO_SAVE_DELAY = 2000
@@ -106,6 +107,7 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
           clearTimeout(autoSaveTimer)
           autoSaveTimer = null
         }
+        useUIStore.getState().clearSelection()
         useProjectStore.getState().clearObjects()
         resetObjectCounter([])
         set({
@@ -195,6 +197,7 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
         const meta = get().projects.find((p) => p.id === id)
         if (!meta) return
 
+        useUIStore.getState().clearSelection()
         useProjectStore.getState().loadProjectData(data)
 
         set({
@@ -240,6 +243,8 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
       },
 
       initializeProject: () => {
+        if (projectInitialized) return
+        projectInitialized = true
         const state = get()
         if (state.currentProjectId) {
           const data = readProjectData(state.currentProjectId)
@@ -274,6 +279,10 @@ export function setIsLoadingProject(value: boolean): void {
   isLoadingProject = value
 }
 
+// Tracks whether onFinishHydration already loaded the project, so
+// initializeProject() in App.tsx can skip the redundant second load.
+let projectInitialized = false
+
 // Wrap loadProjectData to set the isLoadingProject flag, preventing
 // auto-save and history tracking during project loads.
 // Guard against double-wrapping on HMR module re-execution.
@@ -300,10 +309,15 @@ const unsubProjectChanges = useProjectStore.subscribe((state, prevState) => {
   }
 })
 
-// Clean up subscription on HMR to prevent duplicate listeners.
+// Clean up subscription and pending timers on HMR to prevent duplicate
+// listeners and stale callbacks referencing old module state.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     unsubProjectChanges()
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer)
+      autoSaveTimer = null
+    }
   })
 }
 
@@ -318,6 +332,7 @@ if (typeof window !== 'undefined') {
         isLoadingProject = false
       }
     }
+    projectInitialized = true
     unsubFinishHydration()
   })
 }

@@ -168,10 +168,16 @@ const unsubProjectManager = useProjectManagerStore.subscribe((state, prevState) 
   }
 })
 
-// Clean up subscriptions on HMR to prevent duplicate listeners.
+// Clean up subscriptions and pending timers on HMR to prevent duplicate
+// listeners and stale callbacks referencing old module state.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     unsubProjectStore()
     unsubProjectManager()
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+      debounceTimer = null
+    }
+    pendingSnapshot = null
   })
 }
