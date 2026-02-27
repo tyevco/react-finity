@@ -14,7 +14,9 @@ export function triggerDownload(blob: Blob, filename: string): void {
   // JSZip.generateAsync), synchronous cleanup can race with headless
   // Chromium's download initiation.
   setTimeout(() => {
-    document.body.removeChild(link)
+    if (typeof document !== 'undefined') {
+      document.body.removeChild(link)
+    }
     URL.revokeObjectURL(url)
   }, 100)
 }
