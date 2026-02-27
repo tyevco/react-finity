@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
-import { GridHelper, DoubleSide, PlaneGeometry } from 'three'
+import { DoubleSide, PlaneGeometry } from 'three'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, GizmoHelper, GizmoViewport } from '@react-three/drei'
+import { OrbitControls, GizmoHelper, GizmoViewport, Grid } from '@react-three/drei'
 import { useProjectStore } from '@/store/projectStore'
 import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
@@ -12,15 +12,18 @@ import type { PrintLayoutItem } from '@/engine/export/printLayout'
 function PrintBed({ width, depth }: { width: number; depth: number }) {
   const gridSize = 42 // Gridfinity grid spacing in mm
 
-  const gridHelper = useMemo(() => {
-    const divisionsX = Math.floor(width / gridSize)
-    const divisionsZ = Math.floor(depth / gridSize)
-    const divisions = Math.max(divisionsX, divisionsZ)
-    const size = Math.max(width, depth)
-    const grid = new GridHelper(size, divisions, '#444444', '#333333')
-    grid.position.set(width / 2, 0, depth / 2)
-    return grid
-  }, [width, depth])
+  const divisionsX = Math.floor(width / gridSize)
+  const divisionsZ = Math.floor(depth / gridSize)
+  const divisions = Math.max(divisionsX, divisionsZ)
+  const size = Math.max(width, depth)
+
+  // Memoize the PlaneGeometry used for the bed outline edges to prevent leaks
+  const outlinePlaneGeo = useMemo(() => new PlaneGeometry(width, depth), [width, depth])
+  useEffect(() => {
+    return () => {
+      outlinePlaneGeo.dispose()
+    }
+  }, [outlinePlaneGeo])
 
   return (
     <>
@@ -32,12 +35,23 @@ function PrintBed({ width, depth }: { width: number; depth: number }) {
 
       {/* Bed outline */}
       <lineSegments position={[width / 2, 0.05, depth / 2]}>
-        <edgesGeometry args={[new PlaneGeometry(width, depth)]} />
+        <edgesGeometry args={[outlinePlaneGeo]} />
         <lineBasicMaterial color="#6b9bd2" linewidth={2} />
       </lineSegments>
 
       {/* Grid overlay */}
-      <primitive object={gridHelper} />
+      <Grid
+        position={[width / 2, 0, depth / 2]}
+        args={[size, size]}
+        cellSize={gridSize}
+        cellThickness={0.5}
+        cellColor="#444444"
+        sectionSize={gridSize * (divisions || 1)}
+        sectionThickness={1}
+        sectionColor="#333333"
+        fadeDistance={0}
+        infiniteGrid={false}
+      />
     </>
   )
 }

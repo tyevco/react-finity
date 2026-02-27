@@ -172,8 +172,16 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   getRootObjectId: (modifierId: string) => {
     const state = get()
     let currentId = modifierId
+    const visited = new Set<string>()
 
-    for (let depth = 0; depth < 100; depth++) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- loop exits via return statements; condition is always true by design
+    while (true) {
+      if (visited.has(currentId)) {
+        console.warn('Circular reference detected in modifier chain at:', currentId)
+        return null
+      }
+      visited.add(currentId)
+
       const modifier = state.modifiers.find((mod) => mod.id === currentId)
       if (!modifier) {
         const obj = state.objects.find((o) => o.id === currentId)
@@ -181,8 +189,6 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
       }
       currentId = modifier.parentId
     }
-
-    return null
   },
 
   duplicateObjects: (ids: string[]) => {

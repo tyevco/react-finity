@@ -274,7 +274,10 @@ export function exportObjectAs3MF(geometry: BufferGeometry, name: string, scale 
  * into the geometry (consistent with exportAllAsSingleSTL approach).
  */
 export function exportAllAs3MF(items: PrintLayoutItem[], scale = 1): void {
-  if (items.length === 0) return
+  if (items.length === 0) {
+    console.warn('Export skipped: no objects in layout')
+    return
+  }
 
   const clones: BufferGeometry[] = []
 

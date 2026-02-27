@@ -51,6 +51,28 @@ describe('generateLabelTab', () => {
     backGeo.dispose()
   })
 
+  it('handles extreme angle of 0 degrees without error', () => {
+    const geometry = generateLabelTab(
+      { ...defaultParams, angle: 0 },
+      defaultContext,
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
+
+  it('handles extreme angle of 90 degrees without error', () => {
+    const geometry = generateLabelTab(
+      { ...defaultParams, angle: 90 },
+      defaultContext,
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
+
   it('different angles produce geometry', () => {
     const geo30 = generateLabelTab(
       { ...defaultParams, angle: 30 },

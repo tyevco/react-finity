@@ -11,13 +11,44 @@ function projectDataKey(id: string): string {
   return `${PROJECT_DATA_KEY_PREFIX}${id}`
 }
 
+function isValidObject(obj: unknown): boolean {
+  if (typeof obj !== 'object' || obj === null) return false
+  const o = obj as Record<string, unknown>
+  return typeof o.id === 'string' && typeof o.kind === 'string' && typeof o.params === 'object'
+}
+
+function isValidModifier(mod: unknown): boolean {
+  if (typeof mod !== 'object' || mod === null) return false
+  const m = mod as Record<string, unknown>
+  return (
+    typeof m.id === 'string' &&
+    typeof m.parentId === 'string' &&
+    typeof m.kind === 'string' &&
+    typeof m.params === 'object'
+  )
+}
+
 function readProjectData(id: string): ProjectData | null {
   try {
     const raw = localStorage.getItem(projectDataKey(id))
     if (!raw) return null
     const data = JSON.parse(raw) as ProjectData
     if (!Array.isArray(data.objects) || !Array.isArray(data.modifiers)) return null
-    return data
+
+    // Filter out malformed entries to be resilient against corrupted data
+    const validObjects = data.objects.filter(isValidObject)
+    const validModifiers = data.modifiers.filter(isValidModifier)
+
+    if (
+      validObjects.length < data.objects.length ||
+      validModifiers.length < data.modifiers.length
+    ) {
+      console.warn(
+        `Project ${id}: filtered out ${data.objects.length - validObjects.length} invalid objects and ${data.modifiers.length - validModifiers.length} invalid modifiers`,
+      )
+    }
+
+    return { objects: validObjects, modifiers: validModifiers } as ProjectData
   } catch {
     return null
   }
@@ -108,6 +139,7 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
         }
 
         if (!writeProjectData(projectId, { objects, modifiers })) {
+          console.warn('Project save failed for:', projectId)
           // Revert dirty flag so auto-save retries on next change
           set({ isDirty: true })
         }
@@ -131,6 +163,7 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
         }
 
         if (!writeProjectData(projectId, { objects, modifiers })) {
+          console.warn('Project saveAs failed for:', projectId)
           return
         }
 

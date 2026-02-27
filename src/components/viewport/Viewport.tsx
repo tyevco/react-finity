@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Plane, Vector3 } from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, GizmoHelper, GizmoViewport } from '@react-three/drei'
@@ -78,6 +78,8 @@ function CameraController() {
 function SectionPlane() {
   const sectionView = useUIStore((s) => s.sectionView)
   const sectionPlaneY = useUIStore((s) => s.sectionPlaneY)
+  const prevSectionViewRef = useRef(sectionView)
+  const clippingPlanesRef = useRef<Plane[]>([])
 
   const clippingPlane = useMemo(
     () => new Plane(new Vector3(0, -1, 0), sectionPlaneY),
@@ -86,12 +88,17 @@ function SectionPlane() {
 
   useFrame(({ gl }) => {
     if (sectionView) {
-      gl.clippingPlanes = [clippingPlane]
+      // Only reallocate the array when section view is first enabled
+      if (!prevSectionViewRef.current || clippingPlanesRef.current[0] !== clippingPlane) {
+        clippingPlanesRef.current = [clippingPlane]
+      }
+      gl.clippingPlanes = clippingPlanesRef.current
       gl.localClippingEnabled = true
     } else if (gl.localClippingEnabled) {
       gl.clippingPlanes = []
       gl.localClippingEnabled = false
     }
+    prevSectionViewRef.current = sectionView
   })
 
   return null
@@ -107,10 +114,13 @@ function Scene() {
   const lighting = LIGHTING_PRESETS[lightingPreset]
 
   // Only show measurement overlay for single selection
-  const singleSelectedObject =
-    selectedObjectIds.length === 1
-      ? (objects.find((o) => o.id === selectedObjectIds[0]) ?? null)
-      : null
+  const singleSelectedObject = useMemo(
+    () =>
+      selectedObjectIds.length === 1
+        ? (objects.find((o) => o.id === selectedObjectIds[0]) ?? null)
+        : null,
+    [selectedObjectIds, objects],
+  )
 
   return (
     <>
@@ -147,7 +157,8 @@ function Scene() {
       {/* Scene objects */}
       <group
         onClick={(e) => {
-          // Only deselect if clicking on empty space (not on an object)
+          // Clicks on objects or the grid are handled by their own handlers;
+          // only clear selection for background/empty-space clicks
           if (e.object.type === 'GridHelper' || e.object.type === 'Mesh') return
           clearSelection()
         }}

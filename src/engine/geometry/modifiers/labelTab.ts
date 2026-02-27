@@ -15,7 +15,9 @@ export function generateLabelTab(
 
   // Label tab is a wedge at ~60% wall height on the targeted wall
   const tabBaseY = floorY + wallHeight * 0.6
-  const angleRad = (angle * Math.PI) / 180
+  // Clamp angle to safe range to prevent division by zero (tan(0)) or infinity (tan(90))
+  const safeAngle = Math.max(5, Math.min(85, angle))
+  const angleRad = (safeAngle * Math.PI) / 180
   const tabDepthVal = height / Math.tan(angleRad)
 
   // Triangular cross-section (right triangle in Y-Z plane)

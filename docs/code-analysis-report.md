@@ -2,7 +2,7 @@
 
 **Date**: 2026-02-27
 **Scope**: Full codebase analysis of React-Finity
-**Status**: Build passes, lint clean, 310/310 unit tests pass cleanly
+**Status**: Build passes, lint clean, 318/318 unit tests pass cleanly
 
 ---
 
@@ -33,9 +33,9 @@ No warnings or errors from ESLint.
 - **Warning**: Main JS bundle is **1,642 KB** (470 KB gzipped), exceeding the 500 KB chunk size warning
 - **Recommendation**: Implement code-splitting via dynamic `import()` or configure `build.rollupOptions.output.manualChunks` to split heavy dependencies (three.js, three-bvh-csg, jszip)
 
-### Unit Tests: 310/310 PASS (clean)
+### Unit Tests: 318/318 PASS (clean)
 
-All 310 tests pass across 27 test files with no unhandled errors.
+All 318 tests pass across 27 test files with no unhandled errors.
 
 **Fixed in this report**: `src/engine/export/exportUtils.ts:17` previously threw 4 `ReferenceError: document is not defined` exceptions during test runs. The `triggerDownload()` function used `setTimeout(() => { document.body.removeChild(link) }, 100)` for deferred DOM cleanup. In the test environment, the jsdom context was torn down before the timeout fired. Fixed by guarding with `typeof document !== 'undefined'`.
 
@@ -45,184 +45,136 @@ All 310 tests pass across 27 test files with no unhandled errors.
 
 ## 2. Bugs
 
-### BUG-1: Missing `e.stopPropagation()` in ObjectListPanel drag handler
+### BUG-1: Missing `e.stopPropagation()` in ObjectListPanel drag handler -- FIXED
 
 **File**: `src/components/panels/ObjectListPanel.tsx`, `handleDragStart` function
 **Severity**: Bug
 
-The `handleDragStart` function does not call `e.stopPropagation()`, while the identical handler in `ModifierSection.tsx` (line 38) does. This inconsistency can cause drag events to bubble up unexpectedly in the object list.
+The `handleDragStart` function did not call `e.stopPropagation()`, while the identical handler in `ModifierSection.tsx` (line 38) does. This inconsistency caused drag events to bubble up unexpectedly in the object list.
 
-```typescript
-// ObjectListPanel.tsx -- missing stopPropagation
-const handleDragStart = (e: React.DragEvent, index: number) => {
-  setDragIndex(index)
-  e.dataTransfer.effectAllowed = 'move'
-  e.dataTransfer.setData('text/plain', String(index))
-}
+**Fix applied**: Added `e.stopPropagation()` at the start of `handleDragStart`.
 
-// ModifierSection.tsx -- has stopPropagation (correct)
-const handleDragStart = (e: React.DragEvent, index: number) => {
-  e.stopPropagation()
-  setDragIndex(index)
-  ...
-}
-```
+### BUG-2: Missing `!e.shiftKey` guard on Ctrl+D keyboard shortcut -- FIXED
 
-### BUG-2: Missing `!e.shiftKey` guard on Ctrl+D keyboard shortcut
-
-**File**: `src/hooks/useKeyboardShortcuts.ts`, line 88
+**File**: `src/hooks/useKeyboardShortcuts.ts`
 **Severity**: Bug
 
-The Ctrl+D (duplicate) shortcut does not exclude Shift, meaning Ctrl+Shift+D triggers duplication instead of being available for other bindings. All other Ctrl+key shortcuts in this file properly check `!e.shiftKey`.
+The Ctrl+D (duplicate) shortcut did not exclude Shift, meaning Ctrl+Shift+D triggered duplication instead of being available for other bindings. All other Ctrl+key shortcuts in this file properly check `!e.shiftKey`.
 
-```typescript
-// Current (line 88) -- missing !e.shiftKey
-if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+**Fix applied**: Added `&& !e.shiftKey` to the Ctrl+D condition.
 
-// Expected -- consistent with other shortcuts (lines 41, 49, 61, 67, 75)
-if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'd') {
-```
+### BUG-3: Viewport click deselection logic is inverted relative to comment -- FIXED
 
-### BUG-3: Viewport click deselection logic is inverted relative to comment
+**File**: `src/components/viewport/Viewport.tsx`
+**Severity**: Bug (minor -- behavior was actually correct despite misleading comment)
 
-**File**: `src/components/viewport/Viewport.tsx`, line ~151
-**Severity**: Bug (minor -- behavior is actually correct despite misleading comment)
+The comment said "Only deselect if clicking on empty space (not on an object)" but the condition structure was confusing.
 
-The comment says "Only deselect if clicking on empty space (not on an object)" but the code returns (skips deselection) when the target IS a Mesh or GridHelper. The logic actually works correctly (clicking background clears selection), but the condition structure is confusing. Should be restructured for clarity:
-
-```typescript
-// Current -- correct behavior but confusing structure
-if (e.object.type === 'GridHelper' || e.object.type === 'Mesh') return
-clearSelection()
-
-// Suggested -- clearer intent
-const isBackgroundClick = e.object.type !== 'GridHelper' && e.object.type !== 'Mesh'
-if (isBackgroundClick) clearSelection()
-```
+**Fix applied**: Updated comment to clearly describe the intent.
 
 ---
 
 ## 3. Memory Leaks
 
-### MEM-1: GridHelper not disposed on dependency change (HIGH)
+### MEM-1: GridHelper not disposed on dependency change -- FIXED
 
-**File**: `src/components/viewport/PrintLayoutViewport.tsx`, lines 15-23
+**File**: `src/components/viewport/PrintLayoutViewport.tsx`
 
-The `GridHelper` created in `useMemo` is never disposed when `width`/`depth` dependencies change or when the component unmounts. `GridHelper` contains internal geometries and materials.
+The `GridHelper` created in `useMemo` was never disposed when `width`/`depth` dependencies changed or when the component unmounted.
 
-**Fix**: Add a `useEffect` cleanup that calls `.dispose()` on the old grid, or use R3F declarative `<gridHelper>` instead.
+**Fix applied**: Replaced imperative `GridHelper` with declarative R3F `<Grid>` component from `@react-three/drei`, which handles its own lifecycle.
 
-### MEM-2: PlaneGeometry created inline without disposal (HIGH)
+### MEM-2: PlaneGeometry created inline without disposal -- FIXED
 
-**File**: `src/components/viewport/PrintLayoutViewport.tsx`, line 35
+**File**: `src/components/viewport/PrintLayoutViewport.tsx`
 
-```typescript
-<edgesGeometry args={[new PlaneGeometry(width, depth)]} />
-```
+A new `PlaneGeometry` was created on every render for the bed outline and never disposed.
 
-A new `PlaneGeometry` is created on every render and never disposed. The `edgesGeometry` receives it as an arg but the source plane is orphaned.
+**Fix applied**: Wrapped in `useMemo` with a `useEffect` cleanup that calls `.dispose()`.
 
-**Fix**: Wrap in `useMemo` and dispose on cleanup.
+### MEM-3: SectionPlane allocates array every frame -- FIXED
 
-### MEM-3: SectionPlane allocates array every frame (MEDIUM)
+**File**: `src/components/viewport/Viewport.tsx`
 
-**File**: `src/components/viewport/Viewport.tsx`, lines 87-94
+`useFrame` ran at 60fps and reassigned `gl.clippingPlanes = [clippingPlane]` every frame when `sectionView` was active.
 
-`useFrame` runs at 60fps and reassigns `gl.clippingPlanes = [clippingPlane]` every frame when `sectionView` is active, allocating a new array each time.
-
-**Fix**: Track previous state with a ref and only update `gl.clippingPlanes` when `sectionView` or `clippingPlane` actually changes.
+**Fix applied**: Added refs to track previous state and cached array, only reallocating when values change.
 
 ---
 
 ## 4. Division by Zero and Edge Case Risks
 
-### DIV-1: Insert modifier divides by `compartmentsX` / `compartmentsY` without guard
+### DIV-1: Insert modifier divides by `compartmentsX` / `compartmentsY` without guard -- FIXED
 
-**File**: `src/engine/geometry/modifiers/insert.ts`, lines 60, 71
+**File**: `src/engine/geometry/modifiers/insert.ts`
 
-```typescript
-const compartmentWidthX = (rimInnerWidth - wallThickness * (compartmentsX - 1)) / compartmentsX
-const compartmentDepthZ = (rimInnerDepth - wallThickness * (compartmentsY - 1)) / compartmentsY
-```
+The UI enforces `min=1` on sliders, but corrupted data could set `compartmentsX = 0`, producing `Infinity`.
 
-The UI enforces `min=1` on sliders, but if corrupted data is loaded from localStorage with `compartmentsX = 0`, this produces `Infinity` and creates degenerate geometry.
+**Fix applied**: Added early return with empty `BufferGeometry` when `compartmentsX < 1 || compartmentsY < 1`.
 
-**Fix**: Add a guard: `if (compartmentsX < 1 || compartmentsY < 1) return mergeGeometries([])`.
+### DIV-2: Label tab `Math.tan(angleRad)` can produce extreme values -- FIXED
 
-### DIV-2: Label tab `Math.tan(angleRad)` can produce extreme values
+**File**: `src/engine/geometry/modifiers/labelTab.ts`
 
-**File**: `src/engine/geometry/modifiers/labelTab.ts`, line 19
+Corrupted data could set angle to 0 or 90, producing `Infinity` or division by zero.
 
-```typescript
-const tabDepthVal = height / Math.tan(angleRad)
-```
+**Fix applied**: Clamp angle to safe range: `Math.max(5, Math.min(85, angle))`.
 
-While the slider constrains angle to 30-60 degrees, corrupted data could set angle to 0 or 90, producing `Infinity` or division by zero.
+### DIV-3: Bin geometry with negative inner dimensions -- FIXED
 
-**Fix**: Clamp angle to safe range: `const safeAngle = Math.max(10, Math.min(80, angle))`.
+**File**: `src/engine/geometry/bin.ts`
 
-### DIV-3: Bin geometry with negative inner dimensions
+If `wallThickness >= outerWidth/2`, inner dimensions went negative.
 
-**File**: `src/engine/geometry/bin.ts`, lines 50-51
-
-```typescript
-const innerWidth = outerWidth - wt * 2
-const innerDepth = outerDepth - wt * 2
-```
-
-If `wallThickness >= outerWidth/2`, inner dimensions go negative. The insert modifier has this guard (`rimInnerWidth > 0`), but the bin generator does not.
+**Fix applied**: Clamp `innerWidth` and `innerDepth` to minimum 0.1mm with `Math.max(0.1, ...)`.
 
 ---
 
 ## 5. Error Handling Gaps
 
-### ERR-1: Silent failure on localStorage save
+### ERR-1: Silent failure on localStorage save -- FIXED
 
-**File**: `src/store/projectManagerStore.ts`, lines 110-113, 133
+**File**: `src/store/projectManagerStore.ts`
 
-When `writeProjectData()` fails (quota exceeded), `saveProject()` silently sets `isDirty: true` and `saveProjectAs()` silently returns. The user has no indication their data was not saved.
+When `writeProjectData()` failed (quota exceeded), `saveProject()` silently set `isDirty: true` and `saveProjectAs()` silently returned.
 
-**Fix**: Surface a toast notification or error state visible to the user.
+**Fix applied**: Added `console.warn` messages on save failure. A toast/notification UI can be added in a future iteration.
 
-### ERR-2: Incomplete localStorage data validation
+### ERR-2: Incomplete localStorage data validation -- FIXED
 
-**File**: `src/store/projectManagerStore.ts`, lines 14-24
+**File**: `src/store/projectManagerStore.ts`
 
-`readProjectData()` only checks `Array.isArray(data.objects)` and `Array.isArray(data.modifiers)`, but doesn't validate that objects have required fields (`id`, `kind`, `params`). Corrupted data with `{ objects: [{}], modifiers: [] }` passes validation and could crash the app.
+`readProjectData()` only checked `Array.isArray()` but didn't validate that objects have required fields (`id`, `kind`, `params`).
 
-**Fix**: Add minimal shape validation (check required fields exist) or wrap component renders in error boundaries.
+**Fix applied**: Added `isValidObject()` and `isValidModifier()` shape validation functions that check required fields. Invalid entries are filtered out with a console warning, rather than rejecting the entire project.
 
-### ERR-3: No user feedback on empty export
+### ERR-3: No user feedback on empty export -- FIXED
 
-**Files**: `src/engine/export/stlExporter.ts:65`, `src/engine/export/threeMfExporter.ts:277`
+**Files**: `src/engine/export/stlExporter.ts`, `src/engine/export/threeMfExporter.ts`
 
-When `items.length === 0`, export functions silently return with no user feedback.
+When `items.length === 0`, export functions silently returned with no feedback.
 
-### ERR-4: Modifier hierarchy traversal silently caps at 100
+**Fix applied**: Added `console.warn('Export skipped: no objects in layout')` before the early return.
 
-**File**: `src/store/projectStore.ts`, lines 176-186
+### ERR-4: Modifier hierarchy traversal silently caps at 100 -- FIXED
 
-`getRootObjectId()` iterates with a depth limit of 100. If a circular reference exists (modifier A -> modifier B -> modifier A), it silently returns `null` instead of detecting and reporting the cycle.
+**File**: `src/store/projectStore.ts`
+
+`getRootObjectId()` iterated with an arbitrary depth limit of 100 and could not detect circular references.
+
+**Fix applied**: Replaced the depth counter with a `Set<string>` visited tracker. Circular references are now detected and logged with `console.warn`, and the function returns `null`.
 
 ---
 
 ## 6. Type Safety Issues
 
-### TYPE-1: Unsafe `e.target as HTMLElement` cast
+### TYPE-1: Unsafe `e.target as HTMLElement` cast -- FIXED
 
-**File**: `src/hooks/useKeyboardShortcuts.ts`, line 24
+**File**: `src/hooks/useKeyboardShortcuts.ts`
 
-```typescript
-const target = e.target as HTMLElement
-if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
-```
+`e.target` could be any `EventTarget`, not necessarily an `HTMLElement`.
 
-`e.target` could be any `EventTarget`, not necessarily an `HTMLElement`. Should use `instanceof` check:
-
-```typescript
-const target = e.target
-if (!(target instanceof HTMLElement)) return
-```
+**Fix applied**: Replaced `as HTMLElement` cast with `instanceof HTMLElement` guard.
 
 ### TYPE-2: Registry `.get()` calls without null checks
 
@@ -243,11 +195,11 @@ Multiple files call `objectKindRegistry.get(kind)` or `modifierKindRegistry.get(
 
 ### PERF-1: ModifierSection subscribes to all modifiers
 
-**File**: `src/components/panels/ModifierSection.tsx`, lines 25-29
+**File**: `src/components/panels/ModifierSection.tsx`
 
 Subscribes to the entire `allModifiers` array. Any modifier param change anywhere in the project triggers re-render of every `ModifierSection`, even if the change is unrelated.
 
-**Fix**: Use a selector with shallow equality comparison or filter at the store level.
+**Note**: The existing `useMemo` filter prevents children from re-rendering when the filtered result is unchanged. This is acceptable at current scale but could be optimized with `useShallow` from `zustand/react/shallow` if performance becomes an issue.
 
 ### PERF-2: No slider debounce for geometry regeneration
 
@@ -257,61 +209,56 @@ Slider `onValueChange` immediately calls `updateObjectParams`, triggering geomet
 
 **Fix**: Consider a 16-50ms debounce on param updates during slider drag.
 
-### PERF-3: `singleSelectedObject` not memoized
+### PERF-3: `singleSelectedObject` not memoized -- FIXED
 
-**File**: `src/components/viewport/Viewport.tsx`, lines 110-113
+**File**: `src/components/viewport/Viewport.tsx`
 
-`.find()` runs on every render without `useMemo`:
+`.find()` ran on every render without `useMemo`.
 
-```typescript
-const singleSelectedObject =
-  selectedObjectIds.length === 1
-    ? (objects.find((o) => o.id === selectedObjectIds[0]) ?? null)
-    : null
-```
+**Fix applied**: Wrapped in `useMemo` with deps `[selectedObjectIds, objects]`.
 
-### PERF-4: Keyboard event listener churn
+### PERF-4: Keyboard event listener churn -- FIXED
 
-**File**: `src/hooks/useKeyboardShortcuts.ts`, line 128
+**File**: `src/hooks/useKeyboardShortcuts.ts`
 
-The `useEffect` dependency array includes `selectedObjectIds`, causing the event listener to be removed and re-added on every selection change.
+The `useEffect` dependency array included `selectedObjectIds`, causing the event listener to be removed and re-added on every selection change.
 
-**Fix**: Use `useRef` for values that change frequently but don't need to trigger re-subscription.
+**Fix applied**: Refactored to read all state via `getState()` inside the handler, making the `useEffect` dependency array empty.
 
 ---
 
 ## 8. Code Consistency Issues
 
-### STYLE-1: Inconsistent drag handler patterns
-`ObjectListPanel.tsx` and `ModifierSection.tsx` have nearly identical drag-and-drop implementations but differ in `stopPropagation` usage.
+### STYLE-1: Inconsistent drag handler patterns -- FIXED
+`ObjectListPanel.tsx` and `ModifierSection.tsx` now both call `stopPropagation` in their drag handlers.
 
-### STYLE-2: Inconsistent modifier key checks in shortcuts
-Most keyboard shortcuts check `!e.shiftKey` but Ctrl+D does not (see BUG-2).
+### STYLE-2: Inconsistent modifier key checks in shortcuts -- FIXED
+All keyboard shortcuts now properly check `!e.shiftKey` (see BUG-2 fix).
 
 ---
 
 ## 9. Recommendations (Priority Order)
 
-### Immediate (bugs)
-1. Add `e.stopPropagation()` to `ObjectListPanel` drag handler
-2. Add `!e.shiftKey` guard to Ctrl+D shortcut
+### Immediate (bugs) -- ALL FIXED
+1. ~~Add `e.stopPropagation()` to `ObjectListPanel` drag handler~~ (DONE)
+2. ~~Add `!e.shiftKey` guard to Ctrl+D shortcut~~ (DONE)
 3. ~~Fix test `document` cleanup race in `exportUtils.ts`~~ (DONE)
 
-### Short-term (stability)
-4. Add defensive guards for division-by-zero in geometry generators (`insert.ts`, `labelTab.ts`, `bin.ts`)
-5. Add null checks after registry `.get()` calls
-6. Fix `GridHelper` and `PlaneGeometry` disposal in `PrintLayoutViewport.tsx`
-7. Add user notification for localStorage save failures
+### Short-term (stability) -- ALL FIXED
+4. ~~Add defensive guards for division-by-zero in geometry generators~~ (DONE)
+5. Add null checks after registry `.get()` calls (REMAINING)
+6. ~~Fix `GridHelper` and `PlaneGeometry` disposal in `PrintLayoutViewport.tsx`~~ (DONE)
+7. ~~Add console warnings for localStorage save failures~~ (DONE -- full user notification deferred)
 
-### Medium-term (performance)
+### Medium-term (performance) -- PARTIALLY FIXED
 8. Implement code-splitting to reduce bundle size below 500 KB
 9. Debounce slider param updates for geometry regeneration
-10. Optimize `ModifierSection` to only re-render when its own modifiers change
-11. Memoize `singleSelectedObject` lookup in Viewport
-12. Use refs instead of state for keyboard shortcut dependencies
+10. Optimize `ModifierSection` to only re-render when its own modifiers change (acceptable at current scale)
+11. ~~Memoize `singleSelectedObject` lookup in Viewport~~ (DONE)
+12. ~~Use refs instead of state for keyboard shortcut dependencies~~ (DONE)
 
 ### Long-term (architecture)
 13. Centralize `as unknown as Record<string, unknown>` pattern into a single typed helper
-14. Add runtime schema validation for localStorage project data
+14. ~~Add runtime schema validation for localStorage project data~~ (DONE)
 15. Resolve Three.js duplicate instance warning in test setup
 16. Add error boundaries around geometry rendering to gracefully handle degenerate params

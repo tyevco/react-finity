@@ -14,26 +14,27 @@ import { exportObjectAsSTL } from '@/engine/export/stlExporter'
 let clipboard: string[] = []
 
 export function useKeyboardShortcuts() {
-  const removeObject = useProjectStore((s) => s.removeObject)
-  const selectedObjectIds = useUIStore((s) => s.selectedObjectIds)
-  const clearSelection = useUIStore((s) => s.clearSelection)
-  const setSelectedObjectIds = useUIStore((s) => s.setSelectedObjectIds)
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+      const target = e.target
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      ) {
         return
       }
+
+      // Read current selection from store to avoid closing over stale values
+      const selectedObjectIds = useUIStore.getState().selectedObjectIds
 
       // Delete/Backspace: Remove selected objects
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedObjectIds.length > 0) {
           e.preventDefault()
           for (const id of selectedObjectIds) {
-            removeObject(id)
+            useProjectStore.getState().removeObject(id)
           }
-          clearSelection()
+          useUIStore.getState().clearSelection()
         }
       }
 
@@ -54,7 +55,7 @@ export function useKeyboardShortcuts() {
 
       // Escape: Clear selection
       if (e.key === 'Escape') {
-        clearSelection()
+        useUIStore.getState().clearSelection()
       }
 
       // Ctrl+S: Save project
@@ -79,17 +80,17 @@ export function useKeyboardShortcuts() {
           const validIds = clipboard.filter((id) => existingIds.includes(id))
           if (validIds.length > 0) {
             const newIds = useProjectStore.getState().duplicateObjects(validIds)
-            setSelectedObjectIds(newIds)
+            useUIStore.getState().setSelectedObjectIds(newIds)
           }
         }
       }
 
       // Ctrl+D: Duplicate selected objects
-      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && !e.shiftKey) {
         if (selectedObjectIds.length > 0) {
           e.preventDefault()
           const newIds = useProjectStore.getState().duplicateObjects(selectedObjectIds)
-          setSelectedObjectIds(newIds)
+          useUIStore.getState().setSelectedObjectIds(newIds)
         }
       }
 
@@ -125,5 +126,5 @@ export function useKeyboardShortcuts() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [selectedObjectIds, removeObject, clearSelection, setSelectedObjectIds])
+  }, [])
 }

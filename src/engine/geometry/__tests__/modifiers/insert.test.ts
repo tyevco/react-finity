@@ -84,6 +84,28 @@ describe('generateInsert', () => {
     geometry.dispose()
   })
 
+  it('returns empty geometry for zero compartmentsX', () => {
+    const geometry = generateInsert(
+      { compartmentsX: 0, compartmentsY: 2, wallThickness: 1.2 },
+      defaultContext,
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry).toBeDefined()
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
+  it('returns empty geometry for zero compartmentsY', () => {
+    const geometry = generateInsert(
+      { compartmentsX: 2, compartmentsY: 0, wallThickness: 1.2 },
+      defaultContext,
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry).toBeDefined()
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
   it('1x1 compartment still generates outer rim', () => {
     const geometry = generateInsert(
       { compartmentsX: 1, compartmentsY: 1, wallThickness: 1.2 },

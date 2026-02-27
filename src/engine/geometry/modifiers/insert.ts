@@ -36,6 +36,11 @@ export function generateInsert(
   const { compartmentsX, compartmentsY, wallThickness } = params
   const { innerWidth, innerDepth, wallHeight, floorY, centerX, centerZ } = context
 
+  // Guard against zero or negative compartment counts to prevent division by zero
+  if (compartmentsX < 1 || compartmentsY < 1) {
+    return new BufferGeometry()
+  }
+
   const geometries: BufferGeometry[] = []
 
   // Outer rim

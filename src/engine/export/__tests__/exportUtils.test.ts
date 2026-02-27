@@ -58,6 +58,7 @@ describe('triggerDownload', () => {
       href: '',
       download: '',
       click: clickSpy,
+      parentNode: document.body,
     } as unknown as HTMLAnchorElement)
 
     const blob = new Blob(['test'], { type: 'text/plain' })

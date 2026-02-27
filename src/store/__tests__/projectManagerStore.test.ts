@@ -233,4 +233,59 @@ describe('projectManagerStore', () => {
     expect(useProjectManagerStore.getState().currentProjectId).toBeNull()
     expect(useProjectStore.getState().objects).toEqual([])
   })
+
+  it('filters out malformed objects when loading project data', () => {
+    // Write corrupted data directly to localStorage
+    const projectId = 'test-corrupted'
+    const corruptedData = {
+      objects: [
+        {
+          kind: 'bin',
+          id: 'valid-obj',
+          name: 'Valid Bin',
+          position: [0, 0, 0],
+          params: {
+            gridWidth: 1,
+            gridDepth: 1,
+            heightUnits: 3,
+            stackingLip: false,
+            wallThickness: 1.2,
+            innerFillet: 0,
+            magnetHoles: false,
+            weightHoles: false,
+            honeycombBase: false,
+          },
+        },
+        { broken: true }, // missing id, kind, params
+        'not-an-object', // entirely wrong type
+      ],
+      modifiers: [
+        {
+          id: 'valid-mod',
+          parentId: 'valid-obj',
+          kind: 'dividerGrid',
+          params: { dividersX: 1, dividersY: 1, wallThickness: 1.2 },
+        },
+        { id: 'bad-mod' }, // missing parentId, kind, params
+      ],
+    }
+    localStorageMock.setItem(`react-finity-project-${projectId}`, JSON.stringify(corruptedData))
+
+    // Register the project in the store
+    useProjectManagerStore.setState({
+      currentProjectId: null,
+      projects: [{ id: projectId, name: 'Corrupted', createdAt: '', updatedAt: '' }],
+    })
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    useProjectManagerStore.getState().loadProject(projectId)
+
+    // Should only load valid entries
+    expect(useProjectStore.getState().objects).toHaveLength(1)
+    expect(useProjectStore.getState().objects[0].id).toBe('valid-obj')
+    expect(useProjectStore.getState().modifiers).toHaveLength(1)
+    expect(useProjectStore.getState().modifiers[0].id).toBe('valid-mod')
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
 })

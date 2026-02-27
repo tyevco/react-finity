@@ -194,6 +194,16 @@ describe('generateBin', () => {
     with_.dispose()
   })
 
+  it('handles extremely large wallThickness without error', () => {
+    // wallThickness larger than half the outer dimension would produce negative inner dims
+    // The clamp to 0.1mm should prevent degenerate geometry
+    const geometry = generateBin({ ...defaultParams, wallThickness: 50 }, PROFILE_OFFICIAL)
+    expect(geometry).toBeDefined()
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
+
   it('default bin with innerFillet=0 matches existing behavior', () => {
     const geometry = generateBin(defaultParams, PROFILE_OFFICIAL)
     expect(geometry).toBeDefined()

@@ -18,6 +18,7 @@ export function ObjectListPanel() {
   const [dropIndex, setDropIndex] = useState<number | null>(null)
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.stopPropagation()
     setDragIndex(index)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', String(index))

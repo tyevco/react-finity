@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll } from 'vitest'
+import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest'
 import { useProjectStore, resetObjectCounter } from '../projectStore'
 import { useProfileStore } from '../profileStore'
 import { registerBuiltinKinds } from '@/engine/registry/builtins'
@@ -248,6 +248,40 @@ describe('modifier CRUD', () => {
 
     expect(useProjectStore.getState().getRootObjectId(insertId)).toBe(binId)
     expect(useProjectStore.getState().getRootObjectId(scoopId)).toBe(binId)
+  })
+
+  it('getRootObjectId returns null for circular references', () => {
+    // Manually inject a circular modifier chain
+    useProjectStore.setState({
+      objects: [],
+      modifiers: [
+        {
+          id: 'mod-a',
+          parentId: 'mod-b',
+          kind: 'dividerGrid',
+          params: { dividersX: 1, dividersY: 1, wallThickness: 1.2 },
+        },
+        {
+          id: 'mod-b',
+          parentId: 'mod-a',
+          kind: 'dividerGrid',
+          params: { dividersX: 1, dividersY: 1, wallThickness: 1.2 },
+        },
+      ] as never,
+    })
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const result = useProjectStore.getState().getRootObjectId('mod-a')
+    expect(result).toBeNull()
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Circular reference detected in modifier chain at:',
+      expect.any(String),
+    )
+    warnSpy.mockRestore()
+  })
+
+  it('getRootObjectId returns null for unknown id', () => {
+    expect(useProjectStore.getState().getRootObjectId('nonexistent')).toBeNull()
   })
 
   it('addModifier with parentId pointing to another modifier works', () => {

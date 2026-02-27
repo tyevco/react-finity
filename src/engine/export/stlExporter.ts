@@ -63,7 +63,10 @@ export async function exportAllAsZip(items: PrintLayoutItem[], scale = 1): Promi
  * their layout positions.
  */
 export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void {
-  if (items.length === 0) return
+  if (items.length === 0) {
+    console.warn('Export skipped: no objects in layout')
+    return
+  }
 
   const geometries: BufferGeometry[] = []
   let merged: BufferGeometry | null = null

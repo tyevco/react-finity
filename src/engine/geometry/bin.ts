@@ -45,10 +45,11 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): Buff
   // Wall height (the bin body above the base)
   const wallHeight = heightUnits * heightUnit
 
-  // Interior dimensions
+  // Interior dimensions -- clamp to minimum 0.1mm to prevent degenerate geometry
+  // when wall thickness exceeds half the outer dimension
   const wt = wallThickness
-  const innerWidth = outerWidth - wt * 2
-  const innerDepth = outerDepth - wt * 2
+  const innerWidth = Math.max(0.1, outerWidth - wt * 2)
+  const innerDepth = Math.max(0.1, outerDepth - wt * 2)
   const innerRadius = Math.max(0.1, cornerRadius - wt)
 
   const geometries: BufferGeometry[] = []
