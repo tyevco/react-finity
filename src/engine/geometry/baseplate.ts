@@ -156,16 +156,16 @@ export function generateBaseplate(
       const baseBrush = new Brush(result)
       const holeBrush = new Brush(mergedHoles)
 
-      const csgResult = evaluator.evaluate(baseBrush, holeBrush, SUBTRACTION)
-      const finalGeometry = csgResult.geometry
-
-      // Dispose intermediates
-      result.dispose()
-      mergedHoles.dispose()
-      baseBrush.geometry.dispose()
-      holeBrush.geometry.dispose()
-
-      result = finalGeometry
+      try {
+        const csgResult = evaluator.evaluate(baseBrush, holeBrush, SUBTRACTION)
+        const finalGeometry = csgResult.geometry
+        result.dispose()
+        result = finalGeometry
+      } finally {
+        mergedHoles.dispose()
+        baseBrush.geometry.dispose()
+        holeBrush.geometry.dispose()
+      }
     }
   }
 

@@ -252,6 +252,9 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
   reorderObject: (fromIndex: number, toIndex: number) => {
     set((state) => {
+      if (fromIndex < 0 || fromIndex >= state.objects.length) return state
+      if (toIndex < 0 || toIndex >= state.objects.length) return state
+      if (fromIndex === toIndex) return state
       const objects = [...state.objects]
       const [moved] = objects.splice(fromIndex, 1)
       objects.splice(toIndex, 0, moved)
