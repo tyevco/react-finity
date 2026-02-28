@@ -180,10 +180,14 @@ export function mergeGeometries(geometries: BufferGeometry[]): BufferGeometry {
   const merged = new BufferGeometry()
   if (geometries.length === 0) return merged
 
+  // Filter out empty geometries that lack a position attribute to prevent crashes
+  const valid = geometries.filter((geo) => 'position' in geo.attributes)
+  if (valid.length === 0) return merged
+
   let totalVertices = 0
   let totalIndices = 0
 
-  for (const geo of geometries) {
+  for (const geo of valid) {
     totalVertices += geo.attributes.position.count
     if (geo.index) {
       totalIndices += geo.index.count
@@ -198,7 +202,7 @@ export function mergeGeometries(geometries: BufferGeometry[]): BufferGeometry {
   let vertexOffset = 0
   let indexOffset = 0
 
-  for (const geo of geometries) {
+  for (const geo of valid) {
     const posAttr = geo.attributes.position as BufferAttribute
 
     // Copy positions

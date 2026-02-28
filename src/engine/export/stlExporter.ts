@@ -85,12 +85,13 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
       geometries.push(clone)
     }
 
-    // Merge all positioned geometries
+    // Merge all positioned geometries, skipping any without position attributes
+    const valid = geometries.filter((geo) => 'position' in geo.attributes)
     merged = new BufferGeometry()
     let totalVertices = 0
     let totalIndices = 0
 
-    for (const geo of geometries) {
+    for (const geo of valid) {
       totalVertices += geo.attributes.position.count
       if (geo.index) {
         totalIndices += geo.index.count
@@ -105,7 +106,7 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
     let vertexOffset = 0
     let indexOffset = 0
 
-    for (const geo of geometries) {
+    for (const geo of valid) {
       const posAttr = geo.attributes.position as BufferAttribute
 
       for (let i = 0; i < posAttr.count * 3; i++) {

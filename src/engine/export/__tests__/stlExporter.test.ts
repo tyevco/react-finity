@@ -233,6 +233,38 @@ describe('exportAllAsSingleSTL', () => {
       item.geometry.dispose()
     }
   })
+
+  it('skips items with empty geometry without crashing', () => {
+    const items: PrintLayoutItem[] = [
+      {
+        id: 'empty-1',
+        label: 'Empty',
+        object: makeBaseplateObject('empty-1', 'Empty'),
+        geometry: new BufferGeometry(), // no position attribute
+        position: [0, 0, 0],
+        boundingBox: { width: 0, depth: 0, height: 0 },
+        fitsOnBed: true,
+      },
+      {
+        id: 'valid-1',
+        label: 'Valid',
+        object: makeBaseplateObject('valid-1', 'Valid'),
+        geometry: makeTestGeometry(),
+        position: [52, 0, 0],
+        boundingBox: { width: 42, depth: 42, height: 7 },
+        fitsOnBed: true,
+      },
+    ]
+
+    expect(() => {
+      exportAllAsSingleSTL(items)
+    }).not.toThrow()
+    expect(downloadState.triggered).toBe(true)
+
+    for (const item of items) {
+      item.geometry.dispose()
+    }
+  })
 })
 
 describe('exportAllAsZip', () => {

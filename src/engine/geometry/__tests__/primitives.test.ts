@@ -186,6 +186,34 @@ describe('mergeGeometries', () => {
     merged.dispose()
   })
 
+  it('skips geometries without position attribute', () => {
+    const empty = new BufferGeometry() // no position attribute
+    const valid = new BufferGeometry()
+    const v = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
+    valid.setAttribute('position', new BufferAttribute(v, 3))
+    valid.setIndex(new BufferAttribute(new Uint32Array([0, 1, 2]), 1))
+
+    const merged = mergeGeometries([empty, valid])
+    expect(merged.attributes.position.count).toBe(3)
+    expect(merged.index?.count).toBe(3)
+
+    empty.dispose()
+    valid.dispose()
+    merged.dispose()
+  })
+
+  it('returns empty geometry when all inputs lack position attribute', () => {
+    const empty1 = new BufferGeometry()
+    const empty2 = new BufferGeometry()
+
+    const merged = mergeGeometries([empty1, empty2])
+    expect(merged.attributes.position).toBeUndefined()
+
+    empty1.dispose()
+    empty2.dispose()
+    merged.dispose()
+  })
+
   it('handles non-indexed geometry', () => {
     const geo = new BufferGeometry()
     const verts = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
