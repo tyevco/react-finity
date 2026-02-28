@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { toast } from 'sonner'
 import { Download, Check, AlertTriangle } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Label } from '@/components/ui/label'
@@ -69,8 +70,10 @@ export function PrintSettingsPanel() {
 
   const handleExportAll = () => {
     if (layoutItems.length === 0) return
-    void exportAllAsZip(layoutItems, exportScale).catch((error: unknown) => {
-      console.error('Failed to export ZIP:', error)
+    toast.promise(exportAllAsZip(layoutItems, exportScale), {
+      loading: 'Preparing ZIP export...',
+      success: 'ZIP export complete',
+      error: 'ZIP export failed',
     })
   }
 
@@ -78,8 +81,12 @@ export function PrintSettingsPanel() {
     if (layoutItems.length === 0) return
     try {
       exportAllAsSingleSTL(layoutItems, exportScale)
+      toast.success('Exported plate as single STL')
     } catch (error) {
       console.error('Failed to export single STL:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     }
   }
 
@@ -87,8 +94,12 @@ export function PrintSettingsPanel() {
     const oriented = item.geometry.clone()
     try {
       exportObjectAsSTL(oriented, item.label, exportScale)
+      toast.success(`Exported ${item.label}.stl`)
     } catch (error) {
       console.error('Failed to export STL:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     } finally {
       oriented.dispose()
     }
@@ -98,8 +109,12 @@ export function PrintSettingsPanel() {
     if (layoutItems.length === 0) return
     try {
       exportAllAs3MF(layoutItems, exportScale)
+      toast.success('Exported all as 3MF')
     } catch (error) {
       console.error('Failed to export 3MF:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     }
   }
 
@@ -107,8 +122,12 @@ export function PrintSettingsPanel() {
     const oriented = item.geometry.clone()
     try {
       exportObjectAs3MF(oriented, item.label, exportScale)
+      toast.success(`Exported ${item.label}.3mf`)
     } catch (error) {
       console.error('Failed to export 3MF:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     } finally {
       oriented.dispose()
     }

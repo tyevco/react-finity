@@ -5,6 +5,7 @@ import { PropertiesPanel } from '@/components/panels/PropertiesPanel'
 import { PrintSettingsPanel } from '@/components/panels/PrintSettingsPanel'
 import { Viewport } from '@/components/viewport/Viewport'
 import { PrintLayoutViewport } from '@/components/viewport/PrintLayoutViewport'
+import { ViewportErrorBoundary } from '@/components/viewport/ViewportErrorBoundary'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useUIStore } from '@/store/uiStore'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
@@ -59,7 +60,11 @@ export function Layout() {
         )}
 
         {/* Center - 3D Viewport */}
-        <div className="flex-1">{isEditView ? <Viewport /> : <PrintLayoutViewport />}</div>
+        <div className="flex-1">
+          <ViewportErrorBoundary key={activeView}>
+            {isEditView ? <Viewport /> : <PrintLayoutViewport />}
+          </ViewportErrorBoundary>
+        </div>
 
         {/* Desktop: Right panel - Properties (edit) or Print Settings (print layout) */}
         {!isMobile && (

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   Plus,
   PanelLeft,
@@ -113,6 +114,12 @@ export function Toolbar() {
       const rotation = getPrintRotation(obj)
       oriented = applyPrintOrientation(merged, rotation)
       exportObjectAsSTL(oriented, obj.name, exportScale)
+      toast.success(`Exported ${obj.name}.stl`)
+    } catch (error) {
+      console.error('Failed to export STL:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     } finally {
       merged?.dispose()
       oriented?.dispose()
@@ -131,6 +138,12 @@ export function Toolbar() {
       const rotation = getPrintRotation(obj)
       oriented = applyPrintOrientation(merged, rotation)
       exportObjectAs3MF(oriented, obj.name, exportScale)
+      toast.success(`Exported ${obj.name}.3mf`)
+    } catch (error) {
+      console.error('Failed to export 3MF:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     } finally {
       merged?.dispose()
       oriented?.dispose()
