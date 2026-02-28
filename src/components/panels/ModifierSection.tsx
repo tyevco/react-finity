@@ -187,7 +187,13 @@ function ModifierCard({
       <ModifierControls modifier={modifier} />
 
       {/* Recursive: sub-modifiers on this modifier (max depth 10) */}
-      {depth < 10 && <ModifierSection parentId={modifier.id} depth={depth + 1} />}
+      {depth < 10 ? (
+        <ModifierSection parentId={modifier.id} depth={depth + 1} />
+      ) : (
+        <div className="mt-2 text-center text-xs text-muted-foreground">
+          Max nesting depth reached
+        </div>
+      )}
     </div>
   )
 }

@@ -193,7 +193,6 @@ export function mergeGeometries(geometries: BufferGeometry[]): BufferGeometry {
   }
 
   const positions = new Float32Array(totalVertices * 3)
-  const normals = new Float32Array(totalVertices * 3)
   const indices = new Uint32Array(totalIndices)
 
   let vertexOffset = 0
@@ -224,7 +223,6 @@ export function mergeGeometries(geometries: BufferGeometry[]): BufferGeometry {
   }
 
   merged.setAttribute('position', new BufferAttribute(positions, 3))
-  merged.setAttribute('normal', new BufferAttribute(normals, 3))
   merged.setIndex(new BufferAttribute(indices, 1))
   merged.computeVertexNormals()
 

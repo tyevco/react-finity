@@ -23,6 +23,9 @@ export function generateScoop(
   // Create half-cylinder geometry
   const isXWall = wall === 'front' || wall === 'back'
   const span = isXWall ? innerWidth : innerDepth
+
+  if (span <= 0) return new BufferGeometry()
+
   const segments = getCurveSegments() * 2
 
   // Build a half-cylinder as a custom geometry

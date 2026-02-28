@@ -27,13 +27,13 @@ function geometryToMeshXml(geometry: BufferGeometry, scale: number): string {
   parts.push('        <triangles>\n')
   const index = geometry.index
   if (index) {
-    for (let i = 0; i < index.count; i += 3) {
+    for (let i = 0; i + 2 < index.count; i += 3) {
       parts.push(
         `          <triangle v1="${index.getX(i)}" v2="${index.getX(i + 1)}" v3="${index.getX(i + 2)}" />\n`,
       )
     }
   } else {
-    for (let i = 0; i < positions.count; i += 3) {
+    for (let i = 0; i + 2 < positions.count; i += 3) {
       parts.push(`          <triangle v1="${i}" v2="${i + 1}" v3="${i + 2}" />\n`)
     }
   }

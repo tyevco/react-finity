@@ -103,6 +103,17 @@ describe('ObjectListPanel', () => {
     expect(useProjectStore.getState().objects).toHaveLength(0)
   })
 
+  it('object list items have focus-visible ring classes', () => {
+    useProjectStore.setState({
+      objects: [makeBin('b1', 'Bin 1')],
+      modifiers: [],
+    })
+    render(<ObjectListPanel />)
+    const option = screen.getByRole('option')
+    expect(option.className).toContain('focus-visible:ring-1')
+    expect(option.className).toContain('focus-visible:ring-ring')
+  })
+
   it('renders multiple objects in order', () => {
     useProjectStore.setState({
       objects: [makeBin('b1', 'Alpha'), makeBin('b2', 'Beta'), makeBaseplate('bp1', 'Gamma')],

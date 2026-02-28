@@ -718,6 +718,19 @@ describe('modifier CRUD', () => {
       expect(obj1Mods[1].id).toBe(a1)
     })
 
+    it('handles single-child reorder without losing the modifier', () => {
+      const objId = useProjectStore.getState().addObject('bin')
+      const modId = useProjectStore.getState().addModifier(objId, 'dividerGrid')
+
+      // Only one modifier: reorder from 0 to 1 (toIndex out of bounds after removal)
+      useProjectStore.getState().reorderModifier(objId, 0, 1)
+
+      // The modifier should still exist
+      const mods = useProjectStore.getState().modifiers.filter((m) => m.parentId === objId)
+      expect(mods).toHaveLength(1)
+      expect(mods[0].id).toBe(modId)
+    })
+
     it('returns unchanged state when fromIndex equals toIndex', () => {
       const objId = useProjectStore.getState().addObject('bin')
       useProjectStore.getState().addModifier(objId, 'dividerGrid')

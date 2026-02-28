@@ -319,6 +319,12 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
         }
       }
 
+      // Guard: if no siblings remain, re-insert at original position
+      if (newParentIndices.length === 0) {
+        modifiers.splice(removeAt, 0, moved)
+        return state
+      }
+
       // Insert at the target position among siblings
       const insertAt =
         toIndex >= newParentIndices.length

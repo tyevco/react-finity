@@ -75,6 +75,20 @@ describe('generateScoop', () => {
     geometry.dispose()
   })
 
+  it('returns empty geometry when span is zero', () => {
+    const zeroWidthCtx = { ...defaultContext, innerWidth: 0 }
+    const geometry = generateScoop({ wall: 'front', radius: 0 }, zeroWidthCtx, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
+  it('returns empty geometry when span is negative', () => {
+    const negCtx = { ...defaultContext, innerDepth: -5 }
+    const geometry = generateScoop({ wall: 'left', radius: 0 }, negCtx, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
   it('generates on left and right walls', () => {
     const leftGeo = generateScoop({ wall: 'left', radius: 0 }, defaultContext, PROFILE_OFFICIAL)
     const rightGeo = generateScoop({ wall: 'right', radius: 0 }, defaultContext, PROFILE_OFFICIAL)

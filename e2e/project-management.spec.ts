@@ -58,6 +58,26 @@ test.describe('Project Management', () => {
     await expect(projectName).toHaveText('My Test Project')
   })
 
+  test('Save As confirms with Enter key', async ({ page }) => {
+    // Add an object
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'Bin' }).click()
+
+    // Save As
+    await page.getByRole('button', { name: /Project/ }).click()
+    await page.getByRole('menuitem', { name: /Save As/ }).click()
+
+    // Fill in the name and press Enter instead of clicking Save
+    const nameInput = page.getByLabel('Project name')
+    await nameInput.clear()
+    await nameInput.fill('Enter Test Project')
+    await page.keyboard.press('Enter')
+
+    // Project name should update
+    const projectName = page.getByTestId('project-name')
+    await expect(projectName).toHaveText('Enter Test Project')
+  })
+
   test('New Project clears objects', async ({ page }) => {
     // Add an object
     await page.getByRole('button', { name: /Add Object/i }).click()

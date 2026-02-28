@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach, beforeAll } from 'vitest'
 import { useHistoryStore } from '../historyStore'
 import { useProjectStore, resetObjectCounter } from '../projectStore'
-import { useProjectManagerStore, setIsLoadingProject } from '../projectManagerStore'
+import {
+  useProjectManagerStore,
+  setIsLoadingProject,
+  getIsLoadingProject,
+} from '../projectManagerStore'
 import { registerBuiltinKinds } from '@/engine/registry/builtins'
 
 // Mock localStorage so projectManagerStore's persist middleware has a backing store
@@ -193,6 +197,91 @@ describe('historyStore', () => {
     // The undo should have synced the counter — next add should be "Bin 2"
     const id3 = useProjectStore.getState().addObject('bin')
     expect(useProjectStore.getState().objects.find((o) => o.id === id3)?.name).toBe('Bin 2')
+  })
+
+  it('undo recovers flags if setState throws', () => {
+    const prevObjects = [
+      {
+        kind: 'bin' as const,
+        id: 'bin-err',
+        name: 'Bin 1',
+        position: [0, 0, 0] as [number, number, number],
+        params: {
+          gridWidth: 1,
+          gridDepth: 1,
+          heightUnits: 3,
+          stackingLip: true,
+          wallThickness: 1.2,
+          innerFillet: 0,
+          magnetHoles: false,
+          weightHoles: false,
+          honeycombBase: false,
+        },
+      },
+    ]
+
+    useHistoryStore.getState().pushSnapshot({ objects: prevObjects, modifiers: [] })
+    useProjectStore.setState({ objects: [], modifiers: [] })
+
+    // Force markDirty to throw
+    const original = useProjectManagerStore.getState().markDirty
+    vi.spyOn(useProjectManagerStore.getState(), 'markDirty').mockImplementation(() => {
+      throw new Error('simulated failure')
+    })
+
+    expect(() => {
+      useHistoryStore.getState().undo()
+    }).toThrow('simulated failure')
+
+    // isLoadingProject should be reset to false despite the error
+    expect(getIsLoadingProject()).toBe(false)
+
+    // Restore
+    useProjectManagerStore.getState().markDirty = original
+  })
+
+  it('redo recovers flags if setState throws', () => {
+    const objects1 = [
+      {
+        kind: 'bin' as const,
+        id: 'bin-err2',
+        name: 'Bin 1',
+        position: [0, 0, 0] as [number, number, number],
+        params: {
+          gridWidth: 1,
+          gridDepth: 1,
+          heightUnits: 3,
+          stackingLip: true,
+          wallThickness: 1.2,
+          innerFillet: 0,
+          magnetHoles: false,
+          weightHoles: false,
+          honeycombBase: false,
+        },
+      },
+    ]
+
+    useHistoryStore.getState().pushSnapshot({ objects: [], modifiers: [] })
+    useProjectStore.setState({ objects: objects1, modifiers: [] })
+
+    // Undo first (this should work fine)
+    useHistoryStore.getState().undo()
+
+    // Force markDirty to throw on redo
+    const original = useProjectManagerStore.getState().markDirty
+    vi.spyOn(useProjectManagerStore.getState(), 'markDirty').mockImplementation(() => {
+      throw new Error('simulated redo failure')
+    })
+
+    expect(() => {
+      useHistoryStore.getState().redo()
+    }).toThrow('simulated redo failure')
+
+    // isLoadingProject should be reset to false despite the error
+    expect(getIsLoadingProject()).toBe(false)
+
+    // Restore
+    useProjectManagerStore.getState().markDirty = original
   })
 
   it('clear resets all history', () => {

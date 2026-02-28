@@ -65,23 +65,25 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
 
     isUndoRedoInProgress = true
     setIsLoadingProject(true)
-    useProjectStore.setState({
-      objects: previousSnapshot.objects,
-      modifiers: previousSnapshot.modifiers,
-    })
-    resetObjectCounter(previousSnapshot.objects)
+    try {
+      useProjectStore.setState({
+        objects: previousSnapshot.objects,
+        modifiers: previousSnapshot.modifiers,
+      })
+      resetObjectCounter(previousSnapshot.objects)
 
-    set({
-      past: newPast,
-      future: [currentSnapshot, ...future],
-      canUndo: newPast.length > 0,
-      canRedo: true,
-    })
+      set({
+        past: newPast,
+        future: [currentSnapshot, ...future],
+        canUndo: newPast.length > 0,
+        canRedo: true,
+      })
 
-    setIsLoadingProject(false)
-    isUndoRedoInProgress = false
-
-    useProjectManagerStore.getState().markDirty()
+      useProjectManagerStore.getState().markDirty()
+    } finally {
+      setIsLoadingProject(false)
+      isUndoRedoInProgress = false
+    }
   },
 
   redo: () => {
@@ -96,23 +98,25 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
 
     isUndoRedoInProgress = true
     setIsLoadingProject(true)
-    useProjectStore.setState({
-      objects: nextSnapshot.objects,
-      modifiers: nextSnapshot.modifiers,
-    })
-    resetObjectCounter(nextSnapshot.objects)
+    try {
+      useProjectStore.setState({
+        objects: nextSnapshot.objects,
+        modifiers: nextSnapshot.modifiers,
+      })
+      resetObjectCounter(nextSnapshot.objects)
 
-    set({
-      past: [...past, currentSnapshot],
-      future: newFuture,
-      canUndo: true,
-      canRedo: newFuture.length > 0,
-    })
+      set({
+        past: [...past, currentSnapshot],
+        future: newFuture,
+        canUndo: true,
+        canRedo: newFuture.length > 0,
+      })
 
-    setIsLoadingProject(false)
-    isUndoRedoInProgress = false
-
-    useProjectManagerStore.getState().markDirty()
+      useProjectManagerStore.getState().markDirty()
+    } finally {
+      setIsLoadingProject(false)
+      isUndoRedoInProgress = false
+    }
   },
 
   clear: () => {

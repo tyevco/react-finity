@@ -171,6 +171,21 @@ describe('mergeGeometries', () => {
     merged.dispose()
   })
 
+  it('computes vertex normals without pre-allocated normals array', () => {
+    const geo = new BufferGeometry()
+    const v = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
+    geo.setAttribute('position', new BufferAttribute(v, 3))
+    geo.setIndex(new BufferAttribute(new Uint32Array([0, 1, 2]), 1))
+
+    const merged = mergeGeometries([geo])
+    // computeVertexNormals should have created the normal attribute
+    expect(merged.attributes.normal).toBeDefined()
+    expect(merged.attributes.normal.count).toBe(3)
+
+    geo.dispose()
+    merged.dispose()
+  })
+
   it('handles non-indexed geometry', () => {
     const geo = new BufferGeometry()
     const verts = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])

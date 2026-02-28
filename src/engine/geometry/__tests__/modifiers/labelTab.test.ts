@@ -140,6 +140,26 @@ describe('generateLabelTab', () => {
     geometry.dispose()
   })
 
+  it('clamps tab depth to bin interior dimensions at shallow angles', () => {
+    // At angle=5 (min clamp), tabDepthVal would be height/tan(5deg) = huge
+    // With the clamp, it should stay within innerWidth/innerDepth
+    const geometry = generateLabelTab(
+      { ...defaultParams, angle: 5 },
+      defaultContext,
+      PROFILE_OFFICIAL,
+    )
+    geometry.computeBoundingBox()
+    const box = geometry.boundingBox! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+
+    // Bounding box should fit within the bin's inner dimensions
+    const geoWidth = Math.abs(box.max.x - box.min.x)
+    const geoDepth = Math.abs(box.max.z - box.min.z)
+    expect(geoWidth).toBeLessThanOrEqual(defaultContext.innerWidth + 1)
+    expect(geoDepth).toBeLessThanOrEqual(defaultContext.innerDepth + 1)
+
+    geometry.dispose()
+  })
+
   it('generates on left and right walls', () => {
     const leftGeo = generateLabelTab(
       { ...defaultParams, wall: 'left' },

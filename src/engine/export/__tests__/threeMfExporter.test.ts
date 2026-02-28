@@ -143,6 +143,37 @@ describe('exportObjectAs3MF', () => {
     geo.dispose()
   })
 
+  it('handles geometry with non-multiple-of-3 index count gracefully', async () => {
+    const geometry = new BufferGeometry()
+    // 4 vertices: only 1 complete triangle, 1 leftover index
+    const vertices = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0])
+    geometry.setAttribute('position', new BufferAttribute(vertices, 3))
+    geometry.setIndex([0, 1, 2, 3]) // 4 indices -- not a multiple of 3
+
+    exportObjectAs3MF(geometry, 'partial-index')
+    const modelXml = await readModelXml()
+
+    // Should only have 1 triangle (indices 0,1,2), not try to read index 5
+    expect((modelXml.match(/<triangle /g) ?? []).length).toBe(1)
+    expect((modelXml.match(/<vertex /g) ?? []).length).toBe(4)
+
+    geometry.dispose()
+  })
+
+  it('handles non-indexed geometry with non-multiple-of-3 vertex count', async () => {
+    const geometry = new BufferGeometry()
+    // 4 vertices, non-indexed: only 1 complete triangle
+    const vertices = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0])
+    geometry.setAttribute('position', new BufferAttribute(vertices, 3))
+
+    exportObjectAs3MF(geometry, 'partial-verts')
+    const modelXml = await readModelXml()
+
+    expect((modelXml.match(/<triangle /g) ?? []).length).toBe(1)
+
+    geometry.dispose()
+  })
+
   it('applies scale factor when not equal to 1', async () => {
     const geo = makeTestGeometry()
     exportObjectAs3MF(geo, 'scaled', 2)
