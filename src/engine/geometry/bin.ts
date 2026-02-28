@@ -270,7 +270,6 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): Buff
         result.dispose()
         result = finalGeometry
       } finally {
-        mergedHoles.dispose()
         baseBrush.geometry.dispose()
         holeBrush.geometry.dispose()
       }

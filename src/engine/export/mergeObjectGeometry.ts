@@ -163,7 +163,6 @@ export function mergeObjectWithModifiers(
         result.dispose()
         result = finalGeometry
       } finally {
-        mergedSubtractive.dispose()
         baseBrush.geometry.dispose()
         subtractBrush.geometry.dispose()
       }

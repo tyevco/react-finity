@@ -162,7 +162,6 @@ export function generateBaseplate(
         result.dispose()
         result = finalGeometry
       } finally {
-        mergedHoles.dispose()
         baseBrush.geometry.dispose()
         holeBrush.geometry.dispose()
       }
