@@ -12,6 +12,9 @@ function escapeXml(str: string): string {
 }
 
 function geometryToMeshXml(geometry: BufferGeometry, scale: number): string {
+  if (!('position' in geometry.attributes)) {
+    return '        <vertices>\n        </vertices>\n        <triangles>\n        </triangles>\n'
+  }
   const positions = geometry.attributes.position
   const parts: string[] = []
 

@@ -159,10 +159,13 @@ export function mergeObjectWithModifiers(
 
       try {
         const csgResult = evaluator.evaluate(baseBrush, subtractBrush, SUBTRACTION)
-        const finalGeometry = csgResult.geometry
-        result.dispose()
-        result = finalGeometry
+        result = csgResult.geometry
       } finally {
+        // Brush holds a reference to the geometry passed to its constructor,
+        // so baseBrush.geometry === (old) result. Disposing here covers both
+        // the success path (old result replaced) and error path (old result
+        // still assigned but unusable). Avoid disposing result directly above
+        // to prevent double-dispose.
         baseBrush.geometry.dispose()
         subtractBrush.geometry.dispose()
       }

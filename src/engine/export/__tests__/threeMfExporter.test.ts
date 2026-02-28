@@ -126,6 +126,21 @@ describe('exportObjectAs3MF', () => {
     geo.dispose()
   })
 
+  it('handles geometry without position attribute', async () => {
+    const geo = new BufferGeometry()
+    exportObjectAs3MF(geo, 'empty')
+
+    const modelXml = await readModelXml()
+    expect(modelXml).toContain('<vertices>')
+    expect(modelXml).toContain('</vertices>')
+    expect(modelXml).toContain('<triangles>')
+    expect(modelXml).toContain('</triangles>')
+    expect((modelXml.match(/<vertex /g) ?? []).length).toBe(0)
+    expect((modelXml.match(/<triangle /g) ?? []).length).toBe(0)
+
+    geo.dispose()
+  })
+
   it('handles real baseplate geometry', () => {
     const params = {
       gridWidth: 1,
