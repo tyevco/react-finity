@@ -29,7 +29,12 @@ export function useKeyboardShortcuts() {
       const target = e.target
       if (
         target instanceof HTMLElement &&
-        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable ||
+          target.role === 'slider' ||
+          target.role === 'spinbutton' ||
+          target.role === 'combobox')
       ) {
         return
       }

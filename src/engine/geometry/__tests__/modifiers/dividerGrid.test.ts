@@ -86,6 +86,20 @@ describe('generateDividerGrid', () => {
     geometry.dispose()
   })
 
+  it('returns empty geometry when wallHeight is zero', () => {
+    const context = { ...defaultContext, wallHeight: 0 }
+    const geometry = generateDividerGrid(defaultParams, context, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
+  it('returns empty geometry when wallHeight is negative', () => {
+    const context = { ...defaultContext, wallHeight: -1 }
+    const geometry = generateDividerGrid(defaultParams, context, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
   it('dividers only along Y produce geometry spanning width', () => {
     const params: DividerGridModifierParams = {
       dividersX: 0,
