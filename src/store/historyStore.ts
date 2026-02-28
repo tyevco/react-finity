@@ -54,7 +54,7 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
   },
 
   undo: () => {
-    const { past, canUndo } = get()
+    const { past, future, canUndo } = get()
     if (!canUndo || past.length === 0) return
 
     const { objects, modifiers } = useProjectStore.getState()
@@ -72,7 +72,7 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
 
     set({
       past: newPast,
-      future: [currentSnapshot, ...get().future],
+      future: [currentSnapshot, ...future],
       canUndo: newPast.length > 0,
       canRedo: true,
     })
@@ -84,7 +84,7 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
   },
 
   redo: () => {
-    const { future, canRedo } = get()
+    const { past, future, canRedo } = get()
     if (!canRedo || future.length === 0) return
 
     const { objects, modifiers } = useProjectStore.getState()
@@ -101,7 +101,7 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
     })
 
     set({
-      past: [...get().past, currentSnapshot],
+      past: [...past, currentSnapshot],
       future: newFuture,
       canUndo: true,
       canRedo: newFuture.length > 0,

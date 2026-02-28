@@ -21,14 +21,16 @@ export function ScoopControls({ modifier }: ScoopControlsProps) {
     <div className="space-y-3">
       {/* Wall selector */}
       <div className="space-y-1.5">
-        <Label className="text-xs">Wall</Label>
+        <Label htmlFor="mod-scoop-wall" className="text-xs">
+          Wall
+        </Label>
         <Select
           value={modifier.params.wall}
           onValueChange={(v) => {
             updateModifierParams(modifier.id, { wall: v as WallFace })
           }}
         >
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger id="mod-scoop-wall" className="h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -51,12 +53,15 @@ export function ScoopControls({ modifier }: ScoopControlsProps) {
       {/* Radius */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Radius</Label>
+          <Label htmlFor="mod-scoop-radius" className="text-xs">
+            Radius
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {modifier.params.radius === 0 ? 'Auto' : `${modifier.params.radius}mm`}
           </span>
         </div>
         <Slider
+          id="mod-scoop-radius"
           value={[modifier.params.radius]}
           onValueChange={([v]) => {
             updateModifierParams(modifier.id, { radius: v })

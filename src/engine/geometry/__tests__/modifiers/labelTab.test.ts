@@ -118,6 +118,28 @@ describe('generateLabelTab', () => {
     large.dispose()
   })
 
+  it('returns empty geometry when wallHeight is 0', () => {
+    const zeroCtx = { ...defaultContext, wallHeight: 0 }
+    const geometry = generateLabelTab(defaultParams, zeroCtx, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
+  it('clamps height to 40% of wallHeight', () => {
+    // height=100 on wallHeight=21 should clamp to 8.4
+    const geometry = generateLabelTab(
+      { ...defaultParams, height: 100 },
+      defaultContext,
+      PROFILE_OFFICIAL,
+    )
+    geometry.computeBoundingBox()
+    const box = geometry.boundingBox! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const geoHeight = box.max.y - box.min.y
+    // Clamped to wallHeight * 0.4 = 8.4, so geometry height should be <= 8.5
+    expect(geoHeight).toBeLessThanOrEqual(defaultContext.wallHeight * 0.4 + 0.5)
+    geometry.dispose()
+  })
+
   it('generates on left and right walls', () => {
     const leftGeo = generateLabelTab(
       { ...defaultParams, wall: 'left' },

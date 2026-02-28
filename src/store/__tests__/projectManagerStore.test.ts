@@ -170,6 +170,20 @@ describe('projectManagerStore', () => {
     expect(useProjectStore.getState().objects).toEqual([])
   })
 
+  it('deleteProject does not trigger ghost markDirty from newProject cleanup', () => {
+    // Save a project
+    useProjectStore.getState().addObject('bin')
+    useProjectManagerStore.getState().saveProjectAs('Ghost Test')
+    const id = useProjectManagerStore.getState().currentProjectId! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+
+    // Delete it — newProject() clears objects which would normally trigger markDirty
+    useProjectManagerStore.getState().deleteProject(id)
+
+    // The new project should start clean (not dirty)
+    expect(useProjectManagerStore.getState().isDirty).toBe(false)
+    expect(useProjectManagerStore.getState().currentProjectId).toBeNull()
+  })
+
   it('marks dirty and auto-saves after debounce', () => {
     useProjectStore.getState().addObject('bin')
     useProjectManagerStore.getState().saveProject()

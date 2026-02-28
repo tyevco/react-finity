@@ -1,5 +1,4 @@
-import type { BufferGeometry } from 'three'
-import { CylinderGeometry } from 'three'
+import { BufferGeometry, CylinderGeometry } from 'three'
 
 import type { ScoopModifierParams, ModifierContext, GridfinityProfile } from '@/types/gridfinity'
 
@@ -13,9 +12,13 @@ export function generateScoop(
   const { wall, radius: explicitRadius } = params
   const { innerWidth, innerDepth, wallHeight, floorY, centerX, centerZ } = context
 
+  if (wallHeight <= 0) return new BufferGeometry()
+
   // Auto-calculate radius if 0
   const radius = explicitRadius > 0 ? explicitRadius : wallHeight * 0.4
   const clampedRadius = Math.min(radius, wallHeight * 0.9)
+
+  if (clampedRadius <= 0) return new BufferGeometry()
 
   // Create half-cylinder geometry
   const isXWall = wall === 'front' || wall === 'back'

@@ -14,8 +14,11 @@ export function LidControls({ modifier }: LidControlsProps) {
     <div className="space-y-3">
       {/* Stacking toggle */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs">Stacking</Label>
+        <Label htmlFor="mod-lid-stacking" className="text-xs">
+          Stacking
+        </Label>
         <Switch
+          id="mod-lid-stacking"
           checked={modifier.params.stacking}
           onCheckedChange={(checked) => {
             updateModifierParams(modifier.id, { stacking: checked })

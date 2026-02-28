@@ -56,6 +56,8 @@ export function roundedRectShape(width: number, depth: number, radius: number): 
  * Returns geometry centered at the XZ plane with bottom at y=0.
  */
 export function extrudeShape(shape: Shape, height: number, bevelEnabled = false): BufferGeometry {
+  if (height <= 0) return new BufferGeometry()
+
   const geometry = new ExtrudeGeometry(shape, {
     depth: height,
     bevelEnabled,
@@ -199,18 +201,10 @@ export function mergeGeometries(geometries: BufferGeometry[]): BufferGeometry {
 
   for (const geo of geometries) {
     const posAttr = geo.attributes.position as BufferAttribute
-    const normAttr = geo.attributes.normal as BufferAttribute | undefined
 
     // Copy positions
     for (let i = 0; i < posAttr.count * 3; i++) {
       positions[vertexOffset * 3 + i] = posAttr.array[i]
-    }
-
-    // Copy normals
-    if (normAttr) {
-      for (let i = 0; i < normAttr.count * 3; i++) {
-        normals[vertexOffset * 3 + i] = normAttr.array[i]
-      }
     }
 
     // Copy indices

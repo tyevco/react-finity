@@ -38,7 +38,7 @@ export function ModifierSection({ parentId, depth = 0 }: ModifierSectionProps) {
     e.stopPropagation()
     setDragIndex(index)
     e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', String(index))
+    e.dataTransfer.setData('application/x-reactfinity-modifier', String(index))
   }
 
   const handleDragOver = (e: React.DragEvent, index: number) => {

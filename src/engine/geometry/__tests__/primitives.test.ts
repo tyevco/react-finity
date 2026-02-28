@@ -67,6 +67,17 @@ describe('extrudeShape', () => {
     geo.dispose()
   })
 
+  it('returns empty geometry for height <= 0', () => {
+    const shape = roundedRectShape(10, 10, 1)
+    const zeroGeo = extrudeShape(shape, 0)
+    expect(zeroGeo.attributes.position).toBeUndefined()
+    zeroGeo.dispose()
+
+    const negGeo = extrudeShape(shape, -5)
+    expect(negGeo.attributes.position).toBeUndefined()
+    negGeo.dispose()
+  })
+
   it('bounding box height matches extrusion height', () => {
     const shape = roundedRectShape(10, 10, 1)
     const geo = extrudeShape(shape, 7)

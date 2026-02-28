@@ -47,32 +47,40 @@ export function computePrintLayout(
     bounds: { width: number; depth: number; height: number }
   }[] = []
 
-  for (const obj of objects) {
-    const merged = mergeObjectWithModifiers(obj, modifiers, profile)
-    const rotation = getPrintRotation(obj)
-    const oriented = applyPrintOrientation(merged, rotation)
-    const bounds = getBoundsFromOriented(oriented)
-    merged.dispose()
-    items.push({ id: obj.id, label: obj.name, object: obj, geometry: oriented, bounds })
+  try {
+    for (const obj of objects) {
+      const merged = mergeObjectWithModifiers(obj, modifiers, profile)
+      const rotation = getPrintRotation(obj)
+      const oriented = applyPrintOrientation(merged, rotation)
+      const bounds = getBoundsFromOriented(oriented)
+      merged.dispose()
+      items.push({ id: obj.id, label: obj.name, object: obj, geometry: oriented, bounds })
 
-    // Collect separate print parts (e.g. lids)
-    const separateParts = collectSeparatePartModifiers(obj.id, modifiers, profile, obj)
-    for (const { modifier, geometry } of separateParts) {
-      const kindReg = modifierKindRegistry.get(modifier.kind)
-      const kindLabel = kindReg?.label ?? modifier.kind
-      // Lids print upside-down (flat top on bed)
-      const partRotation = new Euler(Math.PI, 0, 0)
-      const partOriented = applyPrintOrientation(geometry, partRotation)
-      const partBounds = getOrientedBounds(geometry, partRotation)
-      geometry.dispose()
-      items.push({
-        id: modifier.id,
-        label: `${obj.name} - ${kindLabel}`,
-        object: obj,
-        geometry: partOriented,
-        bounds: partBounds,
-      })
+      // Collect separate print parts (e.g. lids)
+      const separateParts = collectSeparatePartModifiers(obj.id, modifiers, profile, obj)
+      for (const { modifier, geometry } of separateParts) {
+        const kindReg = modifierKindRegistry.get(modifier.kind)
+        const kindLabel = kindReg?.label ?? modifier.kind
+        // Lids print upside-down (flat top on bed)
+        const partRotation = new Euler(Math.PI, 0, 0)
+        const partOriented = applyPrintOrientation(geometry, partRotation)
+        const partBounds = getOrientedBounds(geometry, partRotation)
+        geometry.dispose()
+        items.push({
+          id: modifier.id,
+          label: `${obj.name} - ${kindLabel}`,
+          object: obj,
+          geometry: partOriented,
+          bounds: partBounds,
+        })
+      }
     }
+  } catch (error) {
+    // Dispose any geometries already collected before re-throwing
+    for (const item of items) {
+      item.geometry.dispose()
+    }
+    throw error
   }
 
   // Sort by depth descending for better row packing

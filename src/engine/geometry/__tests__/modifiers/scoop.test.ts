@@ -68,6 +68,13 @@ describe('generateScoop', () => {
     geometry.dispose()
   })
 
+  it('returns empty geometry when wallHeight <= 0', () => {
+    const zeroCtx = { ...defaultContext, wallHeight: 0 }
+    const geometry = generateScoop(defaultParams, zeroCtx, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
   it('generates on left and right walls', () => {
     const leftGeo = generateScoop({ wall: 'left', radius: 0 }, defaultContext, PROFILE_OFFICIAL)
     const rightGeo = generateScoop({ wall: 'right', radius: 0 }, defaultContext, PROFILE_OFFICIAL)

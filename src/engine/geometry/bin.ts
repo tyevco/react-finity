@@ -80,10 +80,12 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): Buff
       geometries.push(bottomGeo)
 
       // Top tier (wide) — fills the full cavity above the step ledge
-      const topShape = roundedRectShape(cellSize, cellSize, cellRadius)
-      const topGeo = extrudeShape(topShape, topTierHeight)
-      topGeo.translate(cx, stepHeight, cz)
-      geometries.push(topGeo)
+      if (topTierHeight > 0) {
+        const topShape = roundedRectShape(cellSize, cellSize, cellRadius)
+        const topGeo = extrudeShape(topShape, topTierHeight)
+        topGeo.translate(cx, stepHeight, cz)
+        geometries.push(topGeo)
+      }
     }
   }
 

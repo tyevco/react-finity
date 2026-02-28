@@ -1,5 +1,4 @@
-import type { BufferGeometry } from 'three'
-import { Shape } from 'three'
+import { BufferGeometry, Shape } from 'three'
 
 import type { LabelTabModifierParams, ModifierContext, GridfinityProfile } from '@/types/gridfinity'
 
@@ -10,8 +9,18 @@ export function generateLabelTab(
   context: ModifierContext,
   _profile: GridfinityProfile,
 ): BufferGeometry {
-  const { wall, angle, height } = params
+  const { wall, angle } = params
   const { innerWidth, innerDepth, wallHeight, floorY, centerX, centerZ } = context
+
+  // Clamp height to 40% of wall height to avoid oversized tabs
+  const height = Math.min(params.height, wallHeight * 0.4)
+
+  // The tab spans ~80% of the wall width, centered
+  const isXWall = wall === 'front' || wall === 'back'
+  const span = (isXWall ? innerWidth : innerDepth) * 0.8
+
+  // Early return if clamped dimensions are degenerate
+  if (height <= 0 || span <= 0) return new BufferGeometry()
 
   // Label tab is a wedge at ~60% wall height on the targeted wall
   const tabBaseY = floorY + wallHeight * 0.6
@@ -26,10 +35,6 @@ export function generateLabelTab(
   wedgeShape.lineTo(0, height)
   wedgeShape.lineTo(tabDepthVal, 0)
   wedgeShape.lineTo(0, 0)
-
-  // The tab spans ~80% of the wall width, centered
-  const isXWall = wall === 'front' || wall === 'back'
-  const span = (isXWall ? innerWidth : innerDepth) * 0.8
 
   const geo = extrudeShape(wedgeShape, span)
 

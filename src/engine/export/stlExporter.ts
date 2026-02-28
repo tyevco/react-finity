@@ -8,24 +8,28 @@ function geometryToSTLBinary(geometry: BufferGeometry, scale = 1): ArrayBuffer {
   const exporter = new STLExporter()
   let geo = geometry
   let needsDispose = false
+  const material = new MeshBasicMaterial()
 
-  if (scale !== 1) {
-    geo = geometry.clone()
-    geo.scale(scale, scale, scale)
-    needsDispose = true
+  try {
+    if (scale !== 1) {
+      geo = geometry.clone()
+      geo.scale(scale, scale, scale)
+      needsDispose = true
+    }
+
+    const mesh = new Mesh(geo, material)
+    const result = exporter.parse(mesh, { binary: true }) as DataView
+    // Copy to a plain ArrayBuffer to satisfy BlobPart/JSZip type constraints
+    const arrayBuffer = new ArrayBuffer(result.byteLength)
+    new Uint8Array(arrayBuffer).set(new Uint8Array(result.buffer as ArrayBuffer))
+
+    return arrayBuffer
+  } finally {
+    material.dispose()
+    if (needsDispose) {
+      geo.dispose()
+    }
   }
-
-  const mesh = new Mesh(geo, new MeshBasicMaterial())
-  const result = exporter.parse(mesh, { binary: true }) as DataView
-  // Copy to a plain ArrayBuffer to satisfy BlobPart/JSZip type constraints
-  const arrayBuffer = new ArrayBuffer(result.byteLength)
-  new Uint8Array(arrayBuffer).set(new Uint8Array(result.buffer as ArrayBuffer))
-
-  if (needsDispose) {
-    geo.dispose()
-  }
-
-  return arrayBuffer
 }
 
 /**

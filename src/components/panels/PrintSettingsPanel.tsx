@@ -69,20 +69,26 @@ export function PrintSettingsPanel() {
 
   const handleExportAll = () => {
     if (layoutItems.length === 0) return
-    void exportAllAsZip(layoutItems, exportScale).catch(() => {
-      // TODO: show toast notification
+    void exportAllAsZip(layoutItems, exportScale).catch((error: unknown) => {
+      console.error('Failed to export ZIP:', error)
     })
   }
 
   const handleExportSingleSTL = () => {
     if (layoutItems.length === 0) return
-    exportAllAsSingleSTL(layoutItems, exportScale)
+    try {
+      exportAllAsSingleSTL(layoutItems, exportScale)
+    } catch (error) {
+      console.error('Failed to export single STL:', error)
+    }
   }
 
   const handleExportOne = (item: (typeof layoutItems)[number]) => {
     const oriented = item.geometry.clone()
     try {
       exportObjectAsSTL(oriented, item.label, exportScale)
+    } catch (error) {
+      console.error('Failed to export STL:', error)
     } finally {
       oriented.dispose()
     }
@@ -90,13 +96,19 @@ export function PrintSettingsPanel() {
 
   const handleExportAll3MF = () => {
     if (layoutItems.length === 0) return
-    exportAllAs3MF(layoutItems, exportScale)
+    try {
+      exportAllAs3MF(layoutItems, exportScale)
+    } catch (error) {
+      console.error('Failed to export 3MF:', error)
+    }
   }
 
   const handleExportOne3MF = (item: (typeof layoutItems)[number]) => {
     const oriented = item.geometry.clone()
     try {
       exportObjectAs3MF(oriented, item.label, exportScale)
+    } catch (error) {
+      console.error('Failed to export 3MF:', error)
     } finally {
       oriented.dispose()
     }

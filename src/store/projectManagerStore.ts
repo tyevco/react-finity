@@ -230,7 +230,12 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
         }))
 
         if (isCurrentProject) {
-          get().newProject()
+          isLoadingProject = true
+          try {
+            get().newProject()
+          } finally {
+            isLoadingProject = false
+          }
         }
       },
 
@@ -337,9 +342,8 @@ if (typeof window !== 'undefined') {
     if (state.currentProjectId) {
       const data = readProjectData(state.currentProjectId)
       if (data) {
-        isLoadingProject = true
+        // loadProjectData is already wrapped with isLoadingProject guards
         useProjectStore.getState().loadProjectData(data)
-        isLoadingProject = false
       }
     }
     projectInitialized = true

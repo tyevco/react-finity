@@ -135,40 +135,47 @@ export function mergeObjectWithModifiers(
     return baseGeometry
   }
 
-  // Merge base + additive geometries
-  const additiveGeometries = [baseGeometry, ...additive]
-  let result = mergeGeometries(additiveGeometries)
+  try {
+    // Merge base + additive geometries
+    const additiveGeometries = [baseGeometry, ...additive]
+    let result = mergeGeometries(additiveGeometries)
 
-  baseGeometry.dispose()
-  for (const geo of additive) {
-    geo.dispose()
-  }
-
-  // CSG subtract subtractive modifiers
-  if (subtractive.length > 0) {
-    const mergedSubtractive = mergeGeometries(subtractive)
-    for (const geo of subtractive) {
+    baseGeometry.dispose()
+    for (const geo of additive) {
       geo.dispose()
     }
 
-    const evaluator = new Evaluator()
-    evaluator.attributes = ['position', 'normal']
-    const baseBrush = new Brush(result)
-    const subtractBrush = new Brush(mergedSubtractive)
+    // CSG subtract subtractive modifiers
+    if (subtractive.length > 0) {
+      const mergedSubtractive = mergeGeometries(subtractive)
+      for (const geo of subtractive) {
+        geo.dispose()
+      }
 
-    try {
-      const csgResult = evaluator.evaluate(baseBrush, subtractBrush, SUBTRACTION)
-      const finalGeometry = csgResult.geometry
-      result.dispose()
-      result = finalGeometry
-    } finally {
-      mergedSubtractive.dispose()
-      baseBrush.geometry.dispose()
-      subtractBrush.geometry.dispose()
+      const evaluator = new Evaluator()
+      evaluator.attributes = ['position', 'normal']
+      const baseBrush = new Brush(result)
+      const subtractBrush = new Brush(mergedSubtractive)
+
+      try {
+        const csgResult = evaluator.evaluate(baseBrush, subtractBrush, SUBTRACTION)
+        const finalGeometry = csgResult.geometry
+        result.dispose()
+        result = finalGeometry
+      } finally {
+        mergedSubtractive.dispose()
+        baseBrush.geometry.dispose()
+        subtractBrush.geometry.dispose()
+      }
     }
-  }
 
-  return result
+    return result
+  } catch (error) {
+    baseGeometry.dispose()
+    for (const geo of additive) geo.dispose()
+    for (const geo of subtractive) geo.dispose()
+    throw error
+  }
 }
 
 /**

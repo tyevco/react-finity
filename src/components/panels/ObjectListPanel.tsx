@@ -58,55 +58,67 @@ export function ObjectListPanel() {
               No objects yet. Use "Add Object" to get started.
             </div>
           ) : (
-            objects.map((obj, index) => {
-              const Icon = objectKindRegistry.get(obj.kind)?.icon ?? HelpCircle
-              const isSelected = selectedObjectIds.includes(obj.id)
-              const isDragging = dragIndex === index
-              const isDropTarget = dropIndex === index && dragIndex !== index
-              return (
-                <div
-                  key={obj.id}
-                  draggable
-                  onDragStart={(e) => {
-                    handleDragStart(e, index)
-                  }}
-                  onDragOver={(e) => {
-                    handleDragOver(e, index)
-                  }}
-                  onDrop={(e) => {
-                    handleDrop(e, index)
-                  }}
-                  onDragEnd={handleDragEnd}
-                  className={cn(
-                    'group flex cursor-pointer items-center gap-1 rounded-md px-1 py-2.5 text-sm md:py-1.5',
-                    isSelected ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
-                    isDragging && 'opacity-40',
-                    isDropTarget && 'border-t-2 border-primary',
-                  )}
-                  onClick={(e) => {
-                    selectObject(obj.id, e.shiftKey || e.ctrlKey || e.metaKey)
-                  }}
-                >
-                  <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-50" />
-                  <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <span className="flex-1 truncate pl-1">{obj.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 opacity-100 md:h-5 md:w-5 md:opacity-0 md:group-hover:opacity-100"
+            <div role="listbox" aria-label="Object list">
+              {objects.map((obj, index) => {
+                const Icon = objectKindRegistry.get(obj.kind)?.icon ?? HelpCircle
+                const isSelected = selectedObjectIds.includes(obj.id)
+                const isDragging = dragIndex === index
+                const isDropTarget = dropIndex === index && dragIndex !== index
+                return (
+                  <div
+                    key={obj.id}
+                    role="option"
+                    aria-selected={isSelected}
+                    tabIndex={0}
+                    draggable
+                    onDragStart={(e) => {
+                      handleDragStart(e, index)
+                    }}
+                    onDragOver={(e) => {
+                      handleDragOver(e, index)
+                    }}
+                    onDrop={(e) => {
+                      handleDrop(e, index)
+                    }}
+                    onDragEnd={handleDragEnd}
+                    className={cn(
+                      'group flex cursor-pointer items-center gap-1 rounded-md px-1 py-2.5 text-sm md:py-1.5',
+                      isSelected ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
+                      isDragging && 'opacity-40',
+                      isDropTarget && 'border-t-2 border-primary',
+                    )}
                     onClick={(e) => {
-                      e.stopPropagation()
-                      if (isSelected) {
-                        selectObject(null)
+                      selectObject(obj.id, e.shiftKey || e.ctrlKey || e.metaKey)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        selectObject(obj.id, e.shiftKey || e.ctrlKey || e.metaKey)
                       }
-                      removeObject(obj.id)
                     }}
                   >
-                    <Trash2 className="h-4 w-4 md:h-3 md:w-3" />
-                  </Button>
-                </div>
-              )
-            })
+                    <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-50" />
+                    <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="flex-1 truncate pl-1">{obj.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 opacity-100 md:h-5 md:w-5 md:opacity-0 md:group-hover:opacity-100"
+                      aria-label={`Delete ${obj.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (isSelected) {
+                          selectObject(null)
+                        }
+                        removeObject(obj.id)
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 md:h-3 md:w-3" />
+                    </Button>
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
       </ScrollArea>

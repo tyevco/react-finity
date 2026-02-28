@@ -14,6 +14,16 @@ import { exportObjectAsSTL } from '@/engine/export/stlExporter'
 let clipboard: string[] = []
 
 export function useKeyboardShortcuts() {
+  // Clear clipboard when switching projects so stale object IDs aren't pasted
+  useEffect(() => {
+    const unsub = useProjectManagerStore.subscribe((state, prevState) => {
+      if (state.currentProjectId !== prevState.currentProjectId) {
+        clipboard = []
+      }
+    })
+    return unsub
+  }, [])
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target
@@ -31,9 +41,7 @@ export function useKeyboardShortcuts() {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedObjectIds.length > 0) {
           e.preventDefault()
-          for (const id of selectedObjectIds) {
-            useProjectStore.getState().removeObject(id)
-          }
+          useProjectStore.getState().removeObjects(selectedObjectIds)
           useUIStore.getState().clearSelection()
         }
       }

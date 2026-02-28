@@ -15,12 +15,15 @@ export function InsertControls({ modifier }: InsertControlsProps) {
       {/* Compartments X */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Compartments (Width)</Label>
+          <Label htmlFor="mod-insert-comp-x" className="text-xs">
+            Compartments (Width)
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {modifier.params.compartmentsX}
           </span>
         </div>
         <Slider
+          id="mod-insert-comp-x"
           value={[modifier.params.compartmentsX]}
           onValueChange={([v]) => {
             updateModifierParams(modifier.id, { compartmentsX: v })
@@ -34,12 +37,15 @@ export function InsertControls({ modifier }: InsertControlsProps) {
       {/* Compartments Y */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Compartments (Depth)</Label>
+          <Label htmlFor="mod-insert-comp-y" className="text-xs">
+            Compartments (Depth)
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {modifier.params.compartmentsY}
           </span>
         </div>
         <Slider
+          id="mod-insert-comp-y"
           value={[modifier.params.compartmentsY]}
           onValueChange={([v]) => {
             updateModifierParams(modifier.id, { compartmentsY: v })
@@ -53,12 +59,15 @@ export function InsertControls({ modifier }: InsertControlsProps) {
       {/* Wall Thickness */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Wall Thickness</Label>
+          <Label htmlFor="mod-insert-wall" className="text-xs">
+            Wall Thickness
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {modifier.params.wallThickness.toFixed(1)}mm
           </span>
         </div>
         <Slider
+          id="mod-insert-wall"
           value={[modifier.params.wallThickness]}
           onValueChange={([v]) => {
             updateModifierParams(modifier.id, { wallThickness: Math.round(v * 10) / 10 })

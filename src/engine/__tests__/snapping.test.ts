@@ -114,4 +114,9 @@ describe('snapObjectToGrid', () => {
     expect(snapObjectToGrid([-21, 0, -21], gridSize, 2, 2)).toEqual([-21, 0, -21])
     expect(snapObjectToGrid([-50, 0, -50], gridSize, 2, 2)).toEqual([-63, 0, -63])
   })
+
+  it('returns position unchanged when gridSize is 0', () => {
+    expect(snapObjectToGrid([25, 10, 35], 0, 2, 2)).toEqual([25, 10, 35])
+    expect(snapObjectToGrid([-5, 3, 17], 0, 1, 1)).toEqual([-5, 3, 17])
+  })
 })
