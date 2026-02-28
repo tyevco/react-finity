@@ -187,6 +187,12 @@ describe('dividerGrid computeChildContext', () => {
     expect(result.centerX).toBe(parentContext.centerX)
     expect(result.centerZ).toBe(parentContext.centerZ)
   })
+
+  it('clamps wallHeight to a minimum of 0.1 when parent provides negative wallHeight', () => {
+    const negativeHeightContext = { ...parentContext, wallHeight: -5 }
+    const result = compute({ dividersX: 1, dividersY: 0, wallThickness: 2 }, negativeHeightContext)
+    expect(result.wallHeight).toBe(0.1)
+  })
 })
 
 describe('insert computeChildContext', () => {
@@ -256,5 +262,14 @@ describe('insert computeChildContext', () => {
     expect(result.floorY).toBe(parentContext.floorY)
     expect(result.centerX).toBe(parentContext.centerX)
     expect(result.centerZ).toBe(parentContext.centerZ)
+  })
+
+  it('clamps wallHeight to a minimum of 0.1 when parent provides negative wallHeight', () => {
+    const negativeHeightContext = { ...parentContext, wallHeight: -5 }
+    const result = compute(
+      { compartmentsX: 2, compartmentsY: 2, wallThickness: 2 },
+      negativeHeightContext,
+    )
+    expect(result.wallHeight).toBe(0.1)
   })
 })

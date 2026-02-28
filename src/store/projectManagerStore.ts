@@ -127,9 +127,18 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
         const { objects, modifiers } = useProjectStore.getState()
         const now = new Date().toISOString()
 
-        let projectId = state.currentProjectId
-        if (!projectId) {
-          projectId = uuidv4()
+        const isNewProject = !state.currentProjectId
+        const projectId = state.currentProjectId ?? uuidv4()
+
+        // Write data BEFORE updating state to prevent phantom project
+        // metadata when localStorage write fails for new projects
+        if (!writeProjectData(projectId, { objects, modifiers })) {
+          console.warn('Project save failed for:', projectId)
+          set({ isDirty: true })
+          return
+        }
+
+        if (isNewProject) {
           const meta: ProjectMeta = {
             id: projectId,
             name: state.currentProjectName,
@@ -146,12 +155,6 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
             isDirty: false,
             projects: s.projects.map((p) => (p.id === projectId ? { ...p, updatedAt: now } : p)),
           }))
-        }
-
-        if (!writeProjectData(projectId, { objects, modifiers })) {
-          console.warn('Project save failed for:', projectId)
-          // Revert dirty flag so auto-save retries on next change
-          set({ isDirty: true })
         }
       },
 
@@ -238,9 +241,14 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
           clearTimeout(autoSaveTimer)
         }
 
+        // Capture project ID so the timer only auto-saves if we're still
+        // on the same project (defense-in-depth; loadProject also clears the timer)
+        const projectIdAtMark = get().currentProjectId
         autoSaveTimer = setTimeout(() => {
           autoSaveTimer = null
-          get().saveProject()
+          if (get().currentProjectId === projectIdAtMark) {
+            get().saveProject()
+          }
         }, AUTO_SAVE_DELAY)
       },
 

@@ -106,7 +106,7 @@ export function registerBuiltinKinds(): void {
       return {
         innerWidth: Math.max(0.1, compartmentWidth),
         innerDepth: Math.max(0.1, compartmentDepth),
-        wallHeight: parentContext.wallHeight,
+        wallHeight: Math.max(0.1, parentContext.wallHeight),
         floorY: parentContext.floorY,
         centerX: parentContext.centerX,
         centerZ: parentContext.centerZ,
@@ -179,7 +179,7 @@ export function registerBuiltinKinds(): void {
       return {
         innerWidth: Math.max(0.1, compartmentWidth),
         innerDepth: Math.max(0.1, compartmentDepth),
-        wallHeight: parentContext.wallHeight,
+        wallHeight: Math.max(0.1, parentContext.wallHeight),
         floorY: parentContext.floorY,
         centerX: parentContext.centerX,
         centerZ: parentContext.centerZ,

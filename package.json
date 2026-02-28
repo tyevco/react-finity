@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "validate": "eslint . && prettier --check \"src/**/*.{ts,tsx,css}\" && tsc -b && vitest run",
     "preview": "vite preview",
     "prepare": "husky"
   },
