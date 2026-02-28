@@ -95,7 +95,9 @@ export function ProjectDialog({ open, onOpenChange }: ProjectDialogProps) {
                       <div className="flex flex-1 items-center gap-1">
                         <Input
                           value={renameValue}
-                          onChange={(e) => { setRenameValue(e.target.value) }}
+                          onChange={(e) => {
+                            setRenameValue(e.target.value)
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleConfirmRename()
                             if (e.key === 'Escape') handleCancelRename()
@@ -127,9 +129,7 @@ export function ProjectDialog({ open, onOpenChange }: ProjectDialogProps) {
                       <>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="truncate text-sm font-medium">
-                              {project.name}
-                            </span>
+                            <span className="truncate text-sm font-medium">{project.name}</span>
                             {project.id === currentProjectId && (
                               <span className="shrink-0 rounded bg-accent px-1 py-0.5 text-[10px] text-accent-foreground">
                                 Current
@@ -144,7 +144,9 @@ export function ProjectDialog({ open, onOpenChange }: ProjectDialogProps) {
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6 shrink-0"
-                          onClick={() => { handleLoad(project.id) }}
+                          onClick={() => {
+                            handleLoad(project.id)
+                          }}
                           aria-label={`Load ${project.name}`}
                         >
                           <FolderOpen className="h-3 w-3" />
@@ -153,7 +155,9 @@ export function ProjectDialog({ open, onOpenChange }: ProjectDialogProps) {
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6 shrink-0"
-                          onClick={() => { handleStartRename(project.id, project.name) }}
+                          onClick={() => {
+                            handleStartRename(project.id, project.name)
+                          }}
                           aria-label={`Rename ${project.name}`}
                         >
                           <Pencil className="h-3 w-3" />
@@ -164,7 +168,9 @@ export function ProjectDialog({ open, onOpenChange }: ProjectDialogProps) {
                               variant="destructive"
                               size="icon"
                               className="h-6 w-6 shrink-0"
-                              onClick={() => { handleDelete(project.id) }}
+                              onClick={() => {
+                                handleDelete(project.id)
+                              }}
                               aria-label="Confirm delete"
                             >
                               <Check className="h-3 w-3" />
@@ -173,7 +179,9 @@ export function ProjectDialog({ open, onOpenChange }: ProjectDialogProps) {
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6 shrink-0"
-                              onClick={() => { setConfirmDeleteId(null) }}
+                              onClick={() => {
+                                setConfirmDeleteId(null)
+                              }}
                               aria-label="Cancel delete"
                             >
                               <X className="h-3 w-3" />
@@ -184,7 +192,9 @@ export function ProjectDialog({ open, onOpenChange }: ProjectDialogProps) {
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 shrink-0"
-                            onClick={() => { setConfirmDeleteId(project.id) }}
+                            onClick={() => {
+                              setConfirmDeleteId(project.id)
+                            }}
                             aria-label={`Delete ${project.name}`}
                           >
                             <Trash2 className="h-3 w-3" />

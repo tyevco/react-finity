@@ -415,6 +415,52 @@ describe('projectManagerStore', () => {
     expect(renamedMeta?.name).toBe('Renamed First')
   })
 
+  it('saveProject does not create phantom project metadata when write fails for new project', () => {
+    const origSetItem = localStorageMock.setItem
+    localStorageMock.setItem = () => {
+      throw new Error('Quota exceeded')
+    }
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    // Attempt to save a brand-new project (no currentProjectId)
+    useProjectStore.getState().addObject('bin')
+    useProjectManagerStore.getState().saveProject()
+
+    // Should NOT create phantom metadata
+    expect(useProjectManagerStore.getState().currentProjectId).toBeNull()
+    expect(useProjectManagerStore.getState().projects).toHaveLength(0)
+    expect(useProjectManagerStore.getState().isDirty).toBe(true)
+    expect(warnSpy).toHaveBeenCalled()
+
+    warnSpy.mockRestore()
+    errorSpy.mockRestore()
+    localStorageMock.setItem = origSetItem
+  })
+
+  it('auto-save timer does not fire after project switch', () => {
+    // Save and set up project A
+    useProjectStore.getState().addObject('bin')
+    useProjectManagerStore.getState().saveProjectAs('Project A')
+    const projectAId = useProjectManagerStore.getState().currentProjectId
+
+    // Mark dirty (starts 2s auto-save timer for project A)
+    useProjectManagerStore.getState().markDirty()
+    expect(useProjectManagerStore.getState().isDirty).toBe(true)
+
+    // Switch to a new project before timer fires
+    useProjectManagerStore.getState().newProject()
+    useProjectManagerStore.setState({ currentProjectId: 'different-project' })
+
+    // Advance past the auto-save delay
+    vi.advanceTimersByTime(3000)
+
+    // Project ID changed, so auto-save should NOT have fired and overwritten state
+    expect(useProjectManagerStore.getState().currentProjectId).toBe('different-project')
+    expect(useProjectManagerStore.getState().currentProjectId).not.toBe(projectAId)
+  })
+
   it('initializeProject is idempotent — second call is a no-op', () => {
     // The module-level projectInitialized flag is set to true during module
     // initialization (via onFinishHydration in jsdom). Both calls here are

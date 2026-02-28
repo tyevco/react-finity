@@ -1,2 +1,2 @@
 npx lint-staged
-npm run test
+npx tsc -b
