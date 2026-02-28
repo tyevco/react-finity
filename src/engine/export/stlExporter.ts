@@ -19,11 +19,8 @@ function geometryToSTLBinary(geometry: BufferGeometry, scale = 1): ArrayBuffer {
 
     const mesh = new Mesh(geo, material)
     const result = exporter.parse(mesh, { binary: true }) as DataView
-    // Copy to a plain ArrayBuffer to satisfy BlobPart/JSZip type constraints
-    const arrayBuffer = new ArrayBuffer(result.byteLength)
-    new Uint8Array(arrayBuffer).set(new Uint8Array(result.buffer as ArrayBuffer))
-
-    return arrayBuffer
+    // Extract the relevant portion of the DataView's underlying buffer
+    return new Uint8Array(result.buffer, result.byteOffset, result.byteLength).slice().buffer
   } finally {
     material.dispose()
     if (needsDispose) {
@@ -45,6 +42,11 @@ export function exportObjectAsSTL(geometry: BufferGeometry, name: string, scale 
  * Export all print layout items as individual STL files bundled in a ZIP.
  */
 export async function exportAllAsZip(items: PrintLayoutItem[], scale = 1): Promise<void> {
+  if (items.length === 0) {
+    console.warn('Export skipped: no objects in layout')
+    return
+  }
+
   try {
     const zip = new JSZip()
 
@@ -98,7 +100,6 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
     }
 
     const positions = new Float32Array(totalVertices * 3)
-    const normals = new Float32Array(totalVertices * 3)
     const indices = new Uint32Array(totalIndices)
 
     let vertexOffset = 0
@@ -106,16 +107,9 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
 
     for (const geo of geometries) {
       const posAttr = geo.attributes.position as BufferAttribute
-      const normAttr = geo.attributes.normal as BufferAttribute | undefined
 
       for (let i = 0; i < posAttr.count * 3; i++) {
         positions[vertexOffset * 3 + i] = posAttr.array[i]
-      }
-
-      if (normAttr) {
-        for (let i = 0; i < normAttr.count * 3; i++) {
-          normals[vertexOffset * 3 + i] = normAttr.array[i]
-        }
       }
 
       if (geo.index) {
@@ -134,7 +128,6 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
     }
 
     merged.setAttribute('position', new BufferAttribute(positions, 3))
-    merged.setAttribute('normal', new BufferAttribute(normals, 3))
     merged.setIndex(new BufferAttribute(indices, 1))
     merged.computeVertexNormals()
 

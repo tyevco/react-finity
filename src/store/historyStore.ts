@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { GridfinityObject, Modifier } from '@/types/gridfinity'
-import { useProjectStore } from './projectStore'
+import { useProjectStore, resetObjectCounter } from './projectStore'
 import {
   getIsLoadingProject,
   setIsLoadingProject,
@@ -69,6 +69,7 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
       objects: previousSnapshot.objects,
       modifiers: previousSnapshot.modifiers,
     })
+    resetObjectCounter(previousSnapshot.objects)
 
     set({
       past: newPast,
@@ -99,6 +100,7 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
       objects: nextSnapshot.objects,
       modifiers: nextSnapshot.modifiers,
     })
+    resetObjectCounter(nextSnapshot.objects)
 
     set({
       past: [...past, currentSnapshot],

@@ -236,12 +236,9 @@ describe('exportAllAsSingleSTL', () => {
 })
 
 describe('exportAllAsZip', () => {
-  it('still produces a download with empty items (no early-return guard)', async () => {
-    // exportAllAsZip has no early-return for an empty list; it creates a ZIP with
-    // zero files and triggers a download of the empty archive.
+  it('does nothing with empty items', async () => {
     await exportAllAsZip([])
-    expect(downloadState.triggered).toBe(true)
-    expect(downloadState.filename).toBe('react-finity-export.zip')
+    expect(downloadState.triggered).toBe(false)
   })
 
   it('exports items as individual STL files in a ZIP', async () => {

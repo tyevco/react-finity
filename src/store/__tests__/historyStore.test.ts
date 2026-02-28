@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach, beforeAll } from 'vitest'
 import { useHistoryStore } from '../historyStore'
-import { useProjectStore } from '../projectStore'
+import { useProjectStore, resetObjectCounter } from '../projectStore'
 import { useProjectManagerStore, setIsLoadingProject } from '../projectManagerStore'
 import { registerBuiltinKinds } from '@/engine/registry/builtins'
 
@@ -164,6 +164,35 @@ describe('historyStore', () => {
 
     expect(useProjectStore.getState().objects).toEqual([])
     expect(useHistoryStore.getState().canRedo).toBe(false)
+  })
+
+  it('undo syncs objectCounter so next addObject uses correct name', () => {
+    resetObjectCounter([])
+
+    // Add "Bin 1"
+    const id1 = useProjectStore.getState().addObject('bin')
+    expect(useProjectStore.getState().objects.find((o) => o.id === id1)?.name).toBe('Bin 1')
+
+    // Snapshot the state with Bin 1 (this is the "before" state for the next change)
+    const stateWithBin1 = useProjectStore.getState()
+    useHistoryStore.getState().pushSnapshot({
+      objects: stateWithBin1.objects,
+      modifiers: stateWithBin1.modifiers,
+    })
+
+    // Add "Bin 2" (this is the change we'll undo)
+    const id2 = useProjectStore.getState().addObject('bin')
+    expect(useProjectStore.getState().objects.find((o) => o.id === id2)?.name).toBe('Bin 2')
+
+    // Undo -> back to state with only "Bin 1"
+    // Before fix: counter stayed at 2, next add would be "Bin 3"
+    // After fix: counter resets to 1, next add will be "Bin 2"
+    useHistoryStore.getState().undo()
+    expect(useProjectStore.getState().objects).toHaveLength(1)
+
+    // The undo should have synced the counter — next add should be "Bin 2"
+    const id3 = useProjectStore.getState().addObject('bin')
+    expect(useProjectStore.getState().objects.find((o) => o.id === id3)?.name).toBe('Bin 2')
   })
 
   it('clear resets all history', () => {

@@ -2,12 +2,7 @@ import { Euler } from 'three'
 import type { BufferGeometry } from 'three'
 import type { GridfinityObject, GridfinityProfile, Modifier } from '@/types/gridfinity'
 import { mergeObjectWithModifiers, collectSeparatePartModifiers } from './mergeObjectGeometry'
-import {
-  getPrintRotation,
-  getOrientedBounds,
-  getBoundsFromOriented,
-  applyPrintOrientation,
-} from './printOrientation'
+import { getPrintRotation, getBoundsFromOriented, applyPrintOrientation } from './printOrientation'
 import { modifierKindRegistry } from '@/engine/registry/modifierKindRegistry'
 
 export interface PrintLayoutItem {
@@ -64,7 +59,7 @@ export function computePrintLayout(
         // Lids print upside-down (flat top on bed)
         const partRotation = new Euler(Math.PI, 0, 0)
         const partOriented = applyPrintOrientation(geometry, partRotation)
-        const partBounds = getOrientedBounds(geometry, partRotation)
+        const partBounds = getBoundsFromOriented(partOriented)
         geometry.dispose()
         items.push({
           id: modifier.id,

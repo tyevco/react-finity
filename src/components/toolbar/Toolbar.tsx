@@ -143,11 +143,12 @@ export function Toolbar() {
   }
 
   const handleConfirmSaveAs = () => {
-    if (saveAsName.trim()) {
-      saveProjectAs(saveAsName.trim())
-    }
+    const name = saveAsName.trim()
     setSaveAsPrompt(false)
     setSaveAsName('')
+    if (name) {
+      saveProjectAs(name)
+    }
   }
 
   const isEditView = activeView === 'edit'
