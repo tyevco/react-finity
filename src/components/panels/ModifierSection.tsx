@@ -77,6 +77,7 @@ export function ModifierSection({ parentId, depth = 0 }: ModifierSectionProps) {
               variant="ghost"
               size="icon"
               className="h-8 w-8 md:h-6 md:w-6"
+              aria-label={depth === 0 ? 'Add modifier' : 'Add sub-modifier'}
               data-testid="add-modifier-btn"
             >
               <Plus className="h-4 w-4 md:h-3 md:w-3" />
@@ -175,6 +176,7 @@ function ModifierCard({
           variant="ghost"
           size="icon"
           className="h-7 w-7 md:h-5 md:w-5"
+          aria-label={`Remove ${modifierKindRegistry.get(modifier.kind)?.label ?? 'modifier'}`}
           onClick={onRemove}
           data-testid="remove-modifier-btn"
         >
@@ -184,8 +186,8 @@ function ModifierCard({
 
       <ModifierControls modifier={modifier} />
 
-      {/* Recursive: sub-modifiers on this modifier */}
-      <ModifierSection parentId={modifier.id} depth={depth + 1} />
+      {/* Recursive: sub-modifiers on this modifier (max depth 10) */}
+      {depth < 10 && <ModifierSection parentId={modifier.id} depth={depth + 1} />}
     </div>
   )
 }

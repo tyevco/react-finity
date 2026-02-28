@@ -79,7 +79,7 @@ function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
     return context
   }, [modifier, context])
 
-  if (!geometry || !('position' in geometry.attributes)) return null
+  if (!geometry?.attributes.position || geometry.attributes.position.count === 0) return null
 
   const reg = modifierKindRegistry.get(modifier.kind)
   const color = reg?.color ?? '#cccccc'

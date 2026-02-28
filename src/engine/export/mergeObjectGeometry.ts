@@ -80,7 +80,7 @@ function collectModifierGeometries(
     if (reg?.separatePrintPart) continue
 
     const geo = generateModifierGeometry(modifier, context, profile)
-    if (geo && 'position' in geo.attributes) {
+    if (geo?.attributes.position && geo.attributes.position.count > 0) {
       if (reg?.subtractive) {
         subtractive.push(geo)
       } else {
@@ -202,7 +202,7 @@ export function collectSeparatePartModifiers(
     if (!modReg?.separatePrintPart) continue
 
     const geo = generateModifierGeometry(modifier, context, profile)
-    if (geo && 'position' in geo.attributes) {
+    if (geo?.attributes.position && geo.attributes.position.count > 0) {
       results.push({ modifier, geometry: geo })
     }
   }
