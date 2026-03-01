@@ -248,6 +248,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
           number,
           number,
         ],
+        rotation: obj.rotation ? ([...obj.rotation] as [number, number, number]) : undefined,
         params: { ...obj.params },
       } as GridfinityObject
 

@@ -115,16 +115,16 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): Buff
     const halfW = innerWidth / 2 - margin
     const halfD = innerDepth / 2 - margin
 
-    let row = 0
-    for (let z = -halfD; z <= halfD; z += hexSpacingZ) {
-      const xOffset = row % 2 === 1 ? hexSpacingX / 2 : 0
-      for (let x = -halfW + xOffset; x <= halfW; x += hexSpacingX) {
-        // Skip hexes whose center is too close to the rounded rect edge
-        if (Math.abs(x) <= halfW && Math.abs(z) <= halfD) {
+    // Only add hex holes if there is enough room for at least one
+    if (halfW > 0 && halfD > 0) {
+      let row = 0
+      for (let z = -halfD; z <= halfD; z += hexSpacingZ) {
+        const xOffset = row % 2 === 1 ? hexSpacingX / 2 : 0
+        for (let x = -halfW + xOffset; x <= halfW; x += hexSpacingX) {
           floorShape.holes.push(createHexagonHolePath(hexRadius, x, z))
         }
+        row++
       }
-      row++
     }
   }
 
