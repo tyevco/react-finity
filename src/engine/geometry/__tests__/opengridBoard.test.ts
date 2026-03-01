@@ -82,6 +82,25 @@ describe('generateOpenGridBoard', () => {
     geometry.dispose()
   })
 
+  it('asymmetric grid (3x1) has correct bounding box proportions', () => {
+    const geometry = generateOpenGridBoard(
+      { ...defaultParams, gridWidth: 3, gridDepth: 1 },
+      PROFILE_OFFICIAL,
+    )
+    geometry.computeBoundingBox()
+    const box = geometry.boundingBox! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+
+    const width = box.max.x - box.min.x
+    const depth = box.max.z - box.min.z
+
+    // 3 * 28 = 84mm width, 1 * 28 = 28mm depth
+    expect(width).toBeGreaterThan(depth)
+    expect(width).toBeCloseTo(3 * OPENGRID_GRID_SIZE, 0)
+    expect(depth).toBeCloseTo(OPENGRID_GRID_SIZE, 0)
+
+    geometry.dispose()
+  })
+
   it('diamond holes add geometry complexity (more vertices than a plain slab)', () => {
     // A single-cell board with a diamond hole should have more vertices
     // than the same shape would without holes (the hole path creates extra faces)
