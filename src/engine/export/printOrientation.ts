@@ -28,7 +28,7 @@ export function getOrientedBounds(
   clone.computeBoundingBox()
   const box = clone.boundingBox
 
-  if (!box) {
+  if (!box || !isFinite(box.max.x - box.min.x)) {
     clone.dispose()
     return { width: 0, depth: 0, height: 0, yOffset: 0 }
   }
@@ -54,7 +54,7 @@ export function getBoundsFromOriented(oriented: BufferGeometry): {
 } {
   oriented.computeBoundingBox()
   const box = oriented.boundingBox
-  if (!box) {
+  if (!box || !isFinite(box.max.x - box.min.x)) {
     return { width: 0, depth: 0, height: 0 }
   }
   return {
