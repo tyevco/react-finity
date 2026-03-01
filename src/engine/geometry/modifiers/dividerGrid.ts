@@ -26,9 +26,15 @@ export function generateDividerGrid(
 
   const geometries: BufferGeometry[] = []
 
+  // Compute compartment sizes consistent with computeChildContext in builtins.ts
+  // so that divider walls sit exactly between compartment boundaries.
+  const compartmentWidth = (innerWidth - wallThickness * dividersX) / (dividersX + 1)
+  const compartmentDepth = (innerDepth - wallThickness * dividersY) / (dividersY + 1)
+
   // Dividers along X axis (walls spanning depth)
   for (let i = 0; i < dividersX; i++) {
-    const xPos = centerX - innerWidth / 2 + (innerWidth * (i + 1)) / (dividersX + 1)
+    const xPos =
+      centerX - innerWidth / 2 + (i + 1) * compartmentWidth + i * wallThickness + wallThickness / 2
     const shape = roundedRectShape(wallThickness, innerDepth, 0)
     const geo = extrudeShape(shape, wallHeight)
     geo.translate(xPos, floorY, centerZ)
@@ -37,7 +43,8 @@ export function generateDividerGrid(
 
   // Dividers along Y axis (walls spanning width)
   for (let i = 0; i < dividersY; i++) {
-    const zPos = centerZ - innerDepth / 2 + (innerDepth * (i + 1)) / (dividersY + 1)
+    const zPos =
+      centerZ - innerDepth / 2 + (i + 1) * compartmentDepth + i * wallThickness + wallThickness / 2
     const shape = roundedRectShape(innerWidth, wallThickness, 0)
     const geo = extrudeShape(shape, wallHeight)
     geo.translate(centerX, floorY, zPos)

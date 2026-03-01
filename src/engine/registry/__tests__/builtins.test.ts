@@ -231,6 +231,28 @@ describe('dividerGrid computeChildContext', () => {
     // Second compartment center should be right of parent center
     expect(contexts[1].centerX).toBeGreaterThan(parentContext.centerX)
   })
+
+  it('compartment boundaries align with divider wall edges', () => {
+    // Verify that the gap between adjacent compartment edges equals wall thickness.
+    // This ensures divider geometry and compartment contexts are consistent.
+    // dividersX=2, dividersY=0, wallThickness=3
+    // compartmentWidth = (40 - 3*2) / 3 = 34/3 ≈ 11.333
+    const wt = 3
+    const result = compute({ dividersX: 2, dividersY: 0, wallThickness: wt }, parentContext)
+    const contexts = result as ModifierContext[]
+    expect(contexts).toHaveLength(3)
+
+    const cw = contexts[0].innerWidth
+    // Gap between right edge of compartment 0 and left edge of compartment 1
+    const rightEdge0 = contexts[0].centerX + cw / 2
+    const leftEdge1 = contexts[1].centerX - cw / 2
+    expect(leftEdge1 - rightEdge0).toBeCloseTo(wt, 5)
+
+    // Same for compartment 1 and 2
+    const rightEdge1 = contexts[1].centerX + cw / 2
+    const leftEdge2 = contexts[2].centerX - cw / 2
+    expect(leftEdge2 - rightEdge1).toBeCloseTo(wt, 5)
+  })
 })
 
 describe('insert computeChildContext', () => {
@@ -329,5 +351,26 @@ describe('insert computeChildContext', () => {
     expect(contexts[0].centerX).toBeLessThan(parentContext.centerX)
     // Second compartment center should be right of parent center
     expect(contexts[1].centerX).toBeGreaterThan(parentContext.centerX)
+  })
+
+  it('compartment boundaries align with insert divider wall edges', () => {
+    // compartmentsX=3, compartmentsY=1, wallThickness=2
+    // rimInnerWidth = 40 - 2*2 = 36
+    // compartmentWidth = (36 - 2*(3-1)) / 3 = (36 - 4) / 3 ≈ 10.667
+    const wt = 2
+    const result = compute({ compartmentsX: 3, compartmentsY: 1, wallThickness: wt }, parentContext)
+    const contexts = result as ModifierContext[]
+    expect(contexts).toHaveLength(3)
+
+    const cw = contexts[0].innerWidth
+    // Gap between right edge of compartment 0 and left edge of compartment 1
+    const rightEdge0 = contexts[0].centerX + cw / 2
+    const leftEdge1 = contexts[1].centerX - cw / 2
+    expect(leftEdge1 - rightEdge0).toBeCloseTo(wt, 5)
+
+    // Same for compartment 1 and 2
+    const rightEdge1 = contexts[1].centerX + cw / 2
+    const leftEdge2 = contexts[2].centerX - cw / 2
+    expect(leftEdge2 - rightEdge1).toBeCloseTo(wt, 5)
   })
 })
