@@ -76,6 +76,76 @@ describe('generateLid', () => {
 
     geometry.dispose()
   })
+
+  it('skips lip when inner dimensions are too small', () => {
+    // lipInnerWidth = innerWidth - lipThickness*2 = 1.5 - 2.0 = -0.5 → skip lip
+    const tinyContext: ModifierContext = {
+      innerWidth: 1.5,
+      innerDepth: 1.5,
+      wallHeight: 21,
+      floorY: 5.85,
+      centerX: 0,
+      centerZ: 0,
+    }
+    const withLip = generateLid({ stacking: false }, defaultContext, PROFILE_OFFICIAL)
+    const withoutLip = generateLid({ stacking: false }, tinyContext, PROFILE_OFFICIAL)
+
+    // Both should produce valid geometry
+    expect(withLip.attributes.position.count).toBeGreaterThan(0)
+    expect(withoutLip.attributes.position.count).toBeGreaterThan(0)
+
+    // The tiny context version should have fewer vertices (no lip rim)
+    expect(withoutLip.attributes.position.count).toBeLessThan(withLip.attributes.position.count)
+
+    withLip.dispose()
+    withoutLip.dispose()
+  })
+
+  it('stacking rim sits above the slab', () => {
+    const flatGeo = generateLid({ stacking: false }, defaultContext, PROFILE_OFFICIAL)
+    const stackGeo = generateLid({ stacking: true }, defaultContext, PROFILE_OFFICIAL)
+
+    flatGeo.computeBoundingBox()
+    stackGeo.computeBoundingBox()
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const flatTop = flatGeo.boundingBox!.max.y
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const stackTop = stackGeo.boundingBox!.max.y
+
+    // Stacking rim extends above where the flat slab top would be
+    expect(stackTop).toBeGreaterThan(flatTop)
+
+    // The extra height should be approximately stackingLipHeight
+    expect(stackTop - flatTop).toBeCloseTo(PROFILE_OFFICIAL.stackingLipHeight, 0)
+
+    flatGeo.dispose()
+    stackGeo.dispose()
+  })
+
+  it('respects non-zero center offsets', () => {
+    const offsetCtx: ModifierContext = {
+      innerWidth: 38.1,
+      innerDepth: 38.1,
+      wallHeight: 21,
+      floorY: 5.85,
+      centerX: 20,
+      centerZ: -10,
+    }
+
+    const geometry = generateLid({ stacking: false }, offsetCtx, PROFILE_OFFICIAL)
+    geometry.computeBoundingBox()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const box = geometry.boundingBox!
+
+    const midX = (box.max.x + box.min.x) / 2
+    const midZ = (box.max.z + box.min.z) / 2
+
+    expect(midX).toBeCloseTo(20, 0)
+    expect(midZ).toBeCloseTo(-10, 0)
+
+    geometry.dispose()
+  })
 })
 
 describe('getLidDimensions', () => {
