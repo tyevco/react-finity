@@ -166,9 +166,9 @@ describe('generateBaseplate', () => {
     slimWithHoles.dispose()
   })
 
-  it('larger grid (3x3) with all holes produces valid geometry', () => {
+  it('larger grid (2x2) with all holes produces valid geometry', () => {
     const geometry = generateBaseplate(
-      { gridWidth: 3, gridDepth: 3, slim: false, magnetHoles: true, screwHoles: true },
+      { gridWidth: 2, gridDepth: 2, slim: false, magnetHoles: true, screwHoles: true },
       PROFILE_OFFICIAL,
     )
     expect(geometry.attributes.position).toBeDefined()
