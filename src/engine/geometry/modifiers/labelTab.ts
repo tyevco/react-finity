@@ -39,30 +39,33 @@ export function generateLabelTab(
   const geo = extrudeShape(wedgeShape, span)
 
   // Position and orient based on wall
+  // After extrudeShape: X=[0,tabDepth], Y=[0,span], Z=[-height,0]
   switch (wall) {
     case 'front': {
-      // Front = -Z wall. Wedge faces +Z (inward).
-      // extrudeShape extrudes along Y then rotates to Y-up, so we need to re-orient
-      geo.rotateZ(-Math.PI / 2)
-      geo.rotateY(-Math.PI / 2)
-      geo.translate(centerX - span / 2, tabBaseY, centerZ - innerDepth / 2)
+      // rotateZ(PI/2)+rotateX(PI/2): span along X, height along Y, depth toward +Z (inward from front wall at -Z)
+      geo.rotateZ(Math.PI / 2)
+      geo.rotateX(Math.PI / 2)
+      geo.translate(centerX + span / 2, tabBaseY, centerZ - innerDepth / 2)
       break
     }
     case 'back': {
+      // rotateZ(-PI/2)+rotateX(PI/2): span along X, height along Y, depth toward -Z (inward from back wall at +Z)
       geo.rotateZ(-Math.PI / 2)
-      geo.rotateY(Math.PI / 2)
-      geo.translate(centerX + span / 2, tabBaseY, centerZ + innerDepth / 2)
+      geo.rotateX(Math.PI / 2)
+      geo.translate(centerX - span / 2, tabBaseY, centerZ + innerDepth / 2)
       break
     }
     case 'left': {
-      geo.rotateZ(-Math.PI / 2)
-      geo.rotateY(Math.PI)
-      geo.translate(centerX - innerWidth / 2, tabBaseY, centerZ + span / 2)
+      // rotateX(PI/2): depth toward +X (inward from left wall at -X), span along Z
+      geo.rotateX(Math.PI / 2)
+      geo.translate(centerX - innerWidth / 2, tabBaseY, centerZ - span / 2)
       break
     }
     case 'right': {
-      geo.rotateZ(-Math.PI / 2)
-      geo.translate(centerX + innerWidth / 2, tabBaseY, centerZ - span / 2)
+      // rotateX(PI/2)+rotateY(PI): depth toward -X (inward from right wall at +X), span along Z
+      geo.rotateX(Math.PI / 2)
+      geo.rotateY(Math.PI)
+      geo.translate(centerX + innerWidth / 2, tabBaseY, centerZ + span / 2)
       break
     }
   }

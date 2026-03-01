@@ -108,7 +108,7 @@ export function useKeyboardShortcuts() {
       }
 
       // Ctrl+Shift+E: Export selected object as STL (single selection only)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
         e.preventDefault()
         if (selectedObjectIds.length === 1) {
           const objects = useProjectStore.getState().objects

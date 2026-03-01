@@ -2,11 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { DoubleSide, PlaneGeometry } from 'three'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, GizmoHelper, GizmoViewport, Grid } from '@react-three/drei'
-import { useProjectStore } from '@/store/projectStore'
-import { useProfileStore } from '@/store/profileStore'
-import { useUIStore } from '@/store/uiStore'
-import { PRINT_BED_PRESETS } from '@/engine/constants'
-import { computePrintLayout, disposePrintLayout } from '@/engine/export/printLayout'
+import { usePrintLayout } from '@/hooks/usePrintLayout'
 import type { PrintLayoutItem } from '@/engine/export/printLayout'
 
 function PrintBed({ width, depth }: { width: number; depth: number }) {
@@ -73,33 +69,7 @@ function PrintObject({ item }: { item: PrintLayoutItem }) {
 }
 
 function PrintScene() {
-  const objects = useProjectStore((s) => s.objects)
-  const modifiers = useProjectStore((s) => s.modifiers)
-  const activeProfile = useProfileStore((s) => s.activeProfile)
-  const printBedPreset = useUIStore((s) => s.printBedPreset)
-  const printBedSpacing = useUIStore((s) => s.printBedSpacing)
-
-  const bed = PRINT_BED_PRESETS[printBedPreset] ?? PRINT_BED_PRESETS['256x256']
-
-  const layoutItems = useMemo(() => {
-    if (objects.length === 0) return []
-    const items = computePrintLayout(
-      objects,
-      modifiers,
-      activeProfile,
-      bed.width,
-      bed.depth,
-      printBedSpacing,
-    )
-    return items
-  }, [objects, modifiers, activeProfile, bed.width, bed.depth, printBedSpacing])
-
-  // Dispose layout geometries on unmount/recompute
-  useEffect(() => {
-    return () => {
-      disposePrintLayout(layoutItems)
-    }
-  }, [layoutItems])
+  const { layoutItems, bed } = usePrintLayout()
 
   return (
     <>

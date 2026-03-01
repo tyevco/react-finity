@@ -108,7 +108,14 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
           autoSaveTimer = null
         }
         useUIStore.getState().clearSelection()
-        useProjectStore.getState().clearObjects()
+        // Suppress the projectStore subscription during clearObjects to prevent
+        // it from re-arming the auto-save timer we just cancelled
+        isLoadingProject = true
+        try {
+          useProjectStore.getState().clearObjects()
+        } finally {
+          isLoadingProject = false
+        }
         resetObjectCounter([])
         set({
           currentProjectId: null,

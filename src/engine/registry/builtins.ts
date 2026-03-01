@@ -1,10 +1,11 @@
 import { Euler } from 'three'
-import { Grid3x3, Box } from 'lucide-react'
+import { Grid3x3, Box, Grip } from 'lucide-react'
 import { objectKindRegistry } from './objectKindRegistry'
 import { modifierKindRegistry } from './modifierKindRegistry'
 
 import { generateBaseplate, getBaseplateDimensions } from '@/engine/geometry/baseplate'
 import { generateBin, getBinDimensions } from '@/engine/geometry/bin'
+import { generateOpenGridBoard, getOpenGridBoardDimensions } from '@/engine/geometry/opengridBoard'
 import { generateDividerGrid } from '@/engine/geometry/modifiers/dividerGrid'
 import { generateLabelTab } from '@/engine/geometry/modifiers/labelTab'
 import { generateScoop } from '@/engine/geometry/modifiers/scoop'
@@ -14,6 +15,7 @@ import { generateFingerScoop } from '@/engine/geometry/modifiers/fingerScoop'
 import {
   DEFAULT_BASEPLATE_PARAMS,
   DEFAULT_BIN_PARAMS,
+  DEFAULT_OPENGRID_BOARD_PARAMS,
   DEFAULT_DIVIDER_GRID_PARAMS,
   DEFAULT_LABEL_TAB_PARAMS,
   DEFAULT_SCOOP_PARAMS,
@@ -29,6 +31,7 @@ import type {
 } from '@/types/gridfinity'
 import { BaseplateProperties } from '@/components/panels/BaseplateProperties'
 import { BinProperties } from '@/components/panels/BinProperties'
+import { OpenGridBoardProperties } from '@/components/panels/OpenGridBoardProperties'
 import { DividerGridControls } from '@/components/panels/modifiers/DividerGridControls'
 import { LabelTabControls } from '@/components/panels/modifiers/LabelTabControls'
 import { InsertControls } from '@/components/panels/modifiers/InsertControls'
@@ -84,6 +87,18 @@ export function registerBuiltinKinds(): void {
     PropertiesComponent: asPropertiesComponent(BinProperties),
   })
 
+  objectKindRegistry.register({
+    kind: 'opengridBoard',
+    label: 'OpenGrid Board',
+    icon: Grip,
+    defaultParams: { ...DEFAULT_OPENGRID_BOARD_PARAMS },
+    generateGeometry: generateOpenGridBoard,
+    getDimensions: getOpenGridBoardDimensions,
+    getPrintRotation: () => new Euler(0, 0, 0),
+    supportsModifiers: false,
+    PropertiesComponent: asPropertiesComponent(OpenGridBoardProperties),
+  })
+
   // --- Modifier kinds ---
 
   modifierKindRegistry.register({
@@ -96,21 +111,37 @@ export function registerBuiltinKinds(): void {
     computeChildContext: (
       params: DividerGridModifierParams,
       parentContext: ModifierContext,
-    ): ModifierContext => {
+    ): ModifierContext | ModifierContext[] => {
       const { dividersX, dividersY, wallThickness } = params
       if (dividersX === 0 && dividersY === 0) return parentContext
       const compartmentWidth =
         (parentContext.innerWidth - wallThickness * dividersX) / (dividersX + 1)
       const compartmentDepth =
         (parentContext.innerDepth - wallThickness * dividersY) / (dividersY + 1)
-      return {
-        innerWidth: Math.max(0.1, compartmentWidth),
-        innerDepth: Math.max(0.1, compartmentDepth),
-        wallHeight: Math.max(0.1, parentContext.wallHeight),
-        floorY: parentContext.floorY,
-        centerX: parentContext.centerX,
-        centerZ: parentContext.centerZ,
+      const cw = Math.max(0.1, compartmentWidth)
+      const cd = Math.max(0.1, compartmentDepth)
+      const contexts: ModifierContext[] = []
+      for (let i = 0; i <= dividersX; i++) {
+        for (let j = 0; j <= dividersY; j++) {
+          contexts.push({
+            innerWidth: cw,
+            innerDepth: cd,
+            wallHeight: Math.max(0.1, parentContext.wallHeight),
+            floorY: parentContext.floorY,
+            centerX:
+              parentContext.centerX -
+              parentContext.innerWidth / 2 +
+              cw / 2 +
+              i * (cw + wallThickness),
+            centerZ:
+              parentContext.centerZ -
+              parentContext.innerDepth / 2 +
+              cd / 2 +
+              j * (cd + wallThickness),
+          })
+        }
       }
+      return contexts
     },
     ControlsComponent: asControlsComponent(DividerGridControls),
   })
@@ -168,22 +199,34 @@ export function registerBuiltinKinds(): void {
     computeChildContext: (
       params: InsertModifierParams,
       parentContext: ModifierContext,
-    ): ModifierContext => {
+    ): ModifierContext | ModifierContext[] => {
       const { compartmentsX, compartmentsY, wallThickness } = params
       if (compartmentsX < 1 || compartmentsY < 1) return parentContext
       const rimInnerWidth = parentContext.innerWidth - wallThickness * 2
       const rimInnerDepth = parentContext.innerDepth - wallThickness * 2
       if (rimInnerWidth <= 0 || rimInnerDepth <= 0) return parentContext
-      const compartmentWidth = (rimInnerWidth - wallThickness * (compartmentsX - 1)) / compartmentsX
-      const compartmentDepth = (rimInnerDepth - wallThickness * (compartmentsY - 1)) / compartmentsY
-      return {
-        innerWidth: Math.max(0.1, compartmentWidth),
-        innerDepth: Math.max(0.1, compartmentDepth),
-        wallHeight: Math.max(0.1, parentContext.wallHeight),
-        floorY: parentContext.floorY,
-        centerX: parentContext.centerX,
-        centerZ: parentContext.centerZ,
+      const cw = Math.max(
+        0.1,
+        (rimInnerWidth - wallThickness * (compartmentsX - 1)) / compartmentsX,
+      )
+      const cd = Math.max(
+        0.1,
+        (rimInnerDepth - wallThickness * (compartmentsY - 1)) / compartmentsY,
+      )
+      const contexts: ModifierContext[] = []
+      for (let i = 0; i < compartmentsX; i++) {
+        for (let j = 0; j < compartmentsY; j++) {
+          contexts.push({
+            innerWidth: cw,
+            innerDepth: cd,
+            wallHeight: Math.max(0.1, parentContext.wallHeight),
+            floorY: parentContext.floorY,
+            centerX: parentContext.centerX - rimInnerWidth / 2 + cw / 2 + i * (cw + wallThickness),
+            centerZ: parentContext.centerZ - rimInnerDepth / 2 + cd / 2 + j * (cd + wallThickness),
+          })
+        }
       }
+      return contexts
     },
     ControlsComponent: asControlsComponent(InsertControls),
   })

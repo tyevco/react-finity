@@ -160,6 +160,76 @@ describe('generateLabelTab', () => {
     geometry.dispose()
   })
 
+  it('front/back tab X-extent approximates span on asymmetric context', () => {
+    const asymCtx: ModifierContext = {
+      innerWidth: 50,
+      innerDepth: 30,
+      wallHeight: 21,
+      floorY: 5.85,
+      centerX: 0,
+      centerZ: 0,
+    }
+
+    const frontGeo = generateLabelTab(
+      { ...defaultParams, wall: 'front' },
+      asymCtx,
+      PROFILE_OFFICIAL,
+    )
+    const backGeo = generateLabelTab({ ...defaultParams, wall: 'back' }, asymCtx, PROFILE_OFFICIAL)
+
+    frontGeo.computeBoundingBox()
+    backGeo.computeBoundingBox()
+
+    // Front/back tabs span along X. Span = 80% of innerWidth = 40
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const frontXExtent = frontGeo.boundingBox!.max.x - frontGeo.boundingBox!.min.x
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const backXExtent = backGeo.boundingBox!.max.x - backGeo.boundingBox!.min.x
+
+    // X extent should be close to 80% of innerWidth (40), not 80% of innerDepth (24)
+    expect(frontXExtent).toBeGreaterThan(35)
+    expect(backXExtent).toBeGreaterThan(35)
+
+    frontGeo.dispose()
+    backGeo.dispose()
+  })
+
+  it('left/right tab Z-extent approximates span on asymmetric context', () => {
+    const asymCtx: ModifierContext = {
+      innerWidth: 50,
+      innerDepth: 30,
+      wallHeight: 21,
+      floorY: 5.85,
+      centerX: 0,
+      centerZ: 0,
+    }
+
+    const leftGeo = generateLabelTab({ ...defaultParams, wall: 'left' }, asymCtx, PROFILE_OFFICIAL)
+    const rightGeo = generateLabelTab(
+      { ...defaultParams, wall: 'right' },
+      asymCtx,
+      PROFILE_OFFICIAL,
+    )
+
+    leftGeo.computeBoundingBox()
+    rightGeo.computeBoundingBox()
+
+    // Left/right tabs span along Z. Span = 80% of innerDepth = 24
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const leftZExtent = leftGeo.boundingBox!.max.z - leftGeo.boundingBox!.min.z
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const rightZExtent = rightGeo.boundingBox!.max.z - rightGeo.boundingBox!.min.z
+
+    // Z extent should be close to 80% of innerDepth (24), not 80% of innerWidth (40)
+    expect(leftZExtent).toBeGreaterThan(20)
+    expect(leftZExtent).toBeLessThan(35)
+    expect(rightZExtent).toBeGreaterThan(20)
+    expect(rightZExtent).toBeLessThan(35)
+
+    leftGeo.dispose()
+    rightGeo.dispose()
+  })
+
   it('generates on left and right walls', () => {
     const leftGeo = generateLabelTab(
       { ...defaultParams, wall: 'left' },

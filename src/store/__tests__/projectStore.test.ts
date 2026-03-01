@@ -58,6 +58,30 @@ describe('projectStore', () => {
     expect(obj.position).toEqual([42, 0, 42])
   })
 
+  it('updates object rotation', () => {
+    const id = useProjectStore.getState().addObject('baseplate')
+    const rotation: [number, number, number] = [-Math.PI / 2, 0, 0]
+    useProjectStore.getState().updateObjectRotation(id, rotation)
+
+    const obj = useProjectStore.getState().objects[0]
+    expect(obj.rotation).toEqual(rotation)
+  })
+
+  it('rotation persists through load/save cycle', () => {
+    const id = useProjectStore.getState().addObject('bin')
+    const rotation: [number, number, number] = [-Math.PI / 2, 0, 0]
+    useProjectStore.getState().updateObjectRotation(id, rotation)
+
+    const state = useProjectStore.getState()
+    const data = { objects: state.objects, modifiers: state.modifiers }
+    const serialized = JSON.parse(JSON.stringify(data)) as typeof data
+
+    useProjectStore.getState().loadProjectData(serialized)
+    const loaded = useProjectStore.getState().objects.find((o) => o.id === id)
+    expect(loaded).toBeDefined()
+    expect(loaded!.rotation).toEqual(rotation) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+  })
+
   it('updates object name', () => {
     const id = useProjectStore.getState().addObject('baseplate')
     useProjectStore.getState().updateObjectName(id, 'My Baseplate')

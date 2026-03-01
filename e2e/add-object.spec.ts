@@ -10,6 +10,7 @@ test.describe('Add Object', () => {
 
     await expect(page.getByRole('menuitem', { name: 'Baseplate' })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: /Bin/ })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: 'OpenGrid Board' })).toBeVisible()
   })
 
   test('adds a baseplate to the object list', async ({ page }) => {
@@ -82,5 +83,29 @@ test.describe('Add Object', () => {
     // Both should be in the list
     await expect(page.locator('.group').getByText('Baseplate 1')).toBeVisible()
     await expect(page.locator('.group').getByText('Bin 2')).toBeVisible()
+  })
+
+  test('adds an OpenGrid Board to the object list', async ({ page }) => {
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'OpenGrid Board' }).click()
+
+    await expect(page.locator('.group').getByText('OpenGrid Board 1')).toBeVisible()
+  })
+
+  test('auto-selects the newly added OpenGrid Board', async ({ page }) => {
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'OpenGrid Board' }).click()
+
+    await expect(page.getByText('(opengridBoard)')).toBeVisible()
+  })
+
+  test('increments names for multiple OpenGrid Boards', async ({ page }) => {
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'OpenGrid Board' }).click()
+    await expect(page.locator('.group').getByText('OpenGrid Board 1')).toBeVisible()
+
+    await page.getByRole('button', { name: /Add Object/i }).click()
+    await page.getByRole('menuitem', { name: 'OpenGrid Board' }).click()
+    await expect(page.locator('.group').getByText('OpenGrid Board 2')).toBeVisible()
   })
 })

@@ -11,6 +11,7 @@ interface ProjectStore {
   addObject: (kind: string) => string
   updateObjectParams: (id: string, params: Record<string, unknown>) => void
   updateObjectPosition: (id: string, position: [number, number, number]) => void
+  updateObjectRotation: (id: string, rotation: [number, number, number]) => void
   updateObjectName: (id: string, name: string) => void
   removeObject: (id: string) => void
   removeObjects: (ids: string[]) => void
@@ -107,6 +108,12 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   updateObjectPosition: (id, position) => {
     set((state) => ({
       objects: state.objects.map((obj) => (obj.id === id ? { ...obj, position } : obj)),
+    }))
+  },
+
+  updateObjectRotation: (id, rotation) => {
+    set((state) => ({
+      objects: state.objects.map((obj) => (obj.id === id ? { ...obj, rotation } : obj)),
     }))
   },
 
@@ -365,10 +372,11 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
       const modReg = modifierKindRegistry.get(parentModifier.kind)
       if (modReg?.subdividesSpace && modReg.computeChildContext) {
-        return modReg.computeChildContext(
+        const result = modReg.computeChildContext(
           parentModifier.params as unknown as Record<string, unknown>,
           parentContext,
         )
+        return Array.isArray(result) ? result[0] : result
       }
 
       return parentContext

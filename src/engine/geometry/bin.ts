@@ -266,10 +266,10 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): Buff
 
       try {
         const csgResult = evaluator.evaluate(baseBrush, holeBrush, SUBTRACTION)
-        const finalGeometry = csgResult.geometry
-        result.dispose()
-        result = finalGeometry
+        result = csgResult.geometry
       } finally {
+        // baseBrush.geometry === old result; disposing it covers both
+        // success (old result replaced) and error (old result unusable)
         baseBrush.geometry.dispose()
         holeBrush.geometry.dispose()
       }

@@ -10,6 +10,11 @@ export async function addBin(page: Page) {
   await page.getByRole('menuitem', { name: 'Bin' }).click()
 }
 
+export async function addOpenGridBoard(page: Page) {
+  await page.getByRole('button', { name: /Add Object/i }).click()
+  await page.getByRole('menuitem', { name: 'OpenGrid Board' }).click()
+}
+
 /**
  * Click an object in the object list panel by its displayed name.
  * Uses force:true to bypass Playwright stability checks that can fail

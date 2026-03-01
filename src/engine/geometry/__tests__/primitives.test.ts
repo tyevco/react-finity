@@ -9,6 +9,7 @@ import {
   roundedRectHolePath,
   roundedRectHolePathAt,
   createHollowExtrusion,
+  createDiamondHolePath,
   mergeGeometries,
 } from '../primitives'
 
@@ -126,6 +127,42 @@ describe('roundedRectHolePathAt', () => {
     expect(Math.max(...xs)).toBeLessThanOrEqual(12.1)
     expect(Math.min(...ys)).toBeGreaterThanOrEqual(17.9)
     expect(Math.max(...ys)).toBeLessThanOrEqual(22.1)
+  })
+})
+
+describe('createDiamondHolePath', () => {
+  it('returns a path with 4 corner points', () => {
+    const path = createDiamondHolePath(10, 0, 0)
+    const points = path.getPoints(1)
+    // Diamond: 4 sides + close = 5 points (moveTo + 3 lineTo + closePath)
+    expect(points.length).toBe(5)
+  })
+
+  it('points stay within the diamond bounds', () => {
+    const size = 11
+    const cx = 5
+    const cz = 10
+    const path = createDiamondHolePath(size, cx, cz)
+    const points = path.getPoints(1)
+    const half = size / 2
+    for (const p of points) {
+      expect(p.x).toBeGreaterThanOrEqual(cx - half - 0.01)
+      expect(p.x).toBeLessThanOrEqual(cx + half + 0.01)
+      expect(p.y).toBeGreaterThanOrEqual(cz - half - 0.01)
+      expect(p.y).toBeLessThanOrEqual(cz + half + 0.01)
+    }
+  })
+
+  it('offsets correctly to the given center', () => {
+    const path = createDiamondHolePath(10, 20, 30)
+    const points = path.getPoints(1)
+    const xs = points.map((p) => p.x)
+    const ys = points.map((p) => p.y)
+    // Center should be at (20, 30), so min/max x should be [15, 25], y should be [25, 35]
+    expect(Math.min(...xs)).toBeCloseTo(15, 1)
+    expect(Math.max(...xs)).toBeCloseTo(25, 1)
+    expect(Math.min(...ys)).toBeCloseTo(25, 1)
+    expect(Math.max(...ys)).toBeCloseTo(35, 1)
   })
 })
 

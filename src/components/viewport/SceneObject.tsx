@@ -71,15 +71,19 @@ function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
     }
   }, [geometry])
 
-  const childContext = useMemo((): ModifierContext | null => {
+  const childContexts = useMemo((): ModifierContext[] => {
     const reg = modifierKindRegistry.get(modifier.kind)
     if (reg?.subdividesSpace && reg.computeChildContext) {
-      return reg.computeChildContext(modifier.params as unknown as Record<string, unknown>, context)
+      const result = reg.computeChildContext(
+        modifier.params as unknown as Record<string, unknown>,
+        context,
+      )
+      return Array.isArray(result) ? result : [result]
     }
-    return context
+    return [context]
   }, [modifier, context])
 
-  if (!geometry?.attributes.position || geometry.attributes.position.count === 0) return null
+  const hasGeometry = geometry?.attributes.position && geometry.attributes.position.count > 0
 
   const reg = modifierKindRegistry.get(modifier.kind)
   const color = reg?.color ?? '#cccccc'
@@ -87,17 +91,21 @@ function ModifierMesh({ modifier, context, profile }: ModifierMeshProps) {
 
   return (
     <>
-      <mesh geometry={geometry}>
-        <meshStandardMaterial
-          color={color}
-          roughness={0.6}
-          metalness={0.1}
-          transparent
-          opacity={opacity}
-          wireframe={showWireframe}
-        />
-      </mesh>
-      {childContext && <ModifierMeshes parentId={modifier.id} context={childContext} />}
+      {hasGeometry && (
+        <mesh geometry={geometry}>
+          <meshStandardMaterial
+            color={color}
+            roughness={0.6}
+            metalness={0.1}
+            transparent
+            opacity={opacity}
+            wireframe={showWireframe}
+          />
+        </mesh>
+      )}
+      {childContexts.map((ctx, i) => (
+        <ModifierMeshes key={`${modifier.id}-ctx-${i}`} parentId={modifier.id} context={ctx} />
+      ))}
     </>
   )
 }
@@ -143,7 +151,7 @@ export function SceneObject({ object }: SceneObjectProps) {
 
   return (
     <>
-      <group ref={setGroupNode} position={object.position}>
+      <group ref={setGroupNode} position={object.position} rotation={object.rotation ?? [0, 0, 0]}>
         <mesh
           geometry={geometry}
           onClick={(e) => {

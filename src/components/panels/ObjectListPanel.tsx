@@ -13,6 +13,7 @@ export function ObjectListPanel() {
   const reorderObject = useProjectStore((s) => s.reorderObject)
   const selectedObjectIds = useUIStore((s) => s.selectedObjectIds)
   const selectObject = useUIStore((s) => s.selectObject)
+  const setSelectedObjectIds = useUIStore((s) => s.setSelectedObjectIds)
 
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dropIndex, setDropIndex] = useState<number | null>(null)
@@ -109,7 +110,7 @@ export function ObjectListPanel() {
                       onClick={(e) => {
                         e.stopPropagation()
                         if (isSelected) {
-                          selectObject(null)
+                          setSelectedObjectIds(selectedObjectIds.filter((id) => id !== obj.id))
                         }
                         removeObject(obj.id)
                       }}

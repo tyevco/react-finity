@@ -43,26 +43,29 @@ export function generateScoop(
   // Orient and position based on wall
   switch (wall) {
     case 'front': {
-      // Scoop ramp at base of front wall (-Z), cylinder axis along X
+      // Axis Y→X via rotateZ. Arc faces +Z (inward). No rotateY needed.
       geo.rotateZ(Math.PI / 2)
-      geo.rotateY(Math.PI / 2)
       geo.translate(centerX, floorY + clampedRadius, centerZ - innerDepth / 2 + clampedRadius)
       break
     }
     case 'back': {
+      // Axis Y→X. rotateX(PI) flips arc to face -Z (inward from back wall).
       geo.rotateZ(Math.PI / 2)
-      geo.rotateY(-Math.PI / 2)
+      geo.rotateX(Math.PI)
       geo.translate(centerX, floorY + clampedRadius, centerZ + innerDepth / 2 - clampedRadius)
       break
     }
     case 'left': {
+      // Axis Y→Z via rotateZ+rotateY(-PI/2). Arc faces +X (inward from left wall).
       geo.rotateZ(Math.PI / 2)
-      geo.rotateY(Math.PI)
+      geo.rotateY(-Math.PI / 2)
       geo.translate(centerX - innerWidth / 2 + clampedRadius, floorY + clampedRadius, centerZ)
       break
     }
     case 'right': {
+      // Axis Y→Z via rotateZ+rotateY(PI/2). Arc faces -X (inward from right wall).
       geo.rotateZ(Math.PI / 2)
+      geo.rotateY(Math.PI / 2)
       geo.translate(centerX + innerWidth / 2 - clampedRadius, floorY + clampedRadius, centerZ)
       break
     }

@@ -1,4 +1,3 @@
-import { useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Download, Check, AlertTriangle } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -19,11 +18,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useProjectStore } from '@/store/projectStore'
-import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
 import { PRINT_BED_PRESETS } from '@/engine/constants'
-import { computePrintLayout, disposePrintLayout } from '@/engine/export/printLayout'
+import { usePrintLayout } from '@/hooks/usePrintLayout'
 import {
   exportObjectAsSTL,
   exportAllAsZip,
@@ -33,9 +30,7 @@ import { exportObjectAs3MF, exportAllAs3MF } from '@/engine/export/threeMfExport
 import type { CurveQuality } from '@/types/gridfinity'
 
 export function PrintSettingsPanel() {
-  const objects = useProjectStore((s) => s.objects)
-  const modifiers = useProjectStore((s) => s.modifiers)
-  const activeProfile = useProfileStore((s) => s.activeProfile)
+  const { layoutItems } = usePrintLayout()
   const printBedPreset = useUIStore((s) => s.printBedPreset)
   const printBedSpacing = useUIStore((s) => s.printBedSpacing)
   const setPrintBedPreset = useUIStore((s) => s.setPrintBedPreset)
@@ -44,27 +39,6 @@ export function PrintSettingsPanel() {
   const setExportScale = useUIStore((s) => s.setExportScale)
   const curveQuality = useUIStore((s) => s.curveQuality)
   const setCurveQuality = useUIStore((s) => s.setCurveQuality)
-
-  const bed = PRINT_BED_PRESETS[printBedPreset] ?? PRINT_BED_PRESETS['256x256']
-
-  const layoutItems = useMemo(() => {
-    if (objects.length === 0) return []
-    return computePrintLayout(
-      objects,
-      modifiers,
-      activeProfile,
-      bed.width,
-      bed.depth,
-      printBedSpacing,
-    )
-  }, [objects, modifiers, activeProfile, bed.width, bed.depth, printBedSpacing])
-
-  // Dispose layout geometries on unmount/recompute
-  useEffect(() => {
-    return () => {
-      disposePrintLayout(layoutItems)
-    }
-  }, [layoutItems])
 
   const allFit = layoutItems.every((item) => item.fitsOnBed)
 

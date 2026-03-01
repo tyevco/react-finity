@@ -89,6 +89,68 @@ describe('generateScoop', () => {
     geometry.dispose()
   })
 
+  it('front/back scoop X-extent matches innerWidth on asymmetric context', () => {
+    const asymCtx: ModifierContext = {
+      innerWidth: 50,
+      innerDepth: 30,
+      wallHeight: 21,
+      floorY: 5.85,
+      centerX: 0,
+      centerZ: 0,
+    }
+
+    const frontGeo = generateScoop({ wall: 'front', radius: 8 }, asymCtx, PROFILE_OFFICIAL)
+    const backGeo = generateScoop({ wall: 'back', radius: 8 }, asymCtx, PROFILE_OFFICIAL)
+
+    frontGeo.computeBoundingBox()
+    backGeo.computeBoundingBox()
+
+    // Front/back scoops span along X, which should match innerWidth (50), not innerDepth (30)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const frontXExtent = frontGeo.boundingBox!.max.x - frontGeo.boundingBox!.min.x
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const backXExtent = backGeo.boundingBox!.max.x - backGeo.boundingBox!.min.x
+
+    // X extent should be close to innerWidth (50), not innerDepth (30)
+    expect(frontXExtent).toBeGreaterThan(40)
+    expect(backXExtent).toBeGreaterThan(40)
+
+    frontGeo.dispose()
+    backGeo.dispose()
+  })
+
+  it('left/right scoop Z-extent matches innerDepth on asymmetric context', () => {
+    const asymCtx: ModifierContext = {
+      innerWidth: 50,
+      innerDepth: 30,
+      wallHeight: 21,
+      floorY: 5.85,
+      centerX: 0,
+      centerZ: 0,
+    }
+
+    const leftGeo = generateScoop({ wall: 'left', radius: 8 }, asymCtx, PROFILE_OFFICIAL)
+    const rightGeo = generateScoop({ wall: 'right', radius: 8 }, asymCtx, PROFILE_OFFICIAL)
+
+    leftGeo.computeBoundingBox()
+    rightGeo.computeBoundingBox()
+
+    // Left/right scoops span along Z, which should match innerDepth (30), not innerWidth (50)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const leftZExtent = leftGeo.boundingBox!.max.z - leftGeo.boundingBox!.min.z
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const rightZExtent = rightGeo.boundingBox!.max.z - rightGeo.boundingBox!.min.z
+
+    // Z extent should be close to innerDepth (30), not innerWidth (50)
+    expect(leftZExtent).toBeGreaterThan(20)
+    expect(leftZExtent).toBeLessThan(40)
+    expect(rightZExtent).toBeGreaterThan(20)
+    expect(rightZExtent).toBeLessThan(40)
+
+    leftGeo.dispose()
+    rightGeo.dispose()
+  })
+
   it('generates on left and right walls', () => {
     const leftGeo = generateScoop({ wall: 'left', radius: 0 }, defaultContext, PROFILE_OFFICIAL)
     const rightGeo = generateScoop({ wall: 'right', radius: 0 }, defaultContext, PROFILE_OFFICIAL)

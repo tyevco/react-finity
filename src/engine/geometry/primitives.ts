@@ -154,6 +154,21 @@ export function createHollowExtrusion(
 }
 
 /**
+ * Create a diamond-shaped hole Path (clockwise winding for use as Shape.hole)
+ * centered at (cx, cz) with the given point-to-point size.
+ */
+export function createDiamondHolePath(size: number, cx: number, cz: number): Path {
+  const half = size / 2
+  const path = new Path()
+  path.moveTo(cx, cz - half)
+  path.lineTo(cx - half, cz)
+  path.lineTo(cx, cz + half)
+  path.lineTo(cx + half, cz)
+  path.closePath()
+  return path
+}
+
+/**
  * Create a hexagon hole Path (clockwise winding for use as Shape.hole)
  * centered at (cx, cz) with the given radius. Flat-top orientation.
  */
