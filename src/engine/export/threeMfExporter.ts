@@ -12,7 +12,7 @@ function escapeXml(str: string): string {
 }
 
 function geometryToMeshXml(geometry: BufferGeometry, scaleInput: number): string {
-  const scale = isFinite(scaleInput) ? scaleInput : 1
+  const scale = isFinite(scaleInput) && scaleInput > 0 ? scaleInput : 1
   if (!('position' in geometry.attributes)) {
     return '        <vertices>\n        </vertices>\n        <triangles>\n        </triangles>\n'
   }

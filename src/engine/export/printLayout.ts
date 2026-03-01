@@ -90,8 +90,11 @@ export function computePrintLayout(
   for (const item of items) {
     const { bounds } = item
 
-    // Skip degenerate items with near-zero dimensions
-    if (bounds.width < 0.01 || bounds.depth < 0.01) continue
+    // Skip degenerate items with near-zero dimensions, disposing leaked geometry
+    if (bounds.width < 0.01 || bounds.depth < 0.01) {
+      item.geometry.dispose()
+      continue
+    }
 
     // Check if the item fits in the current row
     if (currentX + bounds.width > bedWidth && currentX > 0) {

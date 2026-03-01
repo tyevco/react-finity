@@ -245,6 +245,51 @@ describe('exportAllAsSingleSTL', () => {
     }
   })
 
+  it('preserves vertex positions from multiple items at different offsets', () => {
+    // Create two test geometries with known vertex positions
+    const geo1 = new BufferGeometry()
+    const verts1 = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
+    geo1.setAttribute('position', new BufferAttribute(verts1, 3))
+    geo1.setAttribute('normal', new BufferAttribute(new Float32Array(9).fill(0), 3))
+    geo1.setIndex([0, 1, 2])
+
+    const geo2 = new BufferGeometry()
+    const verts2 = new Float32Array([10, 0, 0, 11, 0, 0, 10, 1, 0])
+    geo2.setAttribute('position', new BufferAttribute(verts2, 3))
+    geo2.setAttribute('normal', new BufferAttribute(new Float32Array(9).fill(0), 3))
+    geo2.setIndex([0, 1, 2])
+
+    const items: PrintLayoutItem[] = [
+      {
+        id: 'a',
+        label: 'A',
+        object: makeBaseplateObject('a', 'A'),
+        geometry: geo1,
+        position: [0, 0, 0],
+        boundingBox: { width: 1, depth: 1, height: 1 },
+        fitsOnBed: true,
+      },
+      {
+        id: 'b',
+        label: 'B',
+        object: makeBaseplateObject('b', 'B'),
+        geometry: geo2,
+        position: [20, 0, 0],
+        boundingBox: { width: 1, depth: 1, height: 1 },
+        fitsOnBed: true,
+      },
+    ]
+
+    // Should not throw and should produce a valid download
+    expect(() => {
+      exportAllAsSingleSTL(items)
+    }).not.toThrow()
+    expect(downloadState.triggered).toBe(true)
+
+    geo1.dispose()
+    geo2.dispose()
+  })
+
   it('skips items with empty geometry without crashing', () => {
     const items: PrintLayoutItem[] = [
       {

@@ -239,6 +239,28 @@ describe('exportObjectAs3MF', () => {
 
     geo.dispose()
   })
+
+  it('falls back to scale=1 when scale is zero', async () => {
+    const geo = makeTestGeometry()
+    exportObjectAs3MF(geo, 'zero-scale', 0)
+
+    const modelXml = await readModelXml()
+    // Should use scale=1 fallback, vertex at (1,0,0) stays as 1.000000
+    expect(modelXml).toContain('x="1.000000"')
+
+    geo.dispose()
+  })
+
+  it('falls back to scale=1 when scale is negative', async () => {
+    const geo = makeTestGeometry()
+    exportObjectAs3MF(geo, 'neg-scale', -2)
+
+    const modelXml = await readModelXml()
+    // Should use scale=1 fallback, not invert geometry
+    expect(modelXml).toContain('x="1.000000"')
+
+    geo.dispose()
+  })
 })
 
 describe('exportAllAs3MF', () => {
