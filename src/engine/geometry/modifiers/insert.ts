@@ -18,11 +18,11 @@ function createHollowExtrusion(
   const holePath = new Path()
   const hw = innerWidth / 2
   const hd = innerDepth / 2
-  // Clockwise winding for hole
+  // Hole path (Three.js auto-corrects winding via ShapeUtils)
   holePath.moveTo(-hw, -hd)
-  holePath.lineTo(-hw, hd)
-  holePath.lineTo(hw, hd)
   holePath.lineTo(hw, -hd)
+  holePath.lineTo(hw, hd)
+  holePath.lineTo(-hw, hd)
   holePath.lineTo(-hw, -hd)
   shape.holes.push(holePath)
   return extrudeShape(shape, height)

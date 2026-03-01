@@ -376,7 +376,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
           parentModifier.params as unknown as Record<string, unknown>,
           parentContext,
         )
-        return Array.isArray(result) ? result[0] : result
+        return Array.isArray(result) ? (result[0] ?? parentContext) : result
       }
 
       return parentContext

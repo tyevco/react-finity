@@ -77,6 +77,19 @@ describe('computeBinContext', () => {
 })
 
 describe('generateModifierGeometry', () => {
+  it('returns null for unknown modifier kind', () => {
+    const bin = makeBin()
+    const ctx = computeBinContext(bin.params, PROFILE_OFFICIAL)
+    const modifier = {
+      id: 'unk-1',
+      parentId: 'bin-1',
+      kind: 'unknownKind',
+      params: {},
+    } as unknown as Modifier
+    const geo = generateModifierGeometry(modifier, ctx, PROFILE_OFFICIAL)
+    expect(geo).toBeNull()
+  })
+
   it('generates divider grid geometry', () => {
     const bin = makeBin()
     const ctx = computeBinContext(bin.params, PROFILE_OFFICIAL)
@@ -187,6 +200,24 @@ describe('mergeObjectWithModifiers', () => {
 
     baseGeo.dispose()
     mergedGeo.dispose()
+  })
+
+  it('skips unknown modifier kinds gracefully', () => {
+    const bin = makeBin()
+    const unknown = {
+      id: 'unk-1',
+      parentId: 'bin-1',
+      kind: 'unknownKind',
+      params: {},
+    } as unknown as Modifier
+    const baseGeo = mergeObjectWithModifiers(bin, [], PROFILE_OFFICIAL)
+    const withUnknown = mergeObjectWithModifiers(bin, [unknown], PROFILE_OFFICIAL)
+
+    // Unknown modifier should be skipped, producing same vertex count as no modifiers
+    expect(withUnknown.attributes.position.count).toBe(baseGeo.attributes.position.count)
+
+    baseGeo.dispose()
+    withUnknown.dispose()
   })
 
   it('excludes lid modifier geometry from merge (separatePrintPart)', () => {
