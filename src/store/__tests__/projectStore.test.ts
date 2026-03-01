@@ -619,6 +619,32 @@ describe('modifier CRUD', () => {
       expect(duplicate!.position[0]).toBe(original!.position[0] + 42) // eslint-disable-line @typescript-eslint/no-non-null-assertion
     })
 
+    it('deep-copies rotation array so mutating original does not affect duplicate', () => {
+      const id = useProjectStore.getState().addObject('bin')
+      // Set a rotation on the original
+      useProjectStore.getState().updateObjectRotation(id, [0.1, 0.2, 0.3])
+      const newIds = useProjectStore.getState().duplicateObjects([id])
+
+      const { objects } = useProjectStore.getState()
+      const original = objects.find((o) => o.id === id)
+      const duplicate = objects.find((o) => o.id === newIds[0])
+
+      // Rotation values should match
+      expect(duplicate!.rotation).toEqual([0.1, 0.2, 0.3]) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+      // But they should be different array references
+      expect(duplicate!.rotation).not.toBe(original!.rotation) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    })
+
+    it('handles duplication of object without rotation', () => {
+      const id = useProjectStore.getState().addObject('baseplate')
+      const newIds = useProjectStore.getState().duplicateObjects([id])
+
+      const { objects } = useProjectStore.getState()
+      const duplicate = objects.find((o) => o.id === newIds[0])
+      // Should not have rotation (baseplate default has no rotation)
+      expect(duplicate!.rotation).toBeUndefined() // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    })
+
     it('deep-copies modifiers with new ids', () => {
       const objId = useProjectStore.getState().addObject('bin')
       const modId = useProjectStore.getState().addModifier(objId, 'dividerGrid')

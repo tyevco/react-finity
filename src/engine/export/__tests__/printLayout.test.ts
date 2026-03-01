@@ -186,4 +186,12 @@ describe('computePrintLayout', () => {
 
     disposePrintLayout(result)
   })
+
+  it('includes object reference on each layout item', () => {
+    const bin = makeBin()
+    const result = computePrintLayout([bin], [], PROFILE_OFFICIAL, 256, 256, 10)
+    expect(result).toHaveLength(1)
+    expect(result[0].object).toBe(bin)
+    disposePrintLayout(result)
+  })
 })

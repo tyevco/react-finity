@@ -74,6 +74,12 @@ describe('computeBinContext', () => {
     const large = computeBinContext(makeBin({ gridWidth: 3 }).params, PROFILE_OFFICIAL)
     expect(large.innerWidth).toBeGreaterThan(small.innerWidth)
   })
+
+  it('clamps inner dimensions to minimum 0.1 for extreme wallThickness', () => {
+    const ctx = computeBinContext(makeBin({ wallThickness: 50 }).params, PROFILE_OFFICIAL)
+    expect(ctx.innerWidth).toBe(0.1)
+    expect(ctx.innerDepth).toBe(0.1)
+  })
 })
 
 describe('generateModifierGeometry', () => {
@@ -237,6 +243,22 @@ describe('mergeObjectWithModifiers', () => {
 
     withoutLid.dispose()
     withoutModifiers.dispose()
+  })
+
+  it('handles extreme wallThickness with divider modifier without crashing', () => {
+    const bin = makeBin({ wallThickness: 50 })
+    const divider: DividerGridModifier = {
+      id: 'div-1',
+      parentId: 'bin-1',
+      kind: 'dividerGrid',
+      params: { dividersX: 1, dividersY: 1, wallThickness: 1.2 },
+    }
+    // Should not crash even though inner dimensions are clamped to 0.1
+    const geo = mergeObjectWithModifiers(bin, [divider], PROFILE_OFFICIAL)
+    expect(geo).toBeDefined()
+    expect(geo.attributes.position).toBeDefined()
+    expect(geo.attributes.position.count).toBeGreaterThan(0)
+    geo.dispose()
   })
 })
 

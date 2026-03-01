@@ -36,8 +36,10 @@ export function computeBinContext(params: BinParams, profile: GridfinityProfile)
 
   const outerWidth = gridWidth * gridSize - tolerance * 2
   const outerDepth = gridDepth * gridSize - tolerance * 2
-  const innerWidth = outerWidth - wallThickness * 2
-  const innerDepth = outerDepth - wallThickness * 2
+  // Clamp to minimum 0.1mm to match bin.ts and prevent negative dimensions
+  // when wallThickness exceeds half the outer dimension
+  const innerWidth = Math.max(0.1, outerWidth - wallThickness * 2)
+  const innerDepth = Math.max(0.1, outerDepth - wallThickness * 2)
   const wallHeight = heightUnits * heightUnit
 
   return {

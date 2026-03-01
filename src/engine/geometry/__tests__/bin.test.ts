@@ -279,6 +279,31 @@ describe('generateBin', () => {
     both.dispose()
   })
 
+  it('honeycomb base with very thick walls skips hex holes gracefully', () => {
+    // With wallThickness=20 on a 1x1 bin, innerWidth is very small.
+    // The hex margin (hexRadius + hexWall = 5.2mm) may exceed innerWidth/2,
+    // making halfW negative. The guard should prevent any hex hole creation.
+    const thinInner = generateBin(
+      { ...defaultParams, honeycombBase: true, wallThickness: 18 },
+      PROFILE_OFFICIAL,
+    )
+    const normalInner = generateBin(
+      { ...defaultParams, honeycombBase: true, wallThickness: 1.2 },
+      PROFILE_OFFICIAL,
+    )
+
+    // Both should produce valid geometry
+    expect(thinInner.attributes.position).toBeDefined()
+    expect(thinInner.attributes.position.count).toBeGreaterThan(0)
+
+    // With very thick walls, honeycomb can't fit hex holes, so it should have
+    // fewer vertices than the normal case (no hex hole cutouts in the floor)
+    expect(thinInner.attributes.position.count).toBeLessThan(normalInner.attributes.position.count)
+
+    thinInner.dispose()
+    normalInner.dispose()
+  })
+
   it('innerFillet clamped to wallThickness produces valid geometry', () => {
     // innerFillet larger than wallThickness should be clamped
     const geometry = generateBin(
