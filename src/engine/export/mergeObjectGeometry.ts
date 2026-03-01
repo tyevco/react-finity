@@ -40,7 +40,10 @@ export function computeBinContext(params: BinParams, profile: GridfinityProfile)
   // when wallThickness exceeds half the outer dimension
   const innerWidth = Math.max(0.1, outerWidth - wallThickness * 2)
   const innerDepth = Math.max(0.1, outerDepth - wallThickness * 2)
-  const wallHeight = heightUnits * heightUnit
+  // wallHeight is the inner cavity height: from the floor surface to the bin
+  // top. Modifiers start at floorY (on top of the floor slab), so wallHeight
+  // must subtract the floor thickness to avoid geometry overshooting the bin.
+  const wallHeight = Math.max(0.1, heightUnits * heightUnit - wallThickness)
 
   return {
     innerWidth,
