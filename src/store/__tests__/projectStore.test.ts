@@ -655,6 +655,41 @@ describe('modifier CRUD', () => {
       expect(newIds).toHaveLength(1)
       expect(useProjectStore.getState().objects).toHaveLength(2)
     })
+
+    it('deep-copies 3-level modifier hierarchy with remapped parentIds', () => {
+      const binId = useProjectStore.getState().addObject('bin')
+      const insertId = useProjectStore.getState().addModifier(binId, 'insert')
+      const divId = useProjectStore.getState().addModifier(insertId, 'dividerGrid')
+      useProjectStore.getState().addModifier(divId, 'scoop')
+
+      expect(useProjectStore.getState().modifiers).toHaveLength(3)
+
+      const newIds = useProjectStore.getState().duplicateObjects([binId])
+      const { modifiers } = useProjectStore.getState()
+
+      // Should have 6 modifiers total (3 original + 3 duplicated)
+      expect(modifiers).toHaveLength(6)
+
+      // Find the duplicated insert (child of new bin)
+      const dupInsert = modifiers.find((m) => m.parentId === newIds[0] && m.kind === 'insert')
+      expect(dupInsert).toBeDefined()
+
+      // Find the duplicated dividerGrid (child of duplicated insert)
+      const dupDiv = modifiers.find(
+        (m) => m.parentId === dupInsert!.id && m.kind === 'dividerGrid', // eslint-disable-line @typescript-eslint/no-non-null-assertion
+      )
+      expect(dupDiv).toBeDefined()
+
+      // Find the duplicated scoop (child of duplicated dividerGrid)
+      const dupScoop = modifiers.find(
+        (m) => m.parentId === dupDiv!.id && m.kind === 'scoop', // eslint-disable-line @typescript-eslint/no-non-null-assertion
+      )
+      expect(dupScoop).toBeDefined()
+
+      // All duplicated IDs should be new (not matching originals)
+      expect(dupInsert!.id).not.toBe(insertId) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+      expect(dupDiv!.id).not.toBe(divId) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    })
   })
 
   describe('reorderObject', () => {
