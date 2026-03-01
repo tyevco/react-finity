@@ -255,7 +255,7 @@ function build3MFBlob(modelXml: string): Blob {
     { name: '_rels/.rels', data: encoder.encode(buildRelsXml()) },
     { name: '3D/3dmodel.model', data: encoder.encode(modelXml) },
   ])
-  return new Blob([zipBytes.buffer as ArrayBuffer], {
+  return new Blob([new Uint8Array(zipBytes)], {
     type: 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml',
   })
 }
