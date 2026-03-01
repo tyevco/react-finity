@@ -118,6 +118,20 @@ describe('generateLabelTab', () => {
     large.dispose()
   })
 
+  it('returns empty geometry when innerWidth is zero', () => {
+    const zeroCtx = { ...defaultContext, innerWidth: 0 }
+    const geometry = generateLabelTab(defaultParams, zeroCtx, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
+  it('returns empty geometry when innerDepth is negative', () => {
+    const negCtx = { ...defaultContext, innerDepth: -5 }
+    const geometry = generateLabelTab({ ...defaultParams, wall: 'left' }, negCtx, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
   it('returns empty geometry when wallHeight is 0', () => {
     const zeroCtx = { ...defaultContext, wallHeight: 0 }
     const geometry = generateLabelTab(defaultParams, zeroCtx, PROFILE_OFFICIAL)

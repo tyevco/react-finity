@@ -183,6 +183,20 @@ describe('generateFingerScoop', () => {
     geo.dispose()
   })
 
+  it('returns empty geometry when wallHeight is zero', () => {
+    const zeroCtx = { ...defaultContext, wallHeight: 0 }
+    const geo = generateFingerScoop(defaultParams, zeroCtx, PROFILE_OFFICIAL)
+    expect(geo.attributes.position).toBeUndefined()
+    geo.dispose()
+  })
+
+  it('returns empty geometry when wallHeight is negative', () => {
+    const negCtx = { ...defaultContext, wallHeight: -5 }
+    const geo = generateFingerScoop(defaultParams, negCtx, PROFILE_OFFICIAL)
+    expect(geo.attributes.position).toBeUndefined()
+    geo.dispose()
+  })
+
   it('respects non-zero center offsets', () => {
     const offsetCtx: ModifierContext = {
       innerWidth: 39.1,

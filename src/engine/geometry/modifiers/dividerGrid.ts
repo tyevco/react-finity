@@ -31,6 +31,8 @@ export function generateDividerGrid(
   const compartmentWidth = (innerWidth - wallThickness * dividersX) / (dividersX + 1)
   const compartmentDepth = (innerDepth - wallThickness * dividersY) / (dividersY + 1)
 
+  if (compartmentWidth <= 0 || compartmentDepth <= 0) return new BufferGeometry()
+
   // Dividers along X axis (walls spanning depth)
   for (let i = 0; i < dividersX; i++) {
     const xPos =

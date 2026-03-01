@@ -77,6 +77,20 @@ describe('generateLid', () => {
     geometry.dispose()
   })
 
+  it('returns empty geometry when innerWidth is zero', () => {
+    const zeroCtx: ModifierContext = { ...defaultContext, innerWidth: 0 }
+    const geo = generateLid({ stacking: false }, zeroCtx, PROFILE_OFFICIAL)
+    expect(geo.attributes.position).toBeUndefined()
+    geo.dispose()
+  })
+
+  it('returns empty geometry when innerDepth is negative', () => {
+    const negCtx: ModifierContext = { ...defaultContext, innerDepth: -5 }
+    const geo = generateLid({ stacking: true }, negCtx, PROFILE_OFFICIAL)
+    expect(geo.attributes.position).toBeUndefined()
+    geo.dispose()
+  })
+
   it('skips lip when inner dimensions are too small', () => {
     // lipInnerWidth = innerWidth - lipThickness*2 = 1.5 - 2.0 = -0.5 → skip lip
     const tinyContext: ModifierContext = {

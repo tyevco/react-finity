@@ -181,6 +181,26 @@ describe('generateDividerGrid', () => {
     geometry.dispose()
   })
 
+  it('returns empty geometry when walls exceed available space', () => {
+    const context: ModifierContext = {
+      innerWidth: 10,
+      innerDepth: 10,
+      wallHeight: 10,
+      floorY: 0,
+      centerX: 0,
+      centerZ: 0,
+    }
+    const params: DividerGridModifierParams = {
+      dividersX: 3,
+      dividersY: 0,
+      wallThickness: 5.0,
+    }
+    // 3 walls * 5mm = 15mm in a 10mm space -> compartmentWidth = (10-15)/4 = -1.25
+    const geometry = generateDividerGrid(params, context, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
   it('handles thick walls that consume most of the available space', () => {
     const context: ModifierContext = {
       innerWidth: 20,

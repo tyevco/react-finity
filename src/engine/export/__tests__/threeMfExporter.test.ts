@@ -216,6 +216,29 @@ describe('exportObjectAs3MF', () => {
 
     geo.dispose()
   })
+
+  it('falls back to scale=1 when scale is NaN', async () => {
+    const geo = makeTestGeometry()
+    exportObjectAs3MF(geo, 'nan-scale', NaN)
+
+    const modelXml = await readModelXml()
+    // Should use scale=1 fallback, so vertex at (1,0,0) stays as 1.000000
+    expect(modelXml).toContain('x="1.000000"')
+    expect(modelXml).not.toContain('NaN')
+
+    geo.dispose()
+  })
+
+  it('falls back to scale=1 when scale is Infinity', async () => {
+    const geo = makeTestGeometry()
+    exportObjectAs3MF(geo, 'inf-scale', Infinity)
+
+    const modelXml = await readModelXml()
+    expect(modelXml).toContain('x="1.000000"')
+    expect(modelXml).not.toContain('Infinity')
+
+    geo.dispose()
+  })
 })
 
 describe('exportAllAs3MF', () => {
