@@ -49,6 +49,21 @@ export const useProfileStore = create<ProfileStore>()(
     }),
     {
       name: 'react-finity-profiles',
+      partialize: (state) => ({
+        activeProfileKey: state.activeProfileKey,
+      }),
+      merge: (persisted, current) => {
+        const persistedState = persisted as Partial<ProfileStore> | undefined
+        const key = persistedState?.activeProfileKey ?? current.activeProfileKey
+        const profiles = { ...DEFAULT_PROFILES }
+        const activeProfile = profiles[key] ?? PROFILE_OFFICIAL
+        return {
+          ...current,
+          activeProfileKey: key,
+          profiles,
+          activeProfile,
+        }
+      },
     },
   ),
 )

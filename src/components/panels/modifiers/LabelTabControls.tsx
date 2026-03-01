@@ -21,14 +21,16 @@ export function LabelTabControls({ modifier }: LabelTabControlsProps) {
     <div className="space-y-3">
       {/* Wall selector */}
       <div className="space-y-1.5">
-        <Label className="text-xs">Wall</Label>
+        <Label htmlFor="mod-label-wall" className="text-xs">
+          Wall
+        </Label>
         <Select
           value={modifier.params.wall}
           onValueChange={(v) => {
             updateModifierParams(modifier.id, { wall: v as WallFace })
           }}
         >
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger id="mod-label-wall" className="h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -51,12 +53,15 @@ export function LabelTabControls({ modifier }: LabelTabControlsProps) {
       {/* Angle */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Angle</Label>
+          <Label htmlFor="mod-label-angle" className="text-xs">
+            Angle
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {modifier.params.angle}deg
           </span>
         </div>
         <Slider
+          id="mod-label-angle"
           value={[modifier.params.angle]}
           onValueChange={([v]) => {
             updateModifierParams(modifier.id, { angle: v })
@@ -70,12 +75,15 @@ export function LabelTabControls({ modifier }: LabelTabControlsProps) {
       {/* Height */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Height</Label>
+          <Label htmlFor="mod-label-height" className="text-xs">
+            Height
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {modifier.params.height}mm
           </span>
         </div>
         <Slider
+          id="mod-label-height"
           value={[modifier.params.height]}
           onValueChange={([v]) => {
             updateModifierParams(modifier.id, { height: v })

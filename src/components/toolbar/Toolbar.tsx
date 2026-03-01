@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   Plus,
   PanelLeft,
@@ -30,6 +31,13 @@ import {
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { CameraPresets } from './CameraPresets'
 import { ViewportSettings } from './ViewportSettings'
 import { ProjectDialog } from './ProjectDialog'
@@ -53,7 +61,9 @@ export function Toolbar() {
   const modifiers = useProjectStore((s) => s.modifiers)
   const selectObject = useUIStore((s) => s.selectObject)
   const selectedObjectIds = useUIStore((s) => s.selectedObjectIds)
+  const leftPanelOpen = useUIStore((s) => s.leftPanelOpen)
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel)
+  const rightPanelOpen = useUIStore((s) => s.rightPanelOpen)
   const toggleRightPanel = useUIStore((s) => s.toggleRightPanel)
   const snapToGrid = useUIStore((s) => s.snapToGrid)
   const toggleSnapToGrid = useUIStore((s) => s.toggleSnapToGrid)
@@ -104,6 +114,12 @@ export function Toolbar() {
       const rotation = getPrintRotation(obj)
       oriented = applyPrintOrientation(merged, rotation)
       exportObjectAsSTL(oriented, obj.name, exportScale)
+      toast.success(`Exported ${obj.name}.stl`)
+    } catch (error) {
+      console.error('Failed to export STL:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     } finally {
       merged?.dispose()
       oriented?.dispose()
@@ -122,6 +138,12 @@ export function Toolbar() {
       const rotation = getPrintRotation(obj)
       oriented = applyPrintOrientation(merged, rotation)
       exportObjectAs3MF(oriented, obj.name, exportScale)
+      toast.success(`Exported ${obj.name}.3mf`)
+    } catch (error) {
+      console.error('Failed to export 3MF:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     } finally {
       merged?.dispose()
       oriented?.dispose()
@@ -134,11 +156,12 @@ export function Toolbar() {
   }
 
   const handleConfirmSaveAs = () => {
-    if (saveAsName.trim()) {
-      saveProjectAs(saveAsName.trim())
-    }
+    const name = saveAsName.trim()
     setSaveAsPrompt(false)
     setSaveAsName('')
+    if (name) {
+      saveProjectAs(name)
+    }
   }
 
   const isEditView = activeView === 'edit'
@@ -155,6 +178,8 @@ export function Toolbar() {
           size="icon"
           onClick={toggleLeftPanel}
           className="h-9 w-9 md:h-7 md:w-7"
+          aria-label="Toggle left panel"
+          aria-expanded={leftPanelOpen}
         >
           <PanelLeft className="h-4 w-4" />
         </Button>
@@ -535,6 +560,8 @@ export function Toolbar() {
           size="icon"
           onClick={toggleRightPanel}
           className="h-9 w-9 md:h-7 md:w-7"
+          aria-label="Toggle right panel"
+          aria-expanded={rightPanelOpen}
         >
           <PanelRight className="h-4 w-4" />
         </Button>
@@ -543,43 +570,42 @@ export function Toolbar() {
       {/* Project management dialog */}
       <ProjectDialog open={projectDialogOpen} onOpenChange={setProjectDialogOpen} />
 
-      {/* Save As prompt - simple inline dialog */}
-      {saveAsPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <div className="w-full max-w-sm rounded-lg border bg-background p-6 shadow-lg">
-            <h3 className="mb-4 text-sm font-semibold">Save Project As</h3>
-            <input
-              type="text"
-              value={saveAsName}
-              onChange={(e) => {
-                setSaveAsName(e.target.value)
+      {/* Save As dialog */}
+      <Dialog open={saveAsPrompt} onOpenChange={setSaveAsPrompt}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Save Project As</DialogTitle>
+          </DialogHeader>
+          <input
+            type="text"
+            value={saveAsName}
+            onChange={(e) => {
+              setSaveAsName(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleConfirmSaveAs()
+            }}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            autoFocus
+            placeholder="Project name"
+            aria-label="Project name"
+          />
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSaveAsPrompt(false)
               }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleConfirmSaveAs()
-                if (e.key === 'Escape') setSaveAsPrompt(false)
-              }}
-              className="mb-4 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              autoFocus
-              placeholder="Project name"
-              aria-label="Project name"
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSaveAsPrompt(false)
-                }}
-              >
-                Cancel
-              </Button>
-              <Button size="sm" onClick={handleConfirmSaveAs} disabled={!saveAsName.trim()}>
-                Save
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+            >
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleConfirmSaveAs} disabled={!saveAsName.trim()}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

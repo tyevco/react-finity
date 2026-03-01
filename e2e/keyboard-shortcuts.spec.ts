@@ -71,13 +71,10 @@ test.describe('Keyboard Shortcuts', () => {
     await slider.focus()
 
     // Press Delete - should NOT delete the object since slider is focused
-    // Note: Slider elements have role="slider", not tagName INPUT
-    // The keyboard shortcut guard checks for INPUT/TEXTAREA/contentEditable
-    // Sliders use arrow keys, not Delete, so this should not interfere
     await page.keyboard.press('Delete')
 
-    // The object may or may not be deleted depending on whether the slider
-    // captures the Delete key. The important thing is no crash.
-    await expect(page.locator('canvas')).toBeVisible()
+    // Object must still exist -- the keyboard guard skips role="slider"
+    await expect(page.locator('.group').getByText('Baseplate 1')).toBeVisible()
+    await expect(page.getByText('(baseplate)')).toBeVisible()
   })
 })

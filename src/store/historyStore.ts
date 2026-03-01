@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { GridfinityObject, Modifier } from '@/types/gridfinity'
-import { useProjectStore } from './projectStore'
+import { useProjectStore, resetObjectCounter } from './projectStore'
 import {
   getIsLoadingProject,
   setIsLoadingProject,
@@ -54,7 +54,7 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
   },
 
   undo: () => {
-    const { past, canUndo } = get()
+    const { past, future, canUndo } = get()
     if (!canUndo || past.length === 0) return
 
     const { objects, modifiers } = useProjectStore.getState()
@@ -65,26 +65,29 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
 
     isUndoRedoInProgress = true
     setIsLoadingProject(true)
-    useProjectStore.setState({
-      objects: previousSnapshot.objects,
-      modifiers: previousSnapshot.modifiers,
-    })
+    try {
+      useProjectStore.setState({
+        objects: previousSnapshot.objects,
+        modifiers: previousSnapshot.modifiers,
+      })
+      resetObjectCounter(previousSnapshot.objects)
 
-    set({
-      past: newPast,
-      future: [currentSnapshot, ...get().future],
-      canUndo: newPast.length > 0,
-      canRedo: true,
-    })
+      set({
+        past: newPast,
+        future: [currentSnapshot, ...future],
+        canUndo: newPast.length > 0,
+        canRedo: true,
+      })
 
-    setIsLoadingProject(false)
-    isUndoRedoInProgress = false
-
-    useProjectManagerStore.getState().markDirty()
+      useProjectManagerStore.getState().markDirty()
+    } finally {
+      setIsLoadingProject(false)
+      isUndoRedoInProgress = false
+    }
   },
 
   redo: () => {
-    const { future, canRedo } = get()
+    const { past, future, canRedo } = get()
     if (!canRedo || future.length === 0) return
 
     const { objects, modifiers } = useProjectStore.getState()
@@ -95,22 +98,25 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
 
     isUndoRedoInProgress = true
     setIsLoadingProject(true)
-    useProjectStore.setState({
-      objects: nextSnapshot.objects,
-      modifiers: nextSnapshot.modifiers,
-    })
+    try {
+      useProjectStore.setState({
+        objects: nextSnapshot.objects,
+        modifiers: nextSnapshot.modifiers,
+      })
+      resetObjectCounter(nextSnapshot.objects)
 
-    set({
-      past: [...get().past, currentSnapshot],
-      future: newFuture,
-      canUndo: true,
-      canRedo: newFuture.length > 0,
-    })
+      set({
+        past: [...past, currentSnapshot],
+        future: newFuture,
+        canUndo: true,
+        canRedo: newFuture.length > 0,
+      })
 
-    setIsLoadingProject(false)
-    isUndoRedoInProgress = false
-
-    useProjectManagerStore.getState().markDirty()
+      useProjectManagerStore.getState().markDirty()
+    } finally {
+      setIsLoadingProject(false)
+      isUndoRedoInProgress = false
+    }
   },
 
   clear: () => {
@@ -168,10 +174,16 @@ const unsubProjectManager = useProjectManagerStore.subscribe((state, prevState) 
   }
 })
 
-// Clean up subscriptions on HMR to prevent duplicate listeners.
+// Clean up subscriptions and pending timers on HMR to prevent duplicate
+// listeners and stale callbacks referencing old module state.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     unsubProjectStore()
     unsubProjectManager()
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+      debounceTimer = null
+    }
+    pendingSnapshot = null
   })
 }

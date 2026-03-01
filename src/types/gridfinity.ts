@@ -38,7 +38,19 @@ export interface BinParams {
   honeycombBase: boolean
 }
 
-export type BuiltinObjectKind = 'baseplate' | 'bin'
+export interface OpenGridBoardParams {
+  gridWidth: number // 1-10 (28mm grid units)
+  gridDepth: number // 1-10 (28mm grid units)
+  variant: 'full' | 'lite'
+  orientation: 'flat' | 'wall'
+}
+
+export interface OpenGridBoardObject extends GridfinityObjectBase {
+  kind: 'opengridBoard'
+  params: OpenGridBoardParams
+}
+
+export type BuiltinObjectKind = 'baseplate' | 'bin' | 'opengridBoard'
 export type GridfinityObjectKind = BuiltinObjectKind | (string & {})
 
 export interface GridfinityObjectBase {
@@ -46,6 +58,7 @@ export interface GridfinityObjectBase {
   kind: string
   name: string
   position: [number, number, number]
+  rotation?: [number, number, number] // Euler angles [x, y, z] in radians
 }
 
 export interface BaseplateObject extends GridfinityObjectBase {
@@ -62,7 +75,11 @@ export interface GenericGridfinityObject extends GridfinityObjectBase {
   params: Record<string, unknown>
 }
 
-export type GridfinityObject = BaseplateObject | BinObject | GenericGridfinityObject
+export type GridfinityObject =
+  | BaseplateObject
+  | BinObject
+  | OpenGridBoardObject
+  | GenericGridfinityObject
 
 // --- Modifier system ---
 

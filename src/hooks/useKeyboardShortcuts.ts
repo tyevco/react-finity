@@ -14,12 +14,27 @@ import { exportObjectAsSTL } from '@/engine/export/stlExporter'
 let clipboard: string[] = []
 
 export function useKeyboardShortcuts() {
+  // Clear clipboard when switching projects so stale object IDs aren't pasted
+  useEffect(() => {
+    const unsub = useProjectManagerStore.subscribe((state, prevState) => {
+      if (state.currentProjectId !== prevState.currentProjectId) {
+        clipboard = []
+      }
+    })
+    return unsub
+  }, [])
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target
       if (
         target instanceof HTMLElement &&
-        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable ||
+          target.role === 'slider' ||
+          target.role === 'spinbutton' ||
+          target.role === 'combobox')
       ) {
         return
       }
@@ -31,9 +46,7 @@ export function useKeyboardShortcuts() {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedObjectIds.length > 0) {
           e.preventDefault()
-          for (const id of selectedObjectIds) {
-            useProjectStore.getState().removeObject(id)
-          }
+          useProjectStore.getState().removeObjects(selectedObjectIds)
           useUIStore.getState().clearSelection()
         }
       }
@@ -95,7 +108,7 @@ export function useKeyboardShortcuts() {
       }
 
       // Ctrl+Shift+E: Export selected object as STL (single selection only)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
         e.preventDefault()
         if (selectedObjectIds.length === 1) {
           const objects = useProjectStore.getState().objects

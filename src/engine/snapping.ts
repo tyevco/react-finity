@@ -30,6 +30,7 @@ export function snapObjectToGrid(
   gridWidth: number,
   gridDepth: number,
 ): [number, number, number] {
+  if (gridSize === 0) return [...position]
   const xOffset = gridWidth % 2 === 0 ? gridSize / 2 : 0
   const zOffset = gridDepth % 2 === 0 ? gridSize / 2 : 0
   return [

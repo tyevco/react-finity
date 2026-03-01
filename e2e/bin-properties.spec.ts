@@ -328,6 +328,23 @@ test.describe('Bin Modifiers', () => {
     await expect(page.getByText('No modifiers added.')).toBeVisible()
   })
 
+  test('adding and removing a modifier restores empty state', async ({ page }) => {
+    // Verify initial empty state
+    await expect(page.getByText('No modifiers added.').first()).toBeVisible()
+
+    // Add a Divider Grid modifier
+    await page.getByTestId('add-modifier-btn').click()
+    await page.getByRole('menuitem', { name: 'Divider Grid' }).click()
+    await expect(page.getByTestId('modifier-dividerGrid')).toBeVisible()
+
+    // Remove it
+    await page.getByTestId('remove-modifier-btn').click()
+
+    // Should be back to empty
+    await expect(page.getByTestId('modifier-dividerGrid')).not.toBeVisible()
+    await expect(page.getByText('No modifiers added.').first()).toBeVisible()
+  })
+
   test('multiple modifiers can coexist on one bin', async ({ page }) => {
     // Add divider grid
     await page.getByTestId('add-modifier-btn').click()

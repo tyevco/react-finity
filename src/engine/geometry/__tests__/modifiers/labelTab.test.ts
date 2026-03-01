@@ -118,6 +118,118 @@ describe('generateLabelTab', () => {
     large.dispose()
   })
 
+  it('returns empty geometry when wallHeight is 0', () => {
+    const zeroCtx = { ...defaultContext, wallHeight: 0 }
+    const geometry = generateLabelTab(defaultParams, zeroCtx, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
+  it('clamps height to 40% of wallHeight', () => {
+    // height=100 on wallHeight=21 should clamp to 8.4
+    const geometry = generateLabelTab(
+      { ...defaultParams, height: 100 },
+      defaultContext,
+      PROFILE_OFFICIAL,
+    )
+    geometry.computeBoundingBox()
+    const box = geometry.boundingBox! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const geoHeight = box.max.y - box.min.y
+    // Clamped to wallHeight * 0.4 = 8.4, so geometry height should be <= 8.5
+    expect(geoHeight).toBeLessThanOrEqual(defaultContext.wallHeight * 0.4 + 0.5)
+    geometry.dispose()
+  })
+
+  it('clamps tab depth to bin interior dimensions at shallow angles', () => {
+    // At angle=5 (min clamp), tabDepthVal would be height/tan(5deg) = huge
+    // With the clamp, it should stay within innerWidth/innerDepth
+    const geometry = generateLabelTab(
+      { ...defaultParams, angle: 5 },
+      defaultContext,
+      PROFILE_OFFICIAL,
+    )
+    geometry.computeBoundingBox()
+    const box = geometry.boundingBox! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+
+    // Bounding box should fit within the bin's inner dimensions
+    const geoWidth = Math.abs(box.max.x - box.min.x)
+    const geoDepth = Math.abs(box.max.z - box.min.z)
+    expect(geoWidth).toBeLessThanOrEqual(defaultContext.innerWidth + 1)
+    expect(geoDepth).toBeLessThanOrEqual(defaultContext.innerDepth + 1)
+
+    geometry.dispose()
+  })
+
+  it('front/back tab X-extent approximates span on asymmetric context', () => {
+    const asymCtx: ModifierContext = {
+      innerWidth: 50,
+      innerDepth: 30,
+      wallHeight: 21,
+      floorY: 5.85,
+      centerX: 0,
+      centerZ: 0,
+    }
+
+    const frontGeo = generateLabelTab(
+      { ...defaultParams, wall: 'front' },
+      asymCtx,
+      PROFILE_OFFICIAL,
+    )
+    const backGeo = generateLabelTab({ ...defaultParams, wall: 'back' }, asymCtx, PROFILE_OFFICIAL)
+
+    frontGeo.computeBoundingBox()
+    backGeo.computeBoundingBox()
+
+    // Front/back tabs span along X. Span = 80% of innerWidth = 40
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const frontXExtent = frontGeo.boundingBox!.max.x - frontGeo.boundingBox!.min.x
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const backXExtent = backGeo.boundingBox!.max.x - backGeo.boundingBox!.min.x
+
+    // X extent should be close to 80% of innerWidth (40), not 80% of innerDepth (24)
+    expect(frontXExtent).toBeGreaterThan(35)
+    expect(backXExtent).toBeGreaterThan(35)
+
+    frontGeo.dispose()
+    backGeo.dispose()
+  })
+
+  it('left/right tab Z-extent approximates span on asymmetric context', () => {
+    const asymCtx: ModifierContext = {
+      innerWidth: 50,
+      innerDepth: 30,
+      wallHeight: 21,
+      floorY: 5.85,
+      centerX: 0,
+      centerZ: 0,
+    }
+
+    const leftGeo = generateLabelTab({ ...defaultParams, wall: 'left' }, asymCtx, PROFILE_OFFICIAL)
+    const rightGeo = generateLabelTab(
+      { ...defaultParams, wall: 'right' },
+      asymCtx,
+      PROFILE_OFFICIAL,
+    )
+
+    leftGeo.computeBoundingBox()
+    rightGeo.computeBoundingBox()
+
+    // Left/right tabs span along Z. Span = 80% of innerDepth = 24
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const leftZExtent = leftGeo.boundingBox!.max.z - leftGeo.boundingBox!.min.z
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const rightZExtent = rightGeo.boundingBox!.max.z - rightGeo.boundingBox!.min.z
+
+    // Z extent should be close to 80% of innerDepth (24), not 80% of innerWidth (40)
+    expect(leftZExtent).toBeGreaterThan(20)
+    expect(leftZExtent).toBeLessThan(35)
+    expect(rightZExtent).toBeGreaterThan(20)
+    expect(rightZExtent).toBeLessThan(35)
+
+    leftGeo.dispose()
+    rightGeo.dispose()
+  })
+
   it('generates on left and right walls', () => {
     const leftGeo = generateLabelTab(
       { ...defaultParams, wall: 'left' },

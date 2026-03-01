@@ -29,8 +29,8 @@ export function generateFingerScoop(
 
   const isXWall = wall === 'front' || wall === 'back'
   const span = isXWall ? innerWidth : innerDepth
-  const clampedWidth = Math.min(width, span)
-  const clampedDepth = Math.min(depth, wallHeight * 0.9)
+  const clampedWidth = Math.max(0.1, Math.min(width, span))
+  const clampedDepth = Math.max(0.1, Math.min(depth, wallHeight * 0.9))
 
   // U-shaped notch cross-section in 2D (X = width, Y = depth from bottom of notch upward)
   const halfW = clampedWidth / 2

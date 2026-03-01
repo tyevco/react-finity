@@ -56,6 +56,8 @@ export function roundedRectShape(width: number, depth: number, radius: number): 
  * Returns geometry centered at the XZ plane with bottom at y=0.
  */
 export function extrudeShape(shape: Shape, height: number, bevelEnabled = false): BufferGeometry {
+  if (height <= 0) return new BufferGeometry()
+
   const geometry = new ExtrudeGeometry(shape, {
     depth: height,
     bevelEnabled,
@@ -152,6 +154,21 @@ export function createHollowExtrusion(
 }
 
 /**
+ * Create a diamond-shaped hole Path (clockwise winding for use as Shape.hole)
+ * centered at (cx, cz) with the given point-to-point size.
+ */
+export function createDiamondHolePath(size: number, cx: number, cz: number): Path {
+  const half = size / 2
+  const path = new Path()
+  path.moveTo(cx, cz - half)
+  path.lineTo(cx - half, cz)
+  path.lineTo(cx, cz + half)
+  path.lineTo(cx + half, cz)
+  path.closePath()
+  return path
+}
+
+/**
  * Create a hexagon hole Path (clockwise winding for use as Shape.hole)
  * centered at (cx, cz) with the given radius. Flat-top orientation.
  */
@@ -178,10 +195,14 @@ export function mergeGeometries(geometries: BufferGeometry[]): BufferGeometry {
   const merged = new BufferGeometry()
   if (geometries.length === 0) return merged
 
+  // Filter out empty geometries that lack a position attribute to prevent crashes
+  const valid = geometries.filter((geo) => 'position' in geo.attributes)
+  if (valid.length === 0) return merged
+
   let totalVertices = 0
   let totalIndices = 0
 
-  for (const geo of geometries) {
+  for (const geo of valid) {
     totalVertices += geo.attributes.position.count
     if (geo.index) {
       totalIndices += geo.index.count
@@ -191,26 +212,17 @@ export function mergeGeometries(geometries: BufferGeometry[]): BufferGeometry {
   }
 
   const positions = new Float32Array(totalVertices * 3)
-  const normals = new Float32Array(totalVertices * 3)
   const indices = new Uint32Array(totalIndices)
 
   let vertexOffset = 0
   let indexOffset = 0
 
-  for (const geo of geometries) {
+  for (const geo of valid) {
     const posAttr = geo.attributes.position as BufferAttribute
-    const normAttr = geo.attributes.normal as BufferAttribute | undefined
 
     // Copy positions
     for (let i = 0; i < posAttr.count * 3; i++) {
       positions[vertexOffset * 3 + i] = posAttr.array[i]
-    }
-
-    // Copy normals
-    if (normAttr) {
-      for (let i = 0; i < normAttr.count * 3; i++) {
-        normals[vertexOffset * 3 + i] = normAttr.array[i]
-      }
     }
 
     // Copy indices
@@ -230,7 +242,6 @@ export function mergeGeometries(geometries: BufferGeometry[]): BufferGeometry {
   }
 
   merged.setAttribute('position', new BufferAttribute(positions, 3))
-  merged.setAttribute('normal', new BufferAttribute(normals, 3))
   merged.setIndex(new BufferAttribute(indices, 1))
   merged.computeVertexNormals()
 

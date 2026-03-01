@@ -22,7 +22,11 @@ export function generateModifierGeometry(
   context: ModifierContext,
   profile: GridfinityProfile,
 ): BufferGeometry | null {
-  const reg = modifierKindRegistry.getOrThrow(modifier.kind)
+  const reg = modifierKindRegistry.get(modifier.kind)
+  if (!reg) {
+    console.warn(`Unknown modifier kind "${modifier.kind}", skipping`)
+    return null
+  }
   return reg.generateGeometry(asParams(modifier.params), context, profile)
 }
 
@@ -46,12 +50,16 @@ export function computeBinContext(params: BinParams, profile: GridfinityProfile)
   }
 }
 
-function computeChildContext(modifier: Modifier, parentContext: ModifierContext): ModifierContext {
+function computeChildContexts(
+  modifier: Modifier,
+  parentContext: ModifierContext,
+): ModifierContext[] {
   const reg = modifierKindRegistry.get(modifier.kind)
   if (reg?.subdividesSpace && reg.computeChildContext) {
-    return reg.computeChildContext(asParams(modifier.params), parentContext)
+    const result = reg.computeChildContext(asParams(modifier.params), parentContext)
+    return Array.isArray(result) ? result : [result]
   }
-  return parentContext
+  return [parentContext]
 }
 
 interface CollectedModifierGeometries {
@@ -76,18 +84,25 @@ function collectModifierGeometries(
     if (reg?.separatePrintPart) continue
 
     const geo = generateModifierGeometry(modifier, context, profile)
-    if (geo && 'position' in geo.attributes) {
-      if (reg?.subtractive) {
-        subtractive.push(geo)
+    if (geo) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- position may be absent on empty BufferGeometry
+      if (geo.attributes.position && geo.attributes.position.count > 0) {
+        if (reg?.subtractive) {
+          subtractive.push(geo)
+        } else {
+          additive.push(geo)
+        }
       } else {
-        additive.push(geo)
+        geo.dispose()
       }
     }
 
-    const childContext = computeChildContext(modifier, context)
-    const childGeos = collectModifierGeometries(modifier.id, childContext, allModifiers, profile)
-    additive.push(...childGeos.additive)
-    subtractive.push(...childGeos.subtractive)
+    const childContexts = computeChildContexts(modifier, context)
+    for (const childCtx of childContexts) {
+      const childGeos = collectModifierGeometries(modifier.id, childCtx, allModifiers, profile)
+      additive.push(...childGeos.additive)
+      subtractive.push(...childGeos.subtractive)
+    }
   }
 
   return { additive, subtractive }
@@ -135,6 +150,7 @@ export function mergeObjectWithModifiers(
   const additiveGeometries = [baseGeometry, ...additive]
   let result = mergeGeometries(additiveGeometries)
 
+  // Dispose source geometries now that they've been merged
   baseGeometry.dispose()
   for (const geo of additive) {
     geo.dispose()
@@ -154,11 +170,13 @@ export function mergeObjectWithModifiers(
 
     try {
       const csgResult = evaluator.evaluate(baseBrush, subtractBrush, SUBTRACTION)
-      const finalGeometry = csgResult.geometry
-      result.dispose()
-      result = finalGeometry
+      result = csgResult.geometry
     } finally {
-      mergedSubtractive.dispose()
+      // Brush holds a reference to the geometry passed to its constructor,
+      // so baseBrush.geometry === (old) result. Disposing here covers both
+      // the success path (old result replaced) and error path (old result
+      // still assigned but unusable). Avoid disposing result directly above
+      // to prevent double-dispose.
       baseBrush.geometry.dispose()
       subtractBrush.geometry.dispose()
     }
@@ -191,8 +209,13 @@ export function collectSeparatePartModifiers(
     if (!modReg?.separatePrintPart) continue
 
     const geo = generateModifierGeometry(modifier, context, profile)
-    if (geo && 'position' in geo.attributes) {
-      results.push({ modifier, geometry: geo })
+    if (geo) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- position may be absent on empty BufferGeometry
+      if (geo.attributes.position && geo.attributes.position.count > 0) {
+        results.push({ modifier, geometry: geo })
+      } else {
+        geo.dispose()
+      }
     }
   }
 

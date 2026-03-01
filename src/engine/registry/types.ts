@@ -108,7 +108,10 @@ export interface ModifierKindRegistration<TParams = Record<string, unknown>> {
   ) => BufferGeometry | null
   subdividesSpace: boolean
   subtractive?: boolean
-  computeChildContext?: (params: TParams, parentContext: ModifierContext) => ModifierContext
+  computeChildContext?: (
+    params: TParams,
+    parentContext: ModifierContext,
+  ) => ModifierContext | ModifierContext[]
   separatePrintPart?: boolean
   allowedParentKinds?: string[]
   controlsSchema?: ParamSchema

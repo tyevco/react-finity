@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { toast } from 'sonner'
 import { Download, Check, AlertTriangle } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Label } from '@/components/ui/label'
@@ -18,11 +18,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useProjectStore } from '@/store/projectStore'
-import { useProfileStore } from '@/store/profileStore'
 import { useUIStore } from '@/store/uiStore'
 import { PRINT_BED_PRESETS } from '@/engine/constants'
-import { computePrintLayout, disposePrintLayout } from '@/engine/export/printLayout'
+import { usePrintLayout } from '@/hooks/usePrintLayout'
 import {
   exportObjectAsSTL,
   exportAllAsZip,
@@ -32,9 +30,7 @@ import { exportObjectAs3MF, exportAllAs3MF } from '@/engine/export/threeMfExport
 import type { CurveQuality } from '@/types/gridfinity'
 
 export function PrintSettingsPanel() {
-  const objects = useProjectStore((s) => s.objects)
-  const modifiers = useProjectStore((s) => s.modifiers)
-  const activeProfile = useProfileStore((s) => s.activeProfile)
+  const { layoutItems } = usePrintLayout()
   const printBedPreset = useUIStore((s) => s.printBedPreset)
   const printBedSpacing = useUIStore((s) => s.printBedSpacing)
   const setPrintBedPreset = useUIStore((s) => s.setPrintBedPreset)
@@ -44,45 +40,40 @@ export function PrintSettingsPanel() {
   const curveQuality = useUIStore((s) => s.curveQuality)
   const setCurveQuality = useUIStore((s) => s.setCurveQuality)
 
-  const bed = PRINT_BED_PRESETS[printBedPreset] ?? PRINT_BED_PRESETS['256x256']
-
-  const layoutItems = useMemo(() => {
-    if (objects.length === 0) return []
-    return computePrintLayout(
-      objects,
-      modifiers,
-      activeProfile,
-      bed.width,
-      bed.depth,
-      printBedSpacing,
-    )
-  }, [objects, modifiers, activeProfile, bed.width, bed.depth, printBedSpacing])
-
-  // Dispose layout geometries on unmount/recompute
-  useEffect(() => {
-    return () => {
-      disposePrintLayout(layoutItems)
-    }
-  }, [layoutItems])
-
   const allFit = layoutItems.every((item) => item.fitsOnBed)
 
   const handleExportAll = () => {
     if (layoutItems.length === 0) return
-    void exportAllAsZip(layoutItems, exportScale).catch(() => {
-      // TODO: show toast notification
+    toast.promise(exportAllAsZip(layoutItems, exportScale), {
+      loading: 'Preparing ZIP export...',
+      success: 'ZIP export complete',
+      error: 'ZIP export failed',
     })
   }
 
   const handleExportSingleSTL = () => {
     if (layoutItems.length === 0) return
-    exportAllAsSingleSTL(layoutItems, exportScale)
+    try {
+      exportAllAsSingleSTL(layoutItems, exportScale)
+      toast.success('Exported plate as single STL')
+    } catch (error) {
+      console.error('Failed to export single STL:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
+    }
   }
 
   const handleExportOne = (item: (typeof layoutItems)[number]) => {
     const oriented = item.geometry.clone()
     try {
       exportObjectAsSTL(oriented, item.label, exportScale)
+      toast.success(`Exported ${item.label}.stl`)
+    } catch (error) {
+      console.error('Failed to export STL:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     } finally {
       oriented.dispose()
     }
@@ -90,13 +81,27 @@ export function PrintSettingsPanel() {
 
   const handleExportAll3MF = () => {
     if (layoutItems.length === 0) return
-    exportAllAs3MF(layoutItems, exportScale)
+    try {
+      exportAllAs3MF(layoutItems, exportScale)
+      toast.success('Exported all as 3MF')
+    } catch (error) {
+      console.error('Failed to export 3MF:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
+    }
   }
 
   const handleExportOne3MF = (item: (typeof layoutItems)[number]) => {
     const oriented = item.geometry.clone()
     try {
       exportObjectAs3MF(oriented, item.label, exportScale)
+      toast.success(`Exported ${item.label}.3mf`)
+    } catch (error) {
+      console.error('Failed to export 3MF:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     } finally {
       oriented.dispose()
     }

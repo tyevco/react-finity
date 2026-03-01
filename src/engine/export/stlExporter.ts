@@ -8,24 +8,25 @@ function geometryToSTLBinary(geometry: BufferGeometry, scale = 1): ArrayBuffer {
   const exporter = new STLExporter()
   let geo = geometry
   let needsDispose = false
+  const material = new MeshBasicMaterial()
 
-  if (scale !== 1) {
-    geo = geometry.clone()
-    geo.scale(scale, scale, scale)
-    needsDispose = true
+  try {
+    if (scale !== 1) {
+      geo = geometry.clone()
+      geo.scale(scale, scale, scale)
+      needsDispose = true
+    }
+
+    const mesh = new Mesh(geo, material)
+    const result = exporter.parse(mesh, { binary: true }) as DataView
+    // Extract the relevant portion of the DataView's underlying buffer
+    return new Uint8Array(result.buffer, result.byteOffset, result.byteLength).slice().buffer
+  } finally {
+    material.dispose()
+    if (needsDispose) {
+      geo.dispose()
+    }
   }
-
-  const mesh = new Mesh(geo, new MeshBasicMaterial())
-  const result = exporter.parse(mesh, { binary: true }) as DataView
-  // Copy to a plain ArrayBuffer to satisfy BlobPart/JSZip type constraints
-  const arrayBuffer = new ArrayBuffer(result.byteLength)
-  new Uint8Array(arrayBuffer).set(new Uint8Array(result.buffer as ArrayBuffer))
-
-  if (needsDispose) {
-    geo.dispose()
-  }
-
-  return arrayBuffer
 }
 
 /**
@@ -41,6 +42,11 @@ export function exportObjectAsSTL(geometry: BufferGeometry, name: string, scale 
  * Export all print layout items as individual STL files bundled in a ZIP.
  */
 export async function exportAllAsZip(items: PrintLayoutItem[], scale = 1): Promise<void> {
+  if (items.length === 0) {
+    console.warn('Export skipped: no objects in layout')
+    return
+  }
+
   try {
     const zip = new JSZip()
 
@@ -79,12 +85,13 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
       geometries.push(clone)
     }
 
-    // Merge all positioned geometries
+    // Merge all positioned geometries, skipping any without position attributes
+    const valid = geometries.filter((geo) => 'position' in geo.attributes)
     merged = new BufferGeometry()
     let totalVertices = 0
     let totalIndices = 0
 
-    for (const geo of geometries) {
+    for (const geo of valid) {
       totalVertices += geo.attributes.position.count
       if (geo.index) {
         totalIndices += geo.index.count
@@ -94,24 +101,19 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
     }
 
     const positions = new Float32Array(totalVertices * 3)
-    const normals = new Float32Array(totalVertices * 3)
     const indices = new Uint32Array(totalIndices)
 
     let vertexOffset = 0
     let indexOffset = 0
 
-    for (const geo of geometries) {
+    for (const geo of valid) {
       const posAttr = geo.attributes.position as BufferAttribute
-      const normAttr = geo.attributes.normal as BufferAttribute | undefined
 
-      for (let i = 0; i < posAttr.count * 3; i++) {
-        positions[vertexOffset * 3 + i] = posAttr.array[i]
-      }
-
-      if (normAttr) {
-        for (let i = 0; i < normAttr.count * 3; i++) {
-          normals[vertexOffset * 3 + i] = normAttr.array[i]
-        }
+      for (let i = 0; i < posAttr.count; i++) {
+        const base = (vertexOffset + i) * 3
+        positions[base] = posAttr.getX(i)
+        positions[base + 1] = posAttr.getY(i)
+        positions[base + 2] = posAttr.getZ(i)
       }
 
       if (geo.index) {
@@ -130,7 +132,6 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
     }
 
     merged.setAttribute('position', new BufferAttribute(positions, 3))
-    merged.setAttribute('normal', new BufferAttribute(normals, 3))
     merged.setIndex(new BufferAttribute(indices, 1))
     merged.computeVertexNormals()
 

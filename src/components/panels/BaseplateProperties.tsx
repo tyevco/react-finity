@@ -26,12 +26,15 @@ export function BaseplateProperties({ object }: BaseplatePropertiesProps) {
       {/* Grid Width */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Grid Width</Label>
+          <Label htmlFor="bp-grid-width" className="text-xs">
+            Grid Width
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {object.params.gridWidth}u ({dims.width}mm)
           </span>
         </div>
         <Slider
+          id="bp-grid-width"
           value={[object.params.gridWidth]}
           onValueChange={([v]) => {
             updateObjectParams(object.id, { gridWidth: v })
@@ -45,12 +48,15 @@ export function BaseplateProperties({ object }: BaseplatePropertiesProps) {
       {/* Grid Depth */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Grid Depth</Label>
+          <Label htmlFor="bp-grid-depth" className="text-xs">
+            Grid Depth
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {object.params.gridDepth}u ({dims.depth}mm)
           </span>
         </div>
         <Slider
+          id="bp-grid-depth"
           value={[object.params.gridDepth]}
           onValueChange={([v]) => {
             updateObjectParams(object.id, { gridDepth: v })
@@ -65,8 +71,11 @@ export function BaseplateProperties({ object }: BaseplatePropertiesProps) {
 
       {/* Slim */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs">Slim</Label>
+        <Label htmlFor="bp-slim" className="text-xs">
+          Slim
+        </Label>
         <Switch
+          id="bp-slim"
           checked={object.params.slim}
           onCheckedChange={(checked) => {
             updateObjectParams(object.id, { slim: checked })
@@ -76,8 +85,11 @@ export function BaseplateProperties({ object }: BaseplatePropertiesProps) {
 
       {/* Magnet Holes */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs">Magnet Holes</Label>
+        <Label htmlFor="bp-magnet-holes" className="text-xs">
+          Magnet Holes
+        </Label>
         <Switch
+          id="bp-magnet-holes"
           checked={object.params.magnetHoles}
           onCheckedChange={(checked) => {
             updateObjectParams(object.id, { magnetHoles: checked })
@@ -87,8 +99,11 @@ export function BaseplateProperties({ object }: BaseplatePropertiesProps) {
 
       {/* Screw Holes */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs">Screw Holes</Label>
+        <Label htmlFor="bp-screw-holes" className="text-xs">
+          Screw Holes
+        </Label>
         <Switch
+          id="bp-screw-holes"
           checked={object.params.screwHoles}
           onCheckedChange={(checked) => {
             updateObjectParams(object.id, { screwHoles: checked })

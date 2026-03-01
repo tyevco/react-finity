@@ -26,8 +26,12 @@ export function getOrientedBounds(
   const matrix = new Matrix4().makeRotationFromEuler(rotation)
   clone.applyMatrix4(matrix)
   clone.computeBoundingBox()
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const box = clone.boundingBox!
+  const box = clone.boundingBox
+
+  if (!box) {
+    clone.dispose()
+    return { width: 0, depth: 0, height: 0, yOffset: 0 }
+  }
 
   const width = box.max.x - box.min.x
   const depth = box.max.z - box.min.z
@@ -49,8 +53,10 @@ export function getBoundsFromOriented(oriented: BufferGeometry): {
   height: number
 } {
   oriented.computeBoundingBox()
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const box = oriented.boundingBox!
+  const box = oriented.boundingBox
+  if (!box) {
+    return { width: 0, depth: 0, height: 0 }
+  }
   return {
     width: box.max.x - box.min.x,
     depth: box.max.z - box.min.z,
@@ -69,8 +75,7 @@ export function applyPrintOrientation(geometry: BufferGeometry, rotation: Euler)
   const rotMatrix = new Matrix4().makeRotationFromEuler(rotation)
   oriented.applyMatrix4(rotMatrix)
   oriented.computeBoundingBox()
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const minY = oriented.boundingBox!.min.y
+  const minY = oriented.boundingBox?.min.y ?? 0
   if (Math.abs(minY) > 0.001) {
     const translateMatrix = new Matrix4().makeTranslation(0, -minY, 0)
     oriented.applyMatrix4(translateMatrix)

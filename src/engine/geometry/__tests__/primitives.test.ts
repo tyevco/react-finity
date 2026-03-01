@@ -9,6 +9,7 @@ import {
   roundedRectHolePath,
   roundedRectHolePathAt,
   createHollowExtrusion,
+  createDiamondHolePath,
   mergeGeometries,
 } from '../primitives'
 
@@ -67,6 +68,17 @@ describe('extrudeShape', () => {
     geo.dispose()
   })
 
+  it('returns empty geometry for height <= 0', () => {
+    const shape = roundedRectShape(10, 10, 1)
+    const zeroGeo = extrudeShape(shape, 0)
+    expect(zeroGeo.attributes.position).toBeUndefined()
+    zeroGeo.dispose()
+
+    const negGeo = extrudeShape(shape, -5)
+    expect(negGeo.attributes.position).toBeUndefined()
+    negGeo.dispose()
+  })
+
   it('bounding box height matches extrusion height', () => {
     const shape = roundedRectShape(10, 10, 1)
     const geo = extrudeShape(shape, 7)
@@ -118,6 +130,42 @@ describe('roundedRectHolePathAt', () => {
   })
 })
 
+describe('createDiamondHolePath', () => {
+  it('returns a path with 4 corner points', () => {
+    const path = createDiamondHolePath(10, 0, 0)
+    const points = path.getPoints(1)
+    // Diamond: 4 sides + close = 5 points (moveTo + 3 lineTo + closePath)
+    expect(points.length).toBe(5)
+  })
+
+  it('points stay within the diamond bounds', () => {
+    const size = 11
+    const cx = 5
+    const cz = 10
+    const path = createDiamondHolePath(size, cx, cz)
+    const points = path.getPoints(1)
+    const half = size / 2
+    for (const p of points) {
+      expect(p.x).toBeGreaterThanOrEqual(cx - half - 0.01)
+      expect(p.x).toBeLessThanOrEqual(cx + half + 0.01)
+      expect(p.y).toBeGreaterThanOrEqual(cz - half - 0.01)
+      expect(p.y).toBeLessThanOrEqual(cz + half + 0.01)
+    }
+  })
+
+  it('offsets correctly to the given center', () => {
+    const path = createDiamondHolePath(10, 20, 30)
+    const points = path.getPoints(1)
+    const xs = points.map((p) => p.x)
+    const ys = points.map((p) => p.y)
+    // Center should be at (20, 30), so min/max x should be [15, 25], y should be [25, 35]
+    expect(Math.min(...xs)).toBeCloseTo(15, 1)
+    expect(Math.max(...xs)).toBeCloseTo(25, 1)
+    expect(Math.min(...ys)).toBeCloseTo(25, 1)
+    expect(Math.max(...ys)).toBeCloseTo(35, 1)
+  })
+})
+
 describe('createHollowExtrusion', () => {
   beforeEach(() => {
     setCurveQuality('low')
@@ -157,6 +205,49 @@ describe('mergeGeometries', () => {
 
     geo1.dispose()
     geo2.dispose()
+    merged.dispose()
+  })
+
+  it('computes vertex normals without pre-allocated normals array', () => {
+    const geo = new BufferGeometry()
+    const v = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
+    geo.setAttribute('position', new BufferAttribute(v, 3))
+    geo.setIndex(new BufferAttribute(new Uint32Array([0, 1, 2]), 1))
+
+    const merged = mergeGeometries([geo])
+    // computeVertexNormals should have created the normal attribute
+    expect(merged.attributes.normal).toBeDefined()
+    expect(merged.attributes.normal.count).toBe(3)
+
+    geo.dispose()
+    merged.dispose()
+  })
+
+  it('skips geometries without position attribute', () => {
+    const empty = new BufferGeometry() // no position attribute
+    const valid = new BufferGeometry()
+    const v = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
+    valid.setAttribute('position', new BufferAttribute(v, 3))
+    valid.setIndex(new BufferAttribute(new Uint32Array([0, 1, 2]), 1))
+
+    const merged = mergeGeometries([empty, valid])
+    expect(merged.attributes.position.count).toBe(3)
+    expect(merged.index?.count).toBe(3)
+
+    empty.dispose()
+    valid.dispose()
+    merged.dispose()
+  })
+
+  it('returns empty geometry when all inputs lack position attribute', () => {
+    const empty1 = new BufferGeometry()
+    const empty2 = new BufferGeometry()
+
+    const merged = mergeGeometries([empty1, empty2])
+    expect(merged.attributes.position).toBeUndefined()
+
+    empty1.dispose()
+    empty2.dispose()
     merged.dispose()
   })
 

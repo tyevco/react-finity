@@ -2,6 +2,7 @@ import type {
   GridfinityObject,
   BaseplateObject,
   BinObject,
+  OpenGridBoardObject,
   Modifier,
   DividerGridModifier,
   LabelTabModifier,
@@ -17,6 +18,10 @@ export function isBaseplateObject(obj: GridfinityObject): obj is BaseplateObject
 
 export function isBinObject(obj: GridfinityObject): obj is BinObject {
   return obj.kind === 'bin'
+}
+
+export function isOpenGridBoardObject(obj: GridfinityObject): obj is OpenGridBoardObject {
+  return obj.kind === 'opengridBoard'
 }
 
 export function isDividerGridModifier(mod: Modifier): mod is DividerGridModifier {

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { v4 as uuidv4 } from 'uuid'
 import type { ProjectMeta, ProjectData } from '@/types/gridfinity'
 import { useProjectStore, resetObjectCounter } from './projectStore'
+import { useUIStore } from './uiStore'
 
 const PROJECT_DATA_KEY_PREFIX = 'react-finity-project-'
 const AUTO_SAVE_DELAY = 2000
@@ -106,7 +107,15 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
           clearTimeout(autoSaveTimer)
           autoSaveTimer = null
         }
-        useProjectStore.getState().clearObjects()
+        useUIStore.getState().clearSelection()
+        // Suppress the projectStore subscription during clearObjects to prevent
+        // it from re-arming the auto-save timer we just cancelled
+        isLoadingProject = true
+        try {
+          useProjectStore.getState().clearObjects()
+        } finally {
+          isLoadingProject = false
+        }
         resetObjectCounter([])
         set({
           currentProjectId: null,
@@ -125,9 +134,18 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
         const { objects, modifiers } = useProjectStore.getState()
         const now = new Date().toISOString()
 
-        let projectId = state.currentProjectId
-        if (!projectId) {
-          projectId = uuidv4()
+        const isNewProject = !state.currentProjectId
+        const projectId = state.currentProjectId ?? uuidv4()
+
+        // Write data BEFORE updating state to prevent phantom project
+        // metadata when localStorage write fails for new projects
+        if (!writeProjectData(projectId, { objects, modifiers })) {
+          console.warn('Project save failed for:', projectId)
+          set({ isDirty: true })
+          return
+        }
+
+        if (isNewProject) {
           const meta: ProjectMeta = {
             id: projectId,
             name: state.currentProjectName,
@@ -144,12 +162,6 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
             isDirty: false,
             projects: s.projects.map((p) => (p.id === projectId ? { ...p, updatedAt: now } : p)),
           }))
-        }
-
-        if (!writeProjectData(projectId, { objects, modifiers })) {
-          console.warn('Project save failed for:', projectId)
-          // Revert dirty flag so auto-save retries on next change
-          set({ isDirty: true })
         }
       },
 
@@ -172,6 +184,8 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
 
         if (!writeProjectData(projectId, { objects, modifiers })) {
           console.warn('Project saveAs failed for:', projectId)
+          // Mark dirty so auto-save retries on next change (matches saveProject behavior)
+          set({ isDirty: true })
           return
         }
 
@@ -195,6 +209,7 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
         const meta = get().projects.find((p) => p.id === id)
         if (!meta) return
 
+        useUIStore.getState().clearSelection()
         useProjectStore.getState().loadProjectData(data)
 
         set({
@@ -222,7 +237,12 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
         }))
 
         if (isCurrentProject) {
-          get().newProject()
+          isLoadingProject = true
+          try {
+            get().newProject()
+          } finally {
+            isLoadingProject = false
+          }
         }
       },
 
@@ -233,13 +253,20 @@ export const useProjectManagerStore = create<ProjectManagerStore>()(
           clearTimeout(autoSaveTimer)
         }
 
+        // Capture project ID so the timer only auto-saves if we're still
+        // on the same project (defense-in-depth; loadProject also clears the timer)
+        const projectIdAtMark = get().currentProjectId
         autoSaveTimer = setTimeout(() => {
           autoSaveTimer = null
-          get().saveProject()
+          if (get().currentProjectId === projectIdAtMark) {
+            get().saveProject()
+          }
         }, AUTO_SAVE_DELAY)
       },
 
       initializeProject: () => {
+        if (projectInitialized) return
+        projectInitialized = true
         const state = get()
         if (state.currentProjectId) {
           const data = readProjectData(state.currentProjectId)
@@ -274,6 +301,10 @@ export function setIsLoadingProject(value: boolean): void {
   isLoadingProject = value
 }
 
+// Tracks whether onFinishHydration already loaded the project, so
+// initializeProject() in App.tsx can skip the redundant second load.
+let projectInitialized = false
+
 // Wrap loadProjectData to set the isLoadingProject flag, preventing
 // auto-save and history tracking during project loads.
 // Guard against double-wrapping on HMR module re-execution.
@@ -300,10 +331,15 @@ const unsubProjectChanges = useProjectStore.subscribe((state, prevState) => {
   }
 })
 
-// Clean up subscription on HMR to prevent duplicate listeners.
+// Clean up subscription and pending timers on HMR to prevent duplicate
+// listeners and stale callbacks referencing old module state.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     unsubProjectChanges()
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer)
+      autoSaveTimer = null
+    }
   })
 }
 
@@ -313,11 +349,11 @@ if (typeof window !== 'undefined') {
     if (state.currentProjectId) {
       const data = readProjectData(state.currentProjectId)
       if (data) {
-        isLoadingProject = true
+        // loadProjectData is already wrapped with isLoadingProject guards
         useProjectStore.getState().loadProjectData(data)
-        isLoadingProject = false
       }
     }
+    projectInitialized = true
     unsubFinishHydration()
   })
 }

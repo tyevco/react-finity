@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from 'react'
 
 const MOBILE_BREAKPOINT = 768
+const QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`
 
 function getSnapshot(): boolean {
-  return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).matches
+  return window.matchMedia(QUERY).matches
 }
 
 function getServerSnapshot(): boolean {
@@ -11,7 +12,7 @@ function getServerSnapshot(): boolean {
 }
 
 function subscribe(callback: () => void): () => void {
-  const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+  const mql = window.matchMedia(QUERY)
   mql.addEventListener('change', callback)
   return () => {
     mql.removeEventListener('change', callback)

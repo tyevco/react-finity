@@ -15,12 +15,15 @@ export function DividerGridControls({ modifier }: DividerGridControlsProps) {
       {/* Dividers X */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Dividers (Width)</Label>
+          <Label htmlFor="mod-dividers-x" className="text-xs">
+            Dividers (Width)
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {modifier.params.dividersX}
           </span>
         </div>
         <Slider
+          id="mod-dividers-x"
           value={[modifier.params.dividersX]}
           onValueChange={([v]) => {
             updateModifierParams(modifier.id, { dividersX: v })
@@ -34,12 +37,15 @@ export function DividerGridControls({ modifier }: DividerGridControlsProps) {
       {/* Dividers Y */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Dividers (Depth)</Label>
+          <Label htmlFor="mod-dividers-y" className="text-xs">
+            Dividers (Depth)
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {modifier.params.dividersY}
           </span>
         </div>
         <Slider
+          id="mod-dividers-y"
           value={[modifier.params.dividersY]}
           onValueChange={([v]) => {
             updateModifierParams(modifier.id, { dividersY: v })
@@ -53,12 +59,15 @@ export function DividerGridControls({ modifier }: DividerGridControlsProps) {
       {/* Wall Thickness */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Wall Thickness</Label>
+          <Label htmlFor="mod-divider-wall" className="text-xs">
+            Wall Thickness
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {modifier.params.wallThickness.toFixed(1)}mm
           </span>
         </div>
         <Slider
+          id="mod-divider-wall"
           value={[modifier.params.wallThickness]}
           onValueChange={([v]) => {
             updateModifierParams(modifier.id, { wallThickness: Math.round(v * 10) / 10 })

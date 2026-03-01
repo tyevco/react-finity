@@ -20,6 +20,10 @@ export function generateDividerGrid(
     return new BufferGeometry()
   }
 
+  if (wallHeight <= 0) {
+    return new BufferGeometry()
+  }
+
   const geometries: BufferGeometry[] = []
 
   // Dividers along X axis (walls spanning depth)

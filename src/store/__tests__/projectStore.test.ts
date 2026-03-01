@@ -58,6 +58,30 @@ describe('projectStore', () => {
     expect(obj.position).toEqual([42, 0, 42])
   })
 
+  it('updates object rotation', () => {
+    const id = useProjectStore.getState().addObject('baseplate')
+    const rotation: [number, number, number] = [-Math.PI / 2, 0, 0]
+    useProjectStore.getState().updateObjectRotation(id, rotation)
+
+    const obj = useProjectStore.getState().objects[0]
+    expect(obj.rotation).toEqual(rotation)
+  })
+
+  it('rotation persists through load/save cycle', () => {
+    const id = useProjectStore.getState().addObject('bin')
+    const rotation: [number, number, number] = [-Math.PI / 2, 0, 0]
+    useProjectStore.getState().updateObjectRotation(id, rotation)
+
+    const state = useProjectStore.getState()
+    const data = { objects: state.objects, modifiers: state.modifiers }
+    const serialized = JSON.parse(JSON.stringify(data)) as typeof data
+
+    useProjectStore.getState().loadProjectData(serialized)
+    const loaded = useProjectStore.getState().objects.find((o) => o.id === id)
+    expect(loaded).toBeDefined()
+    expect(loaded!.rotation).toEqual(rotation) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+  })
+
   it('updates object name', () => {
     const id = useProjectStore.getState().addObject('baseplate')
     useProjectStore.getState().updateObjectName(id, 'My Baseplate')
@@ -284,6 +308,15 @@ describe('modifier CRUD', () => {
     expect(useProjectStore.getState().getRootObjectId('nonexistent')).toBeNull()
   })
 
+  it('addModifier returns empty string for nonexistent parent', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const id = useProjectStore.getState().addModifier('nonexistent', 'dividerGrid')
+    expect(id).toBe('')
+    expect(useProjectStore.getState().modifiers).toHaveLength(0)
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
+
   it('addModifier with parentId pointing to another modifier works', () => {
     const binId = useProjectStore.getState().addObject('bin')
     const divId = useProjectStore.getState().addModifier(binId, 'dividerGrid')
@@ -326,6 +359,35 @@ describe('modifier CRUD', () => {
   it('getModifierContext returns null for unknown parent', () => {
     const context = useProjectStore.getState().getModifierContext('nonexistent-id')
     expect(context).toBeNull()
+  })
+
+  it('getModifierContext returns null for circular modifier chain', () => {
+    useProjectStore.setState({
+      objects: [],
+      modifiers: [
+        {
+          id: 'mod-a',
+          parentId: 'mod-b',
+          kind: 'dividerGrid',
+          params: { dividersX: 1, dividersY: 1, wallThickness: 1.2 },
+        },
+        {
+          id: 'mod-b',
+          parentId: 'mod-a',
+          kind: 'dividerGrid',
+          params: { dividersX: 1, dividersY: 1, wallThickness: 1.2 },
+        },
+      ] as never,
+    })
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const result = useProjectStore.getState().getModifierContext('mod-a')
+    expect(result).toBeNull()
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Circular reference detected in modifier context chain at:',
+      expect.any(String),
+    )
+    warnSpy.mockRestore()
   })
 
   it('getModifierContext uses active profile, not hardcoded Official', () => {
@@ -494,6 +556,39 @@ describe('modifier CRUD', () => {
     expect(num).toBe(11)
   })
 
+  describe('removeObjects (batch)', () => {
+    it('removes multiple objects and their modifiers in a single set call', () => {
+      const bin1 = useProjectStore.getState().addObject('bin')
+      const bin2 = useProjectStore.getState().addObject('bin')
+      useProjectStore.getState().addModifier(bin1, 'dividerGrid')
+      useProjectStore.getState().addModifier(bin2, 'scoop')
+      expect(useProjectStore.getState().objects).toHaveLength(2)
+      expect(useProjectStore.getState().modifiers).toHaveLength(2)
+
+      useProjectStore.getState().removeObjects([bin1, bin2])
+      expect(useProjectStore.getState().objects).toHaveLength(0)
+      expect(useProjectStore.getState().modifiers).toHaveLength(0)
+    })
+
+    it('handles empty array gracefully', () => {
+      useProjectStore.getState().addObject('bin')
+      useProjectStore.getState().removeObjects([])
+      expect(useProjectStore.getState().objects).toHaveLength(1)
+    })
+
+    it('removes cascade modifiers for all deleted objects', () => {
+      const bin1 = useProjectStore.getState().addObject('bin')
+      const bin2 = useProjectStore.getState().addObject('bin')
+      const insert = useProjectStore.getState().addModifier(bin1, 'insert')
+      useProjectStore.getState().addModifier(insert, 'scoop')
+      useProjectStore.getState().addModifier(bin2, 'lid')
+      expect(useProjectStore.getState().modifiers).toHaveLength(3)
+
+      useProjectStore.getState().removeObjects([bin1, bin2])
+      expect(useProjectStore.getState().modifiers).toHaveLength(0)
+    })
+  })
+
   describe('duplicateObjects', () => {
     it('duplicates a single object with new id and name', () => {
       resetObjectCounter([])
@@ -647,6 +742,19 @@ describe('modifier CRUD', () => {
       expect(obj1Mods[1].id).toBe(a1)
     })
 
+    it('handles single-child reorder without losing the modifier', () => {
+      const objId = useProjectStore.getState().addObject('bin')
+      const modId = useProjectStore.getState().addModifier(objId, 'dividerGrid')
+
+      // Only one modifier: reorder from 0 to 1 (toIndex out of bounds after removal)
+      useProjectStore.getState().reorderModifier(objId, 0, 1)
+
+      // The modifier should still exist
+      const mods = useProjectStore.getState().modifiers.filter((m) => m.parentId === objId)
+      expect(mods).toHaveLength(1)
+      expect(mods[0].id).toBe(modId)
+    })
+
     it('returns unchanged state when fromIndex equals toIndex', () => {
       const objId = useProjectStore.getState().addObject('bin')
       useProjectStore.getState().addModifier(objId, 'dividerGrid')
@@ -657,6 +765,80 @@ describe('modifier CRUD', () => {
       const after = useProjectStore.getState().modifiers
 
       expect(after).toBe(before)
+    })
+  })
+
+  describe('getModifierContext with modifier parent', () => {
+    it('returns child context for modifier that subdivides space', () => {
+      const binId = useProjectStore.getState().addObject('bin')
+      const insertId = useProjectStore.getState().addModifier(binId, 'insert')
+
+      // Get context using the insert modifier's ID as the parentId
+      const context = useProjectStore.getState().getModifierContext(insertId)
+      expect(context).not.toBeNull()
+
+      // Insert subdivides space, so the context should have smaller dimensions
+      // than the bin's own modifier context
+      const binContext = useProjectStore.getState().getModifierContext(binId)
+      expect(context!.innerWidth).toBeLessThan(binContext!.innerWidth) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+      expect(context!.innerDepth).toBeLessThan(binContext!.innerDepth) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    })
+
+    it('returns parent context for modifier that does not subdivide space', () => {
+      const binId = useProjectStore.getState().addObject('bin')
+      const scoopId = useProjectStore.getState().addModifier(binId, 'scoop')
+
+      // Scoop does not subdivide space, so context should equal the bin's context
+      const context = useProjectStore.getState().getModifierContext(scoopId)
+      const binContext = useProjectStore.getState().getModifierContext(binId)
+      expect(context).toEqual(binContext)
+    })
+
+    it('returns null for modifier whose parent object does not support modifiers', () => {
+      // Create a baseplate (supportsModifiers: false) and manually attach a modifier to it
+      useProjectStore.setState({
+        objects: [
+          {
+            kind: 'baseplate' as const,
+            id: 'bp-1',
+            name: 'Baseplate 1',
+            position: [0, 0, 0] as [number, number, number],
+            params: {
+              gridWidth: 3,
+              gridDepth: 3,
+              slim: false,
+              magnetHoles: true,
+              screwHoles: false,
+            },
+          },
+        ],
+        modifiers: [
+          {
+            kind: 'dividerGrid' as const,
+            id: 'mod-orphan',
+            parentId: 'bp-1',
+            params: { dividersX: 1, dividersY: 1, wallThickness: 1.2 },
+          },
+        ] as never,
+      })
+
+      const context = useProjectStore.getState().getModifierContext('mod-orphan')
+      expect(context).toBeNull()
+    })
+
+    it('chains context through multiple levels of modifiers', () => {
+      const binId = useProjectStore.getState().addObject('bin')
+      const insertId = useProjectStore.getState().addModifier(binId, 'insert')
+      const divGridId = useProjectStore.getState().addModifier(insertId, 'dividerGrid')
+
+      const context = useProjectStore.getState().getModifierContext(divGridId)
+      expect(context).not.toBeNull()
+
+      // The dividerGrid also subdivides space, so its child context should be
+      // smaller than the insert's child context
+      const insertContext = useProjectStore.getState().getModifierContext(insertId)
+      expect(context!.innerWidth).toBeLessThan(insertContext!.innerWidth) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+      expect(context!.innerDepth).toBeLessThan(insertContext!.innerDepth) // eslint-disable-line @typescript-eslint/no-non-null-assertion
     })
   })
 })

@@ -15,9 +15,11 @@ export function ProfileSelector() {
 
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">Dimension Profile</Label>
+      <Label htmlFor="dimension-profile" className="text-xs text-muted-foreground">
+        Dimension Profile
+      </Label>
       <Select value={activeProfileKey} onValueChange={setActiveProfile}>
-        <SelectTrigger className="h-8 text-xs">
+        <SelectTrigger id="dimension-profile" className="h-8 text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

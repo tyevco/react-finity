@@ -52,6 +52,23 @@ test.describe('Undo/Redo', () => {
     await expect(page.locator('.group').getByText('Bin 1')).toBeVisible({ timeout: 10000 })
   })
 
+  test('undo then re-add produces correct object name (counter sync)', async ({ page }) => {
+    // Add a bin -> "Bin 1"
+    await addBin(page)
+    await expect(page.locator('.group').getByText('Bin 1')).toBeVisible()
+
+    // Wait for history to capture
+    await expect(page.getByTestId('undo-btn')).toBeEnabled({ timeout: 10000 })
+
+    // Undo the add
+    await page.keyboard.press('Control+z')
+    await expect(page.locator('.group').getByText('Bin 1')).not.toBeVisible({ timeout: 10000 })
+
+    // Add another bin -- should be "Bin 1" again (not "Bin 2")
+    await addBin(page)
+    await expect(page.locator('.group').getByText('Bin 1')).toBeVisible()
+  })
+
   test('undo button works via click', async ({ page }) => {
     await addBin(page)
     await expect(page.locator('.group').getByText('Bin 1')).toBeVisible()

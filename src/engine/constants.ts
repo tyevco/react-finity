@@ -6,6 +6,7 @@ import type {
   InsertModifierParams,
   LidModifierParams,
   FingerScoopModifierParams,
+  OpenGridBoardParams,
   PrintBedPreset,
 } from '@/types/gridfinity'
 
@@ -101,6 +102,20 @@ export const DEFAULT_FINGER_SCOOP_PARAMS: FingerScoopModifierParams = {
   wall: 'front',
   width: 20,
   depth: 15,
+}
+
+// OpenGrid constants (separate system from Gridfinity)
+export const OPENGRID_GRID_SIZE = 28 // mm per grid unit
+export const OPENGRID_FULL_THICKNESS = 6.8 // mm
+export const OPENGRID_LITE_THICKNESS = 4.0 // mm
+export const OPENGRID_HOLE_SIZE = 11 // mm, diamond point-to-point
+export const OPENGRID_CORNER_RADIUS = 2 // mm
+
+export const DEFAULT_OPENGRID_BOARD_PARAMS: OpenGridBoardParams = {
+  gridWidth: 4,
+  gridDepth: 4,
+  variant: 'full',
+  orientation: 'flat',
 }
 
 export const PRINT_BED_PRESETS: Record<string, PrintBedPreset> = {

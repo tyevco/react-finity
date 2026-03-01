@@ -67,7 +67,7 @@ test.describe('Export Functionality', () => {
     await expect(export3mf).not.toHaveAttribute('data-disabled')
   })
 
-  test('Export Selected (STL) triggers download with .stl extension', async ({ page }) => {
+  test('Export Selected (STL) triggers download and shows success toast', async ({ page }) => {
     // Add and select an object
     await page.getByRole('button', { name: /Add Object/i }).click()
     await page.getByRole('menuitem', { name: 'Baseplate' }).click()
@@ -82,9 +82,12 @@ test.describe('Export Functionality', () => {
     // Should trigger a download
     const download = await downloadPromise
     expect(download.suggestedFilename()).toBe('Baseplate 1.stl')
+
+    // Should show success toast
+    await expect(page.getByText('Exported Baseplate 1.stl')).toBeVisible()
   })
 
-  test('Export Selected (3MF) triggers download with .3mf extension', async ({ page }) => {
+  test('Export Selected (3MF) triggers download and shows success toast', async ({ page }) => {
     // Add and select an object
     await page.getByRole('button', { name: /Add Object/i }).click()
     await page.getByRole('menuitem', { name: 'Baseplate' }).click()
@@ -99,6 +102,9 @@ test.describe('Export Functionality', () => {
     // Should trigger a download
     const download = await downloadPromise
     expect(download.suggestedFilename()).toBe('Baseplate 1.3mf')
+
+    // Should show success toast
+    await expect(page.getByText('Exported Baseplate 1.3mf')).toBeVisible()
   })
 
   test('Ctrl+P toggles to print layout view', async ({ page }) => {

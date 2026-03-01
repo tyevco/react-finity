@@ -11,8 +11,10 @@ interface ProjectStore {
   addObject: (kind: string) => string
   updateObjectParams: (id: string, params: Record<string, unknown>) => void
   updateObjectPosition: (id: string, position: [number, number, number]) => void
+  updateObjectRotation: (id: string, rotation: [number, number, number]) => void
   updateObjectName: (id: string, name: string) => void
   removeObject: (id: string) => void
+  removeObjects: (ids: string[]) => void
   clearObjects: () => void
   addModifier: (parentId: string, kind: string) => string
   updateModifierParams: (id: string, params: Record<string, unknown>) => void
@@ -20,7 +22,7 @@ interface ProjectStore {
   loadProjectData: (data: ProjectData) => void
   getModifiersForParent: (parentId: string) => Modifier[]
   getRootObjectId: (modifierId: string) => string | null
-  getModifierContext: (parentId: string) => ModifierContext | null
+  getModifierContext: (parentId: string, visited?: Set<string>) => ModifierContext | null
   duplicateObjects: (ids: string[]) => string[]
   reorderObject: (fromIndex: number, toIndex: number) => void
   reorderModifier: (parentId: string, fromIndex: number, toIndex: number) => void
@@ -54,7 +56,7 @@ export function resetObjectCounter(objects: GridfinityObject[]): void {
   objectCounter = maxCounter
 }
 
-function collectDescendantModifierIds(modifiers: Modifier[], rootId: string): Set<string> {
+export function collectDescendantModifierIds(modifiers: Modifier[], rootId: string): Set<string> {
   const idsToRemove = new Set<string>()
   const queue = [rootId]
 
@@ -109,6 +111,12 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     }))
   },
 
+  updateObjectRotation: (id, rotation) => {
+    set((state) => ({
+      objects: state.objects.map((obj) => (obj.id === id ? { ...obj, rotation } : obj)),
+    }))
+  },
+
   updateObjectName: (id, name) => {
     set((state) => ({
       objects: state.objects.map((obj) => (obj.id === id ? { ...obj, name } : obj)),
@@ -127,6 +135,26 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     })
   },
 
+  removeObjects: (ids) => {
+    if (ids.length === 0) return
+    set((state) => {
+      const idSet = new Set(ids)
+      // Collect all descendant modifier IDs for all removed objects
+      const allDescendantIds = new Set<string>()
+      for (const id of ids) {
+        for (const descId of collectDescendantModifierIds(state.modifiers, id)) {
+          allDescendantIds.add(descId)
+        }
+      }
+      return {
+        objects: state.objects.filter((obj) => !idSet.has(obj.id)),
+        modifiers: state.modifiers.filter(
+          (mod) => !idSet.has(mod.parentId) && !allDescendantIds.has(mod.id),
+        ),
+      }
+    })
+  },
+
   clearObjects: () => {
     set({ objects: [], modifiers: [] })
   },
@@ -137,13 +165,21 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   },
 
   addModifier: (parentId: string, kind: string) => {
+    const state = get()
+    const parentExists =
+      state.objects.some((o) => o.id === parentId) || state.modifiers.some((m) => m.id === parentId)
+    if (!parentExists) {
+      console.warn(`addModifier: parent "${parentId}" not found, skipping`)
+      return ''
+    }
+
     const id = uuidv4()
     const params = getDefaultModifierParams(kind)
 
     // Safe: params come from the registry's defaultParams for this kind
     const newModifier = { id, parentId, kind, params } as unknown as Modifier
 
-    set((state) => ({ modifiers: [...state.modifiers, newModifier] }))
+    set((s) => ({ modifiers: [...s.modifiers, newModifier] }))
     return id
   },
 
@@ -290,6 +326,12 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
         }
       }
 
+      // Guard: if no siblings remain, re-insert at original position
+      if (newParentIndices.length === 0) {
+        modifiers.splice(removeAt, 0, moved)
+        return state
+      }
+
       // Insert at the target position among siblings
       const insertAt =
         toIndex >= newParentIndices.length
@@ -301,8 +343,15 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
     })
   },
 
-  getModifierContext: (parentId: string) => {
+  getModifierContext: (parentId: string, visited?: Set<string>) => {
     const state = get()
+    const seen = visited ?? new Set<string>()
+
+    if (seen.has(parentId)) {
+      console.warn('Circular reference detected in modifier context chain at:', parentId)
+      return null
+    }
+    seen.add(parentId)
 
     const obj = state.objects.find((o) => o.id === parentId)
     if (obj) {
@@ -318,15 +367,16 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
 
     const parentModifier = state.modifiers.find((m) => m.id === parentId)
     if (parentModifier) {
-      const parentContext = state.getModifierContext(parentModifier.parentId)
+      const parentContext = state.getModifierContext(parentModifier.parentId, seen)
       if (!parentContext) return null
 
       const modReg = modifierKindRegistry.get(parentModifier.kind)
       if (modReg?.subdividesSpace && modReg.computeChildContext) {
-        return modReg.computeChildContext(
+        const result = modReg.computeChildContext(
           parentModifier.params as unknown as Record<string, unknown>,
           parentContext,
         )
+        return Array.isArray(result) ? result[0] : result
       }
 
       return parentContext

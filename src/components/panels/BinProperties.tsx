@@ -27,12 +27,15 @@ export function BinProperties({ object }: BinPropertiesProps) {
       {/* Grid Width */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Grid Width</Label>
+          <Label htmlFor="bin-grid-width" className="text-xs">
+            Grid Width
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {object.params.gridWidth}u ({dims.width}mm)
           </span>
         </div>
         <Slider
+          id="bin-grid-width"
           value={[object.params.gridWidth]}
           onValueChange={([v]) => {
             updateObjectParams(object.id, { gridWidth: v })
@@ -46,12 +49,15 @@ export function BinProperties({ object }: BinPropertiesProps) {
       {/* Grid Depth */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Grid Depth</Label>
+          <Label htmlFor="bin-grid-depth" className="text-xs">
+            Grid Depth
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {object.params.gridDepth}u ({dims.depth}mm)
           </span>
         </div>
         <Slider
+          id="bin-grid-depth"
           value={[object.params.gridDepth]}
           onValueChange={([v]) => {
             updateObjectParams(object.id, { gridDepth: v })
@@ -65,12 +71,15 @@ export function BinProperties({ object }: BinPropertiesProps) {
       {/* Height Units */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Height</Label>
+          <Label htmlFor="bin-height" className="text-xs">
+            Height
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {object.params.heightUnits}u ({dims.height}mm)
           </span>
         </div>
         <Slider
+          id="bin-height"
           value={[object.params.heightUnits]}
           onValueChange={([v]) => {
             updateObjectParams(object.id, { heightUnits: v })
@@ -85,8 +94,11 @@ export function BinProperties({ object }: BinPropertiesProps) {
 
       {/* Stacking Lip */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs">Stacking Lip</Label>
+        <Label htmlFor="bin-stacking-lip" className="text-xs">
+          Stacking Lip
+        </Label>
         <Switch
+          id="bin-stacking-lip"
           checked={object.params.stackingLip}
           onCheckedChange={(checked) => {
             updateObjectParams(object.id, { stackingLip: checked })
@@ -97,12 +109,15 @@ export function BinProperties({ object }: BinPropertiesProps) {
       {/* Wall Thickness */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Wall Thickness</Label>
+          <Label htmlFor="bin-wall-thickness" className="text-xs">
+            Wall Thickness
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {object.params.wallThickness.toFixed(1)}mm
           </span>
         </div>
         <Slider
+          id="bin-wall-thickness"
           value={[object.params.wallThickness]}
           onValueChange={([v]) => {
             updateObjectParams(object.id, { wallThickness: Math.round(v * 10) / 10 })
@@ -116,12 +131,15 @@ export function BinProperties({ object }: BinPropertiesProps) {
       {/* Inner Fillet */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Inner Fillet</Label>
+          <Label htmlFor="bin-inner-fillet" className="text-xs">
+            Inner Fillet
+          </Label>
           <span className="text-xs tabular-nums text-muted-foreground">
             {object.params.innerFillet === 0 ? 'None' : `${object.params.innerFillet.toFixed(1)}mm`}
           </span>
         </div>
         <Slider
+          id="bin-inner-fillet"
           value={[object.params.innerFillet]}
           onValueChange={([v]) => {
             updateObjectParams(object.id, { innerFillet: Math.round(v * 10) / 10 })
@@ -139,8 +157,11 @@ export function BinProperties({ object }: BinPropertiesProps) {
 
       {/* Magnet Holes */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs">Magnet Holes</Label>
+        <Label htmlFor="bin-magnet-holes" className="text-xs">
+          Magnet Holes
+        </Label>
         <Switch
+          id="bin-magnet-holes"
           checked={object.params.magnetHoles}
           onCheckedChange={(checked) => {
             updateObjectParams(object.id, { magnetHoles: checked })
@@ -150,8 +171,11 @@ export function BinProperties({ object }: BinPropertiesProps) {
 
       {/* Weight Holes */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs">Weight Holes</Label>
+        <Label htmlFor="bin-weight-holes" className="text-xs">
+          Weight Holes
+        </Label>
         <Switch
+          id="bin-weight-holes"
           checked={object.params.weightHoles}
           onCheckedChange={(checked) => {
             updateObjectParams(object.id, { weightHoles: checked })
@@ -161,8 +185,11 @@ export function BinProperties({ object }: BinPropertiesProps) {
 
       {/* Honeycomb Base */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs">Honeycomb Base</Label>
+        <Label htmlFor="bin-honeycomb-base" className="text-xs">
+          Honeycomb Base
+        </Label>
         <Switch
+          id="bin-honeycomb-base"
           checked={object.params.honeycombBase}
           onCheckedChange={(checked) => {
             updateObjectParams(object.id, { honeycombBase: checked })
