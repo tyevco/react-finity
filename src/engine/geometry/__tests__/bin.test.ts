@@ -233,6 +233,62 @@ describe('generateBin', () => {
     expect(geometry.attributes.position.count).toBeGreaterThan(0)
     geometry.dispose()
   })
+
+  it('all optional features enabled simultaneously', () => {
+    const geometry = generateBin(
+      {
+        ...defaultParams,
+        stackingLip: true,
+        magnetHoles: true,
+        weightHoles: true,
+        honeycombBase: true,
+        innerFillet: 1.5,
+      },
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry).toBeDefined()
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
+
+  it('honeycomb + innerFillet combined produces valid geometry', () => {
+    const geometry = generateBin(
+      { ...defaultParams, honeycombBase: true, innerFillet: 2 },
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
+
+  it('magnet + weight holes combined changes vertex count', () => {
+    const magnetOnly = generateBin(
+      { ...defaultParams, magnetHoles: true, weightHoles: false },
+      PROFILE_OFFICIAL,
+    )
+    const both = generateBin(
+      { ...defaultParams, magnetHoles: true, weightHoles: true },
+      PROFILE_OFFICIAL,
+    )
+
+    // Adding weight holes on top of magnet holes changes geometry further
+    expect(both.attributes.position.count).not.toBe(magnetOnly.attributes.position.count)
+
+    magnetOnly.dispose()
+    both.dispose()
+  })
+
+  it('innerFillet clamped to wallThickness produces valid geometry', () => {
+    // innerFillet larger than wallThickness should be clamped
+    const geometry = generateBin(
+      { ...defaultParams, innerFillet: 10, wallThickness: 1.2 },
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
 })
 
 describe('getBinDimensions', () => {

@@ -116,6 +116,64 @@ describe('generateInsert', () => {
     expect(geometry.attributes.position.count).toBeGreaterThan(0)
     geometry.dispose()
   })
+
+  it('asymmetric compartments (5x1) produce valid geometry', () => {
+    const geometry = generateInsert(
+      { compartmentsX: 5, compartmentsY: 1, wallThickness: 1.2 },
+      defaultContext,
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
+
+  it('wall thickness consuming most space still produces geometry', () => {
+    // 3 compartments with thick walls: 3 walls * 8mm = 24mm rim walls + 16mm dividers
+    // in 38.1mm inner space
+    const geometry = generateInsert(
+      { compartmentsX: 3, compartmentsY: 1, wallThickness: 8 },
+      defaultContext,
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
+
+  it('returns empty geometry when wallThickness exceeds inner dimensions', () => {
+    // wallThickness * 2 = 40 > innerWidth 38.1 → rimInnerWidth < 0 → empty
+    const geometry = generateInsert(
+      { compartmentsX: 2, compartmentsY: 2, wallThickness: 20 },
+      defaultContext,
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry.attributes.position).toBeUndefined()
+    geometry.dispose()
+  })
+
+  it('respects non-zero center offsets', () => {
+    const offsetCtx: ModifierContext = {
+      innerWidth: 38.1,
+      innerDepth: 38.1,
+      wallHeight: 21,
+      floorY: 5.85,
+      centerX: 15,
+      centerZ: -10,
+    }
+    const geometry = generateInsert(defaultParams, offsetCtx, PROFILE_OFFICIAL)
+    geometry.computeBoundingBox()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const box = geometry.boundingBox!
+
+    const midX = (box.max.x + box.min.x) / 2
+    const midZ = (box.max.z + box.min.z) / 2
+
+    expect(midX).toBeCloseTo(15, 0)
+    expect(midZ).toBeCloseTo(-10, 0)
+
+    geometry.dispose()
+  })
 })
 
 describe('getInsertDimensions', () => {
