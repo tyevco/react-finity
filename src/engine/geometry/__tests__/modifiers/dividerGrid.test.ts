@@ -111,4 +111,103 @@ describe('generateDividerGrid', () => {
     expect(geometry.attributes.position.count).toBeGreaterThan(0)
     geometry.dispose()
   })
+
+  it('divider wall positions align with compartment boundaries for 2 dividers', () => {
+    // With 2 dividers along X, there are 3 compartments. The divider walls
+    // should account for wall thickness so compartments have equal width.
+    const context: ModifierContext = {
+      innerWidth: 50,
+      innerDepth: 30,
+      wallHeight: 20,
+      floorY: 0,
+      centerX: 0,
+      centerZ: 0,
+    }
+    const params: DividerGridModifierParams = {
+      dividersX: 2,
+      dividersY: 0,
+      wallThickness: 1.2,
+    }
+    const geometry = generateDividerGrid(params, context, PROFILE_OFFICIAL)
+    geometry.computeBoundingBox()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const box = geometry.boundingBox!
+
+    // Compartment width: (50 - 1.2*2) / 3 = 15.867
+    const cw =
+      (context.innerWidth - params.wallThickness * params.dividersX) / (params.dividersX + 1)
+    // First divider center: -25 + cw + wallThickness/2
+    const wall1Center = -context.innerWidth / 2 + cw + params.wallThickness / 2
+    // Second divider center: wall1 + cw + wallThickness
+    const wall2Center = wall1Center + cw + params.wallThickness
+
+    // Bounding box should span from (wall1 - wt/2) to (wall2 + wt/2)
+    expect(box.min.x).toBeCloseTo(wall1Center - params.wallThickness / 2, 1)
+    expect(box.max.x).toBeCloseTo(wall2Center + params.wallThickness / 2, 1)
+
+    geometry.dispose()
+  })
+
+  it('divider wall positions align with compartment boundaries for 3 dividers along Z', () => {
+    const context: ModifierContext = {
+      innerWidth: 30,
+      innerDepth: 60,
+      wallHeight: 15,
+      floorY: 0,
+      centerX: 0,
+      centerZ: 0,
+    }
+    const params: DividerGridModifierParams = {
+      dividersX: 0,
+      dividersY: 3,
+      wallThickness: 2.0,
+    }
+    const geometry = generateDividerGrid(params, context, PROFILE_OFFICIAL)
+    geometry.computeBoundingBox()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const box = geometry.boundingBox!
+
+    // Compartment depth: (60 - 2.0*3) / 4 = 13.5
+    const cd =
+      (context.innerDepth - params.wallThickness * params.dividersY) / (params.dividersY + 1)
+    // First divider center: -30 + cd + wt/2
+    const firstWallCenter = -context.innerDepth / 2 + cd + params.wallThickness / 2
+    // Last divider center: firstWall + 2 * (cd + wt)
+    const lastWallCenter = firstWallCenter + 2 * (cd + params.wallThickness)
+
+    expect(box.min.z).toBeCloseTo(firstWallCenter - params.wallThickness / 2, 1)
+    expect(box.max.z).toBeCloseTo(lastWallCenter + params.wallThickness / 2, 1)
+
+    geometry.dispose()
+  })
+
+  it('handles thick walls that consume most of the available space', () => {
+    const context: ModifierContext = {
+      innerWidth: 20,
+      innerDepth: 20,
+      wallHeight: 10,
+      floorY: 0,
+      centerX: 0,
+      centerZ: 0,
+    }
+    const params: DividerGridModifierParams = {
+      dividersX: 3,
+      dividersY: 3,
+      wallThickness: 4.0,
+    }
+    // 4 compartments with 3 walls of 4mm each = 12mm of walls in 20mm space
+    // Compartment size = (20 - 12) / 4 = 2mm each
+    const geometry = generateDividerGrid(params, context, PROFILE_OFFICIAL)
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+
+    geometry.computeBoundingBox()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const box = geometry.boundingBox!
+    const width = box.max.x - box.min.x
+    // Should still fit within innerWidth
+    expect(width).toBeLessThanOrEqual(context.innerWidth + 0.01)
+
+    geometry.dispose()
+  })
 })
