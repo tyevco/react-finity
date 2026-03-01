@@ -21,6 +21,7 @@ export function PrintLayoutProvider({ children }: { children: ReactNode }) {
   const activeProfile = useProfileStore((s) => s.activeProfile)
   const printBedPreset = useUIStore((s) => s.printBedPreset)
   const printBedSpacing = useUIStore((s) => s.printBedSpacing)
+  const curveQuality = useUIStore((s) => s.curveQuality)
 
   const bed = PRINT_BED_PRESETS[printBedPreset] ?? PRINT_BED_PRESETS['256x256']
 
@@ -34,7 +35,9 @@ export function PrintLayoutProvider({ children }: { children: ReactNode }) {
       bed.depth,
       printBedSpacing,
     )
-  }, [objects, modifiers, activeProfile, bed.width, bed.depth, printBedSpacing])
+    // curveQuality affects geometry via module-level getCurveSegments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [objects, modifiers, activeProfile, bed.width, bed.depth, printBedSpacing, curveQuality])
 
   useEffect(() => {
     return () => {

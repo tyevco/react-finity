@@ -4,8 +4,9 @@ import JSZip from 'jszip'
 import type { PrintLayoutItem } from './printLayout'
 import { sanitizeFilename, triggerDownload } from './exportUtils'
 
-function geometryToSTLBinary(geometry: BufferGeometry, scale = 1): ArrayBuffer {
+function geometryToSTLBinary(geometry: BufferGeometry, scaleInput = 1): ArrayBuffer {
   const exporter = new STLExporter()
+  const scale = isFinite(scaleInput) && scaleInput > 0 ? scaleInput : 1
   let geo = geometry
   let needsDispose = false
   const material = new MeshBasicMaterial()

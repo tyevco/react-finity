@@ -89,6 +89,42 @@ describe('exportObjectAsSTL', () => {
 
     geo.dispose()
   })
+
+  it('falls back to scale=1 when scale is NaN', () => {
+    const geo = makeTestGeometry()
+    expect(() => {
+      exportObjectAsSTL(geo, 'nan-scale', NaN)
+    }).not.toThrow()
+    expect(downloadState.triggered).toBe(true)
+    geo.dispose()
+  })
+
+  it('falls back to scale=1 when scale is zero', () => {
+    const geo = makeTestGeometry()
+    expect(() => {
+      exportObjectAsSTL(geo, 'zero-scale', 0)
+    }).not.toThrow()
+    expect(downloadState.triggered).toBe(true)
+    geo.dispose()
+  })
+
+  it('falls back to scale=1 when scale is negative', () => {
+    const geo = makeTestGeometry()
+    expect(() => {
+      exportObjectAsSTL(geo, 'neg-scale', -2)
+    }).not.toThrow()
+    expect(downloadState.triggered).toBe(true)
+    geo.dispose()
+  })
+
+  it('falls back to scale=1 when scale is Infinity', () => {
+    const geo = makeTestGeometry()
+    expect(() => {
+      exportObjectAsSTL(geo, 'inf-scale', Infinity)
+    }).not.toThrow()
+    expect(downloadState.triggered).toBe(true)
+    geo.dispose()
+  })
 })
 
 function makeNonIndexedGeometry(): BufferGeometry {
