@@ -189,6 +189,23 @@ describe('exportObjectAs3MF', () => {
     geometry.dispose()
   })
 
+  it('handles non-indexed geometry by generating sequential triangles', async () => {
+    const geometry = new BufferGeometry()
+    const vertices = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
+    const normals = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1])
+    geometry.setAttribute('position', new BufferAttribute(vertices, 3))
+    geometry.setAttribute('normal', new BufferAttribute(normals, 3))
+    // No index set -- non-indexed geometry
+
+    exportObjectAs3MF(geometry, 'non-indexed')
+    const modelXml = await readModelXml()
+
+    expect((modelXml.match(/<vertex /g) ?? []).length).toBe(3)
+    expect((modelXml.match(/<triangle /g) ?? []).length).toBe(1)
+
+    geometry.dispose()
+  })
+
   it('applies scale factor when not equal to 1', async () => {
     const geo = makeTestGeometry()
     exportObjectAs3MF(geo, 'scaled', 2)

@@ -230,6 +230,59 @@ describe('generateLabelTab', () => {
     rightGeo.dispose()
   })
 
+  it('front tab depth is clamped by innerDepth on asymmetric context', () => {
+    // For front/back walls, tab extends inward along Z, so depth limit is innerDepth
+    const asymCtx: ModifierContext = {
+      innerWidth: 80,
+      innerDepth: 10,
+      wallHeight: 21,
+      floorY: 5.85,
+      centerX: 0,
+      centerZ: 0,
+    }
+
+    // Use a shallow angle so tab depth would be large without clamping
+    const frontGeo = generateLabelTab(
+      { ...defaultParams, wall: 'front', angle: 5 },
+      asymCtx,
+      PROFILE_OFFICIAL,
+    )
+    frontGeo.computeBoundingBox()
+    const box = frontGeo.boundingBox! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const tabZExtent = Math.abs(box.max.z - box.min.z)
+
+    // Tab depth should be clamped to innerDepth (10), not innerWidth (80)
+    expect(tabZExtent).toBeLessThanOrEqual(asymCtx.innerDepth + 1)
+
+    frontGeo.dispose()
+  })
+
+  it('left tab depth is clamped by innerWidth on asymmetric context', () => {
+    // For left/right walls, tab extends inward along X, so depth limit is innerWidth
+    const asymCtx: ModifierContext = {
+      innerWidth: 10,
+      innerDepth: 80,
+      wallHeight: 21,
+      floorY: 5.85,
+      centerX: 0,
+      centerZ: 0,
+    }
+
+    const leftGeo = generateLabelTab(
+      { ...defaultParams, wall: 'left', angle: 5 },
+      asymCtx,
+      PROFILE_OFFICIAL,
+    )
+    leftGeo.computeBoundingBox()
+    const box = leftGeo.boundingBox! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    const tabXExtent = Math.abs(box.max.x - box.min.x)
+
+    // Tab depth should be clamped to innerWidth (10), not innerDepth (80)
+    expect(tabXExtent).toBeLessThanOrEqual(asymCtx.innerWidth + 1)
+
+    leftGeo.dispose()
+  })
+
   it('generates on left and right walls', () => {
     const leftGeo = generateLabelTab(
       { ...defaultParams, wall: 'left' },

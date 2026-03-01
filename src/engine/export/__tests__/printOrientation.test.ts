@@ -93,6 +93,25 @@ describe('getOrientedBounds', () => {
   })
 })
 
+describe('getOrientedBounds edge cases', () => {
+  it('returns consistent dimensions for a non-rotated bin', () => {
+    const bin = makeBin()
+    const geo = generateBin(bin.params, PROFILE_OFFICIAL)
+    const rotation = new Euler(0, 0, 0) // no rotation
+    const bounds = getOrientedBounds(geo, rotation)
+
+    // Non-rotated bounds should match raw bounding box
+    geo.computeBoundingBox()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const box = geo.boundingBox!
+    expect(bounds.width).toBeCloseTo(box.max.x - box.min.x, 2)
+    expect(bounds.depth).toBeCloseTo(box.max.z - box.min.z, 2)
+    expect(bounds.height).toBeCloseTo(box.max.y - box.min.y, 2)
+
+    geo.dispose()
+  })
+})
+
 describe('getBoundsFromOriented', () => {
   it('matches getOrientedBounds for a bin', () => {
     const bin = makeBin()

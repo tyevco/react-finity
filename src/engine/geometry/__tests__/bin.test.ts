@@ -194,6 +194,28 @@ describe('generateBin', () => {
     with_.dispose()
   })
 
+  it('combined magnet + weight holes produces valid geometry', () => {
+    const geometry = generateBin(
+      { ...defaultParams, magnetHoles: true, weightHoles: true },
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry).toBeDefined()
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
+
+  it('honeycomb base with thick walls still produces valid geometry', () => {
+    const geometry = generateBin(
+      { ...defaultParams, honeycombBase: true, wallThickness: 5 },
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry).toBeDefined()
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
+
   it('handles extremely large wallThickness without error', () => {
     // wallThickness larger than half the outer dimension would produce negative inner dims
     // The clamp to 0.1mm should prevent degenerate geometry

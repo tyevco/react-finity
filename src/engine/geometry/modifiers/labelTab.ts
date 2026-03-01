@@ -27,7 +27,8 @@ export function generateLabelTab(
   // Clamp angle to safe range to prevent division by zero (tan(0)) or infinity (tan(90))
   const safeAngle = Math.max(5, Math.min(85, angle))
   const angleRad = (safeAngle * Math.PI) / 180
-  const tabDepthVal = Math.min(height / Math.tan(angleRad), innerWidth, innerDepth)
+  const maxTabDepth = isXWall ? innerDepth : innerWidth
+  const tabDepthVal = Math.min(height / Math.tan(angleRad), maxTabDepth)
 
   // Triangular cross-section (right triangle in Y-Z plane)
   const wedgeShape = new Shape()
