@@ -146,10 +146,12 @@ export const useUIStore = create<UIStore>()((set) => ({
   },
 
   setPrintBedSpacing: (spacing) => {
+    if (!isFinite(spacing) || spacing < 0) return
     set({ printBedSpacing: spacing })
   },
 
   setExportScale: (scale) => {
+    if (!isFinite(scale) || scale <= 0) return
     set({ exportScale: scale })
   },
 

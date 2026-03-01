@@ -184,6 +184,18 @@ describe('uiStore', () => {
     expect(useUIStore.getState().printBedSpacing).toBe(5)
   })
 
+  it('allows zero spacing but rejects negative and non-finite values', () => {
+    useUIStore.getState().setPrintBedSpacing(0)
+    expect(useUIStore.getState().printBedSpacing).toBe(0)
+    useUIStore.getState().setPrintBedSpacing(10)
+    useUIStore.getState().setPrintBedSpacing(-5)
+    expect(useUIStore.getState().printBedSpacing).toBe(10)
+    useUIStore.getState().setPrintBedSpacing(NaN)
+    expect(useUIStore.getState().printBedSpacing).toBe(10)
+    useUIStore.getState().setPrintBedSpacing(Infinity)
+    expect(useUIStore.getState().printBedSpacing).toBe(10)
+  })
+
   it('has correct default export settings', () => {
     expect(useUIStore.getState().exportScale).toBe(1.0)
     expect(useUIStore.getState().curveQuality).toBe('medium')
@@ -194,6 +206,18 @@ describe('uiStore', () => {
     expect(useUIStore.getState().exportScale).toBe(2.0)
     useUIStore.getState().setExportScale(0.5)
     expect(useUIStore.getState().exportScale).toBe(0.5)
+  })
+
+  it('rejects invalid export scale values', () => {
+    useUIStore.getState().setExportScale(2.0)
+    useUIStore.getState().setExportScale(0)
+    expect(useUIStore.getState().exportScale).toBe(2.0)
+    useUIStore.getState().setExportScale(-1)
+    expect(useUIStore.getState().exportScale).toBe(2.0)
+    useUIStore.getState().setExportScale(NaN)
+    expect(useUIStore.getState().exportScale).toBe(2.0)
+    useUIStore.getState().setExportScale(Infinity)
+    expect(useUIStore.getState().exportScale).toBe(2.0)
   })
 
   it('sets curve quality', () => {
