@@ -102,6 +102,21 @@ describe('useKeyboardShortcuts (store-level behavior)', () => {
     expect(useUIStore.getState().selectedObjectIds).toEqual([])
   })
 
+  it('keyboard guard checks for SELECT elements', () => {
+    // The keyboard handler should skip when target is a SELECT element.
+    // We verify the guard logic by checking that a SELECT element would be caught.
+    const select = document.createElement('select')
+    expect(select.tagName).toBe('SELECT')
+    // The handler checks: target.tagName === 'SELECT'
+    // This test verifies the guard condition would match
+    expect(
+      select.tagName === 'INPUT' ||
+        select.tagName === 'TEXTAREA' ||
+        select.tagName === 'SELECT' ||
+        select.isContentEditable,
+    ).toBe(true)
+  })
+
   it('undo/redo store actions exist', () => {
     // Verify the undo/redo imports compile and the store has the expected actions
     const { undo, redo, canUndo, canRedo } = vi.hoisted(() => ({

@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { BufferGeometry, BufferAttribute } from 'three'
+import {
+  BufferGeometry,
+  BufferAttribute,
+  InterleavedBuffer,
+  InterleavedBufferAttribute,
+} from 'three'
 import {
   setCurveQuality,
   getCurveSegments,
@@ -336,6 +341,42 @@ describe('mergeGeometries', () => {
 
     indexed.dispose()
     nonIndexed.dispose()
+    merged.dispose()
+  })
+
+  it('correctly reads positions from interleaved buffer attributes', () => {
+    // Interleaved buffer: stride=6 (pos xyz + normal xyz packed together)
+    const data = new Float32Array([
+      // vertex 0: pos(10,20,30), normal(0,0,1)
+      10, 20, 30, 0, 0, 1,
+      // vertex 1: pos(40,50,60), normal(0,0,1)
+      40, 50, 60, 0, 0, 1,
+      // vertex 2: pos(70,80,90), normal(0,0,1)
+      70, 80, 90, 0, 0, 1,
+    ])
+    const interleaved = new InterleavedBuffer(data, 6)
+    const posAttr = new InterleavedBufferAttribute(interleaved, 3, 0) // itemSize=3, offset=0
+
+    const geo = new BufferGeometry()
+    geo.setAttribute('position', posAttr)
+    geo.setIndex(new BufferAttribute(new Uint32Array([0, 1, 2]), 1))
+
+    const merged = mergeGeometries([geo])
+    expect(merged.attributes.position.count).toBe(3)
+
+    // Verify vertex positions were read correctly via accessor methods
+    const pos = merged.attributes.position as BufferAttribute
+    expect(pos.getX(0)).toBeCloseTo(10)
+    expect(pos.getY(0)).toBeCloseTo(20)
+    expect(pos.getZ(0)).toBeCloseTo(30)
+    expect(pos.getX(1)).toBeCloseTo(40)
+    expect(pos.getY(1)).toBeCloseTo(50)
+    expect(pos.getZ(1)).toBeCloseTo(60)
+    expect(pos.getX(2)).toBeCloseTo(70)
+    expect(pos.getY(2)).toBeCloseTo(80)
+    expect(pos.getZ(2)).toBeCloseTo(90)
+
+    geo.dispose()
     merged.dispose()
   })
 })

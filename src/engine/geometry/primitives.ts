@@ -220,9 +220,12 @@ export function mergeGeometries(geometries: BufferGeometry[]): BufferGeometry {
   for (const geo of valid) {
     const posAttr = geo.attributes.position as BufferAttribute
 
-    // Copy positions
-    for (let i = 0; i < posAttr.count * 3; i++) {
-      positions[vertexOffset * 3 + i] = posAttr.array[i]
+    // Copy positions using accessor methods (handles offset/stride correctly)
+    for (let i = 0; i < posAttr.count; i++) {
+      const base = (vertexOffset + i) * 3
+      positions[base] = posAttr.getX(i)
+      positions[base + 1] = posAttr.getY(i)
+      positions[base + 2] = posAttr.getZ(i)
     }
 
     // Copy indices

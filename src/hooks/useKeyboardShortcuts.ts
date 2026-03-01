@@ -31,6 +31,7 @@ export function useKeyboardShortcuts() {
         target instanceof HTMLElement &&
         (target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
           target.isContentEditable ||
           target.role === 'slider' ||
           target.role === 'spinbutton' ||
