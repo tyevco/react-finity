@@ -276,4 +276,24 @@ describe('collectSeparatePartModifiers', () => {
     const parts = collectSeparatePartModifiers(bp.id, [], PROFILE_OFFICIAL, bp)
     expect(parts).toHaveLength(0)
   })
+
+  it('does not include modifiers that are children of other modifiers (only direct children)', () => {
+    const bin = makeBin()
+    const divider: DividerGridModifier = {
+      id: 'div-1',
+      parentId: 'bin-1',
+      kind: 'dividerGrid',
+      params: { dividersX: 1, dividersY: 0, wallThickness: 1.2 },
+    }
+    // Lid nested under divider should NOT be collected (only direct children of object)
+    const lid: LidModifier = {
+      id: 'lid-1',
+      parentId: 'div-1',
+      kind: 'lid',
+      params: { stacking: false },
+    }
+
+    const parts = collectSeparatePartModifiers(bin.id, [divider, lid], PROFILE_OFFICIAL, bin)
+    expect(parts).toHaveLength(0)
+  })
 })
