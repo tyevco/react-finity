@@ -169,27 +169,35 @@ export function generateBin(params: BinParams, profile: GridfinityProfile): Buff
     chamferShape.lineTo(0, filletR)
     chamferShape.lineTo(0, 0)
 
-    // Front wall (negative Z)
+    // After extrudeShape the chamfer geometry is:
+    //   X: [0, filletR]  (horizontal leg)
+    //   Y: [0, span]     (extrusion direction)
+    //   Z: [-filletR, 0] (vertical leg)
+    // Each wall needs the extrusion swapped to the wall-span axis and the
+    // triangle legs oriented as Y-up (from floor) and inward (from wall).
+
+    // Front wall (negative Z): extrude along X, leg up +Y, leg inward +Z
     const frontGeo = extrudeShape(chamferShape, filletWidthSpan)
-    frontGeo.rotateY(Math.PI / 2)
+    frontGeo.rotateZ(Math.PI / 2)
+    frontGeo.rotateY(Math.PI)
     frontGeo.translate(-(innerWidth / 2 - innerRadius), floorY, -innerDepth / 2)
     geometries.push(frontGeo)
 
-    // Back wall (positive Z)
+    // Back wall (positive Z): extrude along X, leg up +Y, leg inward -Z
     const backGeo = extrudeShape(chamferShape, filletWidthSpan)
-    backGeo.rotateY(Math.PI / 2)
-    backGeo.rotateY(Math.PI)
+    backGeo.rotateZ(Math.PI / 2)
     backGeo.translate(innerWidth / 2 - innerRadius, floorY, innerDepth / 2)
     geometries.push(backGeo)
 
-    // Left wall (negative X)
+    // Left wall (negative X): extrude along Z, leg up +Y, leg inward +X
     const leftGeo = extrudeShape(chamferShape, filletDepthSpan)
-    leftGeo.rotateY(0)
+    leftGeo.rotateX(Math.PI / 2)
     leftGeo.translate(-innerWidth / 2, floorY, -(innerDepth / 2 - innerRadius))
     geometries.push(leftGeo)
 
-    // Right wall (positive X)
+    // Right wall (positive X): extrude along Z, leg up +Y, leg inward -X
     const rightGeo = extrudeShape(chamferShape, filletDepthSpan)
+    rightGeo.rotateX(Math.PI / 2)
     rightGeo.rotateY(Math.PI)
     rightGeo.translate(innerWidth / 2, floorY, innerDepth / 2 - innerRadius)
     geometries.push(rightGeo)

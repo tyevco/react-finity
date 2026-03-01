@@ -57,6 +57,14 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
     const { past, future, canUndo } = get()
     if (!canUndo || past.length === 0) return
 
+    // Cancel any pending debounced snapshot from a prior edit burst so it
+    // doesn't fire after the undo completes and corrupt history state.
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+      debounceTimer = null
+    }
+    pendingSnapshot = null
+
     const { objects, modifiers } = useProjectStore.getState()
     const currentSnapshot: HistorySnapshot = { objects, modifiers }
 
@@ -89,6 +97,13 @@ export const useHistoryStore = create<HistoryStore>()((set, get) => ({
   redo: () => {
     const { past, future, canRedo } = get()
     if (!canRedo || future.length === 0) return
+
+    // Cancel any pending debounced snapshot (same rationale as undo)
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+      debounceTimer = null
+    }
+    pendingSnapshot = null
 
     const { objects, modifiers } = useProjectStore.getState()
     const currentSnapshot: HistorySnapshot = { objects, modifiers }

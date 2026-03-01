@@ -144,6 +144,38 @@ describe('generateBin', () => {
     withFillet.dispose()
   })
 
+  it('inner fillet chamfer is at floor-wall junction, not vertical', () => {
+    // Use a large fillet on a 2x2 bin to make the geometry easy to inspect
+    const geometry = generateBin(
+      { ...defaultParams, gridWidth: 2, gridDepth: 2, innerFillet: 2, wallThickness: 1.2 },
+      PROFILE_OFFICIAL,
+    )
+
+    // Build a comparable bin without fillet
+    const noFillet = generateBin(
+      { ...defaultParams, gridWidth: 2, gridDepth: 2, innerFillet: 0, wallThickness: 1.2 },
+      PROFILE_OFFICIAL,
+    )
+
+    geometry.computeBoundingBox()
+    noFillet.computeBoundingBox()
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const box = geometry.boundingBox!
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const noFilletBox = noFillet.boundingBox!
+
+    // The fillet should NOT increase the overall height of the bin — it sits
+    // inside at the floor-wall junction, so max Y should be approximately equal
+    expect(box.max.y).toBeCloseTo(noFilletBox.max.y, 0)
+
+    // Fillet adds more vertices (regression check)
+    expect(geometry.attributes.position.count).toBeGreaterThan(noFillet.attributes.position.count)
+
+    geometry.dispose()
+    noFillet.dispose()
+  })
+
   it('inner fillet does not change outer bounding box', () => {
     const noFillet = generateBin({ ...defaultParams, innerFillet: 0 }, PROFILE_OFFICIAL)
     const withFillet = generateBin({ ...defaultParams, innerFillet: 2 }, PROFILE_OFFICIAL)

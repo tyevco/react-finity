@@ -441,6 +441,93 @@ describe('debounced subscription', () => {
     expect(snapshot.objects).not.toEqual(updatedObjects)
   })
 
+  it('undo cancels pending debounce to prevent stale snapshot push', () => {
+    const makeObjects = (id: string) => [
+      {
+        kind: 'bin' as const,
+        id,
+        name: `Bin ${id}`,
+        position: [0, 0, 0] as [number, number, number],
+        params: {
+          gridWidth: 1,
+          gridDepth: 1,
+          heightUnits: 3,
+          stackingLip: true,
+          wallThickness: 1.2,
+          innerFillet: 0,
+          magnetHoles: false,
+          weightHoles: false,
+          honeycombBase: false,
+        },
+      },
+    ]
+
+    // Set a stable baseline and create a snapshot we can undo to
+    const baselineObjects = makeObjects('bin-base')
+    useProjectStore.setState({ objects: baselineObjects, modifiers: [] })
+    vi.advanceTimersByTime(300)
+    // Past now has one snapshot (the empty state before baseline was set)
+    const pastCountBeforeEdit = useHistoryStore.getState().past.length
+
+    // Edit — this arms a pending debounce timer
+    useProjectStore.setState({ objects: makeObjects('bin-edit'), modifiers: [] })
+
+    // Undo BEFORE the debounce fires — this should cancel the pending timer
+    useHistoryStore.getState().undo()
+
+    // Advance past the debounce window
+    vi.advanceTimersByTime(300)
+
+    // The stale pre-edit snapshot should NOT have been pushed.
+    // History past should not have grown from the cancelled debounce.
+    expect(useHistoryStore.getState().past.length).toBeLessThanOrEqual(pastCountBeforeEdit)
+  })
+
+  it('redo cancels pending debounce to prevent stale snapshot push', () => {
+    const makeObjects = (id: string) => [
+      {
+        kind: 'bin' as const,
+        id,
+        name: `Bin ${id}`,
+        position: [0, 0, 0] as [number, number, number],
+        params: {
+          gridWidth: 1,
+          gridDepth: 1,
+          heightUnits: 3,
+          stackingLip: true,
+          wallThickness: 1.2,
+          innerFillet: 0,
+          magnetHoles: false,
+          weightHoles: false,
+          honeycombBase: false,
+        },
+      },
+    ]
+
+    // Set up undo/redo state: baseline → edit → undo (so redo is available)
+    const baselineObjects = makeObjects('bin-base')
+    useProjectStore.setState({ objects: baselineObjects, modifiers: [] })
+    vi.advanceTimersByTime(300)
+
+    useProjectStore.setState({ objects: makeObjects('bin-edit'), modifiers: [] })
+    vi.advanceTimersByTime(300)
+
+    useHistoryStore.getState().undo()
+    const pastCountBeforeRedo = useHistoryStore.getState().past.length
+
+    // Trigger another edit to arm a debounce timer
+    useProjectStore.setState({ objects: makeObjects('bin-another'), modifiers: [] })
+
+    // Redo BEFORE the debounce fires
+    useHistoryStore.getState().redo()
+
+    // Advance past debounce
+    vi.advanceTimersByTime(300)
+
+    // The stale snapshot should NOT have been pushed
+    expect(useHistoryStore.getState().past.length).toBeLessThanOrEqual(pastCountBeforeRedo + 1)
+  })
+
   it('coalesces multiple rapid changes into a single snapshot', () => {
     const makeObjects = (id: string) => [
       {
