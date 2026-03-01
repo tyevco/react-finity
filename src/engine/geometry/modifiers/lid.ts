@@ -1,5 +1,4 @@
-import type { BufferGeometry } from 'three'
-import { Path } from 'three'
+import { BufferGeometry, Path } from 'three'
 
 import type { LidModifierParams, ModifierContext, GridfinityProfile } from '@/types/gridfinity'
 
@@ -47,6 +46,8 @@ export function generateLid(
   const { stacking } = params
   const { innerWidth, innerDepth, wallHeight, floorY, centerX, centerZ } = context
   const { binCornerRadius, stackingLipHeight } = profile
+
+  if (innerWidth <= 0 || innerDepth <= 0) return new BufferGeometry()
 
   // The lid sits on top of the bin walls
   // Use the context to determine the outer dimensions

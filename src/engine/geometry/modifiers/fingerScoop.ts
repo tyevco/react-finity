@@ -1,5 +1,4 @@
-import type { BufferGeometry } from 'three'
-import { Shape } from 'three'
+import { BufferGeometry, Shape } from 'three'
 
 import type {
   FingerScoopModifierParams,
@@ -26,6 +25,8 @@ export function generateFingerScoop(
 ): BufferGeometry {
   const { wall, width, depth } = params
   const { innerWidth, innerDepth, wallHeight, floorY, centerX, centerZ } = context
+
+  if (wallHeight <= 0) return new BufferGeometry()
 
   const isXWall = wall === 'front' || wall === 'back'
   const span = isXWall ? innerWidth : innerDepth

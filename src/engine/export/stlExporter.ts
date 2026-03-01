@@ -118,7 +118,7 @@ export function exportAllAsSingleSTL(items: PrintLayoutItem[], scale = 1): void 
 
       if (geo.index) {
         for (let i = 0; i < geo.index.count; i++) {
-          indices[indexOffset + i] = geo.index.array[i] + vertexOffset
+          indices[indexOffset + i] = geo.index.getX(i) + vertexOffset
         }
         indexOffset += geo.index.count
       } else {

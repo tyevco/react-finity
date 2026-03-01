@@ -21,9 +21,11 @@ export function SchemaField({ field, value, onChange }: SchemaFieldProps) {
 
   switch (field.type) {
     case 'slider': {
-      const numValue = typeof value === 'number' ? value : field.min
+      const numValue = typeof value === 'number' && isFinite(value) ? value : field.min
       const displayValue =
-        field.precision !== undefined ? numValue.toFixed(field.precision) : String(numValue)
+        field.precision !== undefined && isFinite(numValue)
+          ? numValue.toFixed(field.precision)
+          : String(numValue)
       return (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
