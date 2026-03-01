@@ -65,7 +65,8 @@ describe('computeBinContext', () => {
 
     expect(ctx.innerWidth).toBeGreaterThan(0)
     expect(ctx.innerDepth).toBeGreaterThan(0)
-    expect(ctx.wallHeight).toBe(3 * 7) // 3 height units * 7mm
+    // wallHeight is the inner cavity height: total wall height minus floor thickness
+    expect(ctx.wallHeight).toBe(3 * 7 - 1.2) // (3 height units * 7mm) - wallThickness
     expect(ctx.floorY).toBeGreaterThan(0)
   })
 
@@ -79,6 +80,18 @@ describe('computeBinContext', () => {
     const ctx = computeBinContext(makeBin({ wallThickness: 50 }).params, PROFILE_OFFICIAL)
     expect(ctx.innerWidth).toBe(0.1)
     expect(ctx.innerDepth).toBe(0.1)
+    // wallHeight should also clamp when wallThickness exceeds total wall height
+    expect(ctx.wallHeight).toBe(0.1)
+  })
+
+  it('modifier top aligns with bin wall top', () => {
+    const bin = makeBin()
+    const ctx = computeBinContext(bin.params, PROFILE_OFFICIAL)
+    const { socketWallHeight } = PROFILE_OFFICIAL
+    const binTopY = socketWallHeight + bin.params.heightUnits * PROFILE_OFFICIAL.heightUnit
+    const modifierTopY = ctx.floorY + ctx.wallHeight
+    // Modifier geometry starting at floorY extending wallHeight should reach exactly the bin top
+    expect(modifierTopY).toBeCloseTo(binTopY, 6)
   })
 })
 
