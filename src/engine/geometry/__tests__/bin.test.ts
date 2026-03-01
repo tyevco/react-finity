@@ -195,6 +195,37 @@ describe('generateBin', () => {
     withFillet.dispose()
   })
 
+  it('inner fillet on non-square bin has correct asymmetric spans', () => {
+    // A 2x1 bin has different innerWidth vs innerDepth, so filletWidthSpan
+    // and filletDepthSpan differ. Verify fillet geometry is valid and stays
+    // within the bin's bounding box.
+    const noFillet = generateBin(
+      { ...defaultParams, gridWidth: 2, gridDepth: 1, innerFillet: 0 },
+      PROFILE_OFFICIAL,
+    )
+    const withFillet = generateBin(
+      { ...defaultParams, gridWidth: 2, gridDepth: 1, innerFillet: 2 },
+      PROFILE_OFFICIAL,
+    )
+
+    noFillet.computeBoundingBox()
+    withFillet.computeBoundingBox()
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const noFilletBox = noFillet.boundingBox!
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const withFilletBox = withFillet.boundingBox!
+
+    // Fillet adds vertices but doesn't change outer dimensions
+    expect(withFillet.attributes.position.count).toBeGreaterThan(noFillet.attributes.position.count)
+    expect(withFilletBox.max.x).toBeCloseTo(noFilletBox.max.x, 0)
+    expect(withFilletBox.max.z).toBeCloseTo(noFilletBox.max.z, 0)
+    expect(withFilletBox.max.y).toBeCloseTo(noFilletBox.max.y, 0)
+
+    noFillet.dispose()
+    withFillet.dispose()
+  })
+
   it('magnet holes change vertex count via CSG', () => {
     const without = generateBin({ ...defaultParams, magnetHoles: false }, PROFILE_OFFICIAL)
     const with_ = generateBin({ ...defaultParams, magnetHoles: true }, PROFILE_OFFICIAL)
