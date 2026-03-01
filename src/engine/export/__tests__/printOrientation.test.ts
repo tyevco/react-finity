@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-import { Euler } from 'three'
+import { BufferGeometry, Euler } from 'three'
 import {
   getPrintRotation,
   getOrientedBounds,
@@ -91,6 +91,19 @@ describe('getOrientedBounds', () => {
 
     geo.dispose()
   })
+
+  it('returns zeros for empty geometry', () => {
+    const empty = new BufferGeometry()
+    const rotation = new Euler(0, 0, 0)
+    const bounds = getOrientedBounds(empty, rotation)
+
+    expect(bounds.width).toBe(0)
+    expect(bounds.depth).toBe(0)
+    expect(bounds.height).toBe(0)
+    expect(bounds.yOffset).toBe(0)
+
+    empty.dispose()
+  })
 })
 
 describe('getOrientedBounds edge cases', () => {
@@ -113,6 +126,17 @@ describe('getOrientedBounds edge cases', () => {
 })
 
 describe('getBoundsFromOriented', () => {
+  it('returns zeros for empty geometry', () => {
+    const empty = new BufferGeometry()
+    const bounds = getBoundsFromOriented(empty)
+
+    expect(bounds.width).toBe(0)
+    expect(bounds.depth).toBe(0)
+    expect(bounds.height).toBe(0)
+
+    empty.dispose()
+  })
+
   it('matches getOrientedBounds for a bin', () => {
     const bin = makeBin()
     const geo = generateBin(bin.params, PROFILE_OFFICIAL)

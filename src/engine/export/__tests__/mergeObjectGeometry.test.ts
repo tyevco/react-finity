@@ -296,4 +296,109 @@ describe('collectSeparatePartModifiers', () => {
     const parts = collectSeparatePartModifiers(bin.id, [divider, lid], PROFILE_OFFICIAL, bin)
     expect(parts).toHaveLength(0)
   })
+
+  it('collects multiple separate part modifiers from one object', () => {
+    const bin = makeBin()
+    const lid1: LidModifier = {
+      id: 'lid-1',
+      parentId: 'bin-1',
+      kind: 'lid',
+      params: { stacking: false },
+    }
+    const lid2: LidModifier = {
+      id: 'lid-2',
+      parentId: 'bin-1',
+      kind: 'lid',
+      params: { stacking: true },
+    }
+
+    const parts = collectSeparatePartModifiers(bin.id, [lid1, lid2], PROFILE_OFFICIAL, bin)
+    expect(parts).toHaveLength(2)
+    expect(parts[0].geometry.attributes.position.count).toBeGreaterThan(0)
+    expect(parts[1].geometry.attributes.position.count).toBeGreaterThan(0)
+
+    for (const p of parts) p.geometry.dispose()
+  })
+})
+
+describe('mergeObjectWithModifiers multi-level nesting', () => {
+  it('merges dividerGrid with nested label tab across compartments', () => {
+    const bin = makeBin()
+    const divider: DividerGridModifier = {
+      id: 'div-1',
+      parentId: 'bin-1',
+      kind: 'dividerGrid',
+      params: { dividersX: 1, dividersY: 0, wallThickness: 1.2 },
+    }
+    const label: LabelTabModifier = {
+      id: 'label-1',
+      parentId: 'div-1',
+      kind: 'labelTab',
+      params: { wall: 'front', angle: 45, height: 7 },
+    }
+    const modifiers: Modifier[] = [divider, label]
+
+    // With per-compartment child contexts (dividersX=1 → 2 compartments),
+    // the label tab should be generated for each compartment
+    const withNested = mergeObjectWithModifiers(bin, modifiers, PROFILE_OFFICIAL)
+    const withDividerOnly = mergeObjectWithModifiers(bin, [divider], PROFILE_OFFICIAL)
+
+    // Nested label tab adds more vertices
+    expect(withNested.attributes.position.count).toBeGreaterThan(
+      withDividerOnly.attributes.position.count,
+    )
+
+    withNested.dispose()
+    withDividerOnly.dispose()
+  })
+
+  it('handles dividerGrid with nested finger scoop (subtractive)', () => {
+    const bin = makeBin()
+    const divider: DividerGridModifier = {
+      id: 'div-1',
+      parentId: 'bin-1',
+      kind: 'dividerGrid',
+      params: { dividersX: 1, dividersY: 0, wallThickness: 1.2 },
+    }
+    const fingerScoop: FingerScoopModifier = {
+      id: 'fs-1',
+      parentId: 'div-1',
+      kind: 'fingerScoop',
+      params: { wall: 'front', width: 10, depth: 8 },
+    }
+    const modifiers: Modifier[] = [divider, fingerScoop]
+
+    // CSG subtraction with nested finger scoop should produce valid geometry
+    const geo = mergeObjectWithModifiers(bin, modifiers, PROFILE_OFFICIAL)
+    expect(geo.attributes.position.count).toBeGreaterThan(0)
+
+    geo.dispose()
+  })
+
+  it('merges 0-divider grid (passthrough) with child modifier correctly', () => {
+    const bin = makeBin()
+    const divider: DividerGridModifier = {
+      id: 'div-1',
+      parentId: 'bin-1',
+      kind: 'dividerGrid',
+      params: { dividersX: 0, dividersY: 0, wallThickness: 1.2 },
+    }
+    const label: LabelTabModifier = {
+      id: 'label-1',
+      parentId: 'div-1',
+      kind: 'labelTab',
+      params: { wall: 'front', angle: 45, height: 7 },
+    }
+    const modifiers: Modifier[] = [divider, label]
+
+    // 0-divider grid produces empty geometry but passes through parent context to children
+    const geo = mergeObjectWithModifiers(bin, modifiers, PROFILE_OFFICIAL)
+    const baseGeo = mergeObjectWithModifiers(bin, [], PROFILE_OFFICIAL)
+
+    // The label tab should still be added even through the empty divider grid
+    expect(geo.attributes.position.count).toBeGreaterThan(baseGeo.attributes.position.count)
+
+    geo.dispose()
+    baseGeo.dispose()
+  })
 })
