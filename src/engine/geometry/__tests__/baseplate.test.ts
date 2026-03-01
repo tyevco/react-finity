@@ -137,6 +137,44 @@ describe('generateBaseplate', () => {
 
     geometry.dispose()
   })
+
+  it('magnet + screw holes combined produces valid geometry', () => {
+    const geometry = generateBaseplate(
+      { ...defaultParams, magnetHoles: true, screwHoles: true },
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry).toBeDefined()
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  })
+
+  it('slim mode disables screw holes too', () => {
+    const slimNoHoles = generateBaseplate(
+      { ...defaultParams, slim: true, screwHoles: false },
+      PROFILE_OFFICIAL,
+    )
+    const slimWithHoles = generateBaseplate(
+      { ...defaultParams, slim: true, screwHoles: true },
+      PROFILE_OFFICIAL,
+    )
+
+    // In slim mode, screw holes are disabled regardless of the flag
+    expect(slimWithHoles.attributes.position.count).toBe(slimNoHoles.attributes.position.count)
+
+    slimNoHoles.dispose()
+    slimWithHoles.dispose()
+  })
+
+  it('magnet + screw holes combined on a 2x2 grid produces valid geometry', () => {
+    const geometry = generateBaseplate(
+      { gridWidth: 2, gridDepth: 2, slim: false, magnetHoles: true, screwHoles: true },
+      PROFILE_OFFICIAL,
+    )
+    expect(geometry.attributes.position).toBeDefined()
+    expect(geometry.attributes.position.count).toBeGreaterThan(0)
+    geometry.dispose()
+  }, 15_000)
 })
 
 describe('getBaseplateDimensions', () => {

@@ -768,6 +768,36 @@ describe('modifier CRUD', () => {
     })
   })
 
+  it('deep-copies 3-level modifier hierarchy with remapped parentIds', () => {
+    const binId = useProjectStore.getState().addObject('bin')
+    const insertId = useProjectStore.getState().addModifier(binId, 'insert')
+    const divId = useProjectStore.getState().addModifier(insertId, 'dividerGrid')
+    useProjectStore.getState().addModifier(divId, 'scoop')
+
+    // 3 modifiers before duplication
+    expect(useProjectStore.getState().modifiers).toHaveLength(3)
+
+    const newIds = useProjectStore.getState().duplicateObjects([binId])
+    expect(newIds).toHaveLength(1)
+    const newBinId = newIds[0]
+
+    // Should now have 6 modifiers total (3 original + 3 duplicated)
+    const allMods = useProjectStore.getState().modifiers
+    expect(allMods).toHaveLength(6)
+
+    // New bin's modifiers should chain correctly
+    const newInsert = allMods.find((m) => m.parentId === newBinId && m.kind === 'insert')
+    expect(newInsert).toBeDefined()
+    const newDiv = allMods.find((m) => m.parentId === newInsert!.id && m.kind === 'dividerGrid') // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    expect(newDiv).toBeDefined()
+    const newScoop = allMods.find((m) => m.parentId === newDiv!.id && m.kind === 'scoop') // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    expect(newScoop).toBeDefined()
+
+    // None of the new IDs should match the originals
+    expect(newInsert!.id).not.toBe(insertId) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    expect(newDiv!.id).not.toBe(divId) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+  })
+
   describe('getModifierContext with modifier parent', () => {
     it('returns child context for modifier that subdivides space', () => {
       const binId = useProjectStore.getState().addObject('bin')

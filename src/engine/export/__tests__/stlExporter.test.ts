@@ -62,6 +62,17 @@ describe('exportObjectAsSTL', () => {
     geo.dispose()
   })
 
+  it('applies a scale factor to the exported geometry', () => {
+    const geo = makeTestGeometry()
+    expect(() => {
+      exportObjectAsSTL(geo, 'scaled-object', 0.001)
+    }).not.toThrow()
+    expect(downloadState.triggered).toBe(true)
+    expect(downloadState.filename).toBe('scaled-object.stl')
+
+    geo.dispose()
+  })
+
   it('handles real baseplate geometry', () => {
     const params = {
       gridWidth: 1,

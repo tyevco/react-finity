@@ -10,6 +10,7 @@ import {
   roundedRectHolePathAt,
   createHollowExtrusion,
   createDiamondHolePath,
+  createHexagonHolePath,
   mergeGeometries,
 } from '../primitives'
 
@@ -166,6 +167,27 @@ describe('createDiamondHolePath', () => {
   })
 })
 
+describe('createHexagonHolePath', () => {
+  it('returns a path with 6 sides plus close point', () => {
+    const path = createHexagonHolePath(5, 0, 0)
+    const points = path.getPoints(1)
+    // hexagon: moveTo + 5 lineTo + closePath = 7 points
+    expect(points.length).toBe(7)
+  })
+
+  it('stays within the bounding radius', () => {
+    const radius = 5
+    const cx = 10
+    const cz = 20
+    const path = createHexagonHolePath(radius, cx, cz)
+    const points = path.getPoints(1)
+    for (const p of points) {
+      const dist = Math.sqrt((p.x - cx) ** 2 + (p.y - cz) ** 2)
+      expect(dist).toBeLessThanOrEqual(radius + 0.01)
+    }
+  })
+})
+
 describe('createHollowExtrusion', () => {
   beforeEach(() => {
     setCurveQuality('low')
@@ -262,6 +284,58 @@ describe('mergeGeometries', () => {
     expect(merged.index?.count).toBe(3)
 
     geo.dispose()
+    merged.dispose()
+  })
+
+  it('merges three geometries with correct index offsets', () => {
+    const geos = Array.from({ length: 3 }, () => {
+      const geo = new BufferGeometry()
+      const v = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
+      geo.setAttribute('position', new BufferAttribute(v, 3))
+      geo.setIndex(new BufferAttribute(new Uint32Array([0, 1, 2]), 1))
+      return geo
+    })
+
+    const merged = mergeGeometries(geos)
+    expect(merged.attributes.position.count).toBe(9)
+    expect(merged.index?.count).toBe(9)
+
+    // Third geometry indices should be offset by 6 (2 * 3 vertices)
+    const idx = merged.index!.array // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    expect(idx[6]).toBe(6)
+    expect(idx[7]).toBe(7)
+    expect(idx[8]).toBe(8)
+
+    for (const g of geos) g.dispose()
+    merged.dispose()
+  })
+
+  it('merges mixed indexed and non-indexed geometries', () => {
+    const indexed = new BufferGeometry()
+    indexed.setAttribute(
+      'position',
+      new BufferAttribute(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]), 3),
+    )
+    indexed.setIndex(new BufferAttribute(new Uint32Array([0, 1, 2]), 1))
+
+    const nonIndexed = new BufferGeometry()
+    nonIndexed.setAttribute(
+      'position',
+      new BufferAttribute(new Float32Array([2, 0, 0, 3, 0, 0, 2, 1, 0]), 3),
+    )
+
+    const merged = mergeGeometries([indexed, nonIndexed])
+    expect(merged.attributes.position.count).toBe(6)
+    expect(merged.index?.count).toBe(6)
+
+    // Non-indexed geometry should get sequential indices offset by vertex count of first geo
+    const idx = merged.index!.array // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    expect(idx[3]).toBe(3)
+    expect(idx[4]).toBe(4)
+    expect(idx[5]).toBe(5)
+
+    indexed.dispose()
+    nonIndexed.dispose()
     merged.dispose()
   })
 })

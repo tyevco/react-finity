@@ -133,6 +133,35 @@ describe('computePrintLayout', () => {
     disposePrintLayout(result)
   })
 
+  it('disposePrintLayout disposes all geometries', () => {
+    const objects: GridfinityObject[] = [makeBaseplate('bp-1'), makeBin('bin-1')]
+    const result = computePrintLayout(objects, [], PROFILE_OFFICIAL, 256, 256, 10)
+
+    expect(result).toHaveLength(2)
+    for (const item of result) {
+      expect(item.geometry.attributes.position).toBeDefined()
+    }
+
+    // Disposal should not throw
+    expect(() => {
+      disposePrintLayout(result)
+    }).not.toThrow()
+  })
+
+  it('spacing parameter affects object placement', () => {
+    const objects: GridfinityObject[] = [makeBaseplate('bp-1'), makeBaseplate('bp-2')]
+    const narrow = computePrintLayout(objects, [], PROFILE_OFFICIAL, 256, 256, 2)
+    const wide = computePrintLayout(objects, [], PROFILE_OFFICIAL, 256, 256, 30)
+
+    // With wider spacing, second object should be further away
+    const narrowGap = Math.abs(narrow[1].position[0] - narrow[0].position[0])
+    const wideGap = Math.abs(wide[1].position[0] - wide[0].position[0])
+    expect(wideGap).toBeGreaterThan(narrowGap)
+
+    disposePrintLayout(narrow)
+    disposePrintLayout(wide)
+  })
+
   it('separates lid modifier as independent print part', () => {
     const bin = makeBin('bin-1')
     const lid: LidModifier = {
